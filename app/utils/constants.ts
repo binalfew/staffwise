@@ -3,7 +3,7 @@ type NavigationItem = {
 	href: string
 }
 
-export const navigation: NavigationItem[] = [
+export const mainNavigation: NavigationItem[] = [
 	{
 		name: 'Dashboard',
 		href: '/dashboard',
@@ -19,5 +19,36 @@ export const navigation: NavigationItem[] = [
 	{
 		name: 'Requests',
 		href: '/requests',
+	},
+]
+
+export const settingsNavigation: NavigationItem[] = [
+	{
+		name: 'General',
+		href: '/settings/general',
+	},
+	{
+		name: 'Countries',
+		href: '/settings/countries',
+	},
+	{
+		name: 'Organs',
+		href: '/settings/organs',
+	},
+	{
+		name: 'Departments',
+		href: '/settings/departments',
+	},
+	{
+		name: 'Locations',
+		href: '/settings/locations',
+	},
+	{
+		name: 'Relationships',
+		href: '/settings/relationships',
+	},
+	{
+		name: 'Security',
+		href: '/settings/security',
 	},
 ]

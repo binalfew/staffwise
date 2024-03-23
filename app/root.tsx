@@ -41,7 +41,7 @@ import { Input } from '~/components/ui/input'
 import { Sheet, SheetContent, SheetTrigger } from '~/components/ui/sheet'
 import { ErrorList } from './components/ErrorList'
 import { GeneralErrorBoundary } from './components/ui/error-boundary'
-import { navigation } from './utils/constants'
+import { mainNavigation } from './utils/constants'
 import { csrf } from './utils/csrf.server'
 import { getEnv } from './utils/env.server'
 import { honeypot } from './utils/honeypot.server'
@@ -73,7 +73,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 			username: os.userInfo().username,
 			theme: getTheme(request),
 			ENV: getEnv(),
-			navigation,
+			navigation: mainNavigation,
 			honeypotProps,
 			csrfToken,
 		},
@@ -298,7 +298,9 @@ function App() {
 							<DropdownMenuContent align="end">
 								<DropdownMenuLabel>Account</DropdownMenuLabel>
 								<DropdownMenuSeparator />
-								<DropdownMenuItem>Settings</DropdownMenuItem>
+								<DropdownMenuItem asChild>
+									<Link to="/settings/general">Settings</Link>
+								</DropdownMenuItem>
 								<DropdownMenuItem>Support</DropdownMenuItem>
 								<DropdownMenuSeparator />
 								<DropdownMenuItem>Logout</DropdownMenuItem>
@@ -307,7 +309,7 @@ function App() {
 						<ThemeSwitch userPreference={theme} />
 					</div>
 				</header>
-				<main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 bg-muted/40">
+				<main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 bg-muted/40">
 					<Outlet />
 				</main>
 

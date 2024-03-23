@@ -1,0 +1,173 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Country {
+  id            String     @id @default(cuid())
+  name          String
+  code          String
+  isMemberState Boolean
+  isDeleted     Boolean    @default(false)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  organs        Organ[]
+  employees     Employee[]
+}
+
+model Organ {
+  id          String       @id @default(cuid())
+  name        String
+  code        String
+  address     String
+  countryId   String
+  country     Country      @relation(fields: [countryId], references: [id])
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  departments Department[]
+  locations   Location[]
+}
+
+model Department {
+  id        String     @id @default(cuid())
+  name      String
+  code      String
+  organId   String
+  organ     Organ      @relation(fields: [organId], references: [id])
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  employees Employee[]
+}
+
+model Location {
+  id        String     @id @default(cuid())
+  name      String
+  code      String
+  organId   String
+  organ     Organ      @relation(fields: [organId], references: [id])
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  floors    Floor[]
+  employees Employee[]
+}
+
+model Floor {
+  id         String     @id @default(cuid())
+  name       String
+  code       String
+  locationId String
+  location   Location   @relation(fields: [locationId], references: [id])
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  employees  Employee[]
+}
+
+model Relationship {
+  id         String      @id @default(cuid())
+  name       String
+  code       String
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  dependants Dependant[]
+}
+
+model Employee {
+  id                     String      @id @default(cuid())
+  firstName              String      @default("")
+  familyName             String      @default("")
+  middleName             String      @default("")
+  email                  String      @default("")
+  countryId              String
+  country                Country     @relation(fields: [countryId], references: [id])
+  nationalPassportNumber String      @default("")
+  auPassportNumber       String      @default("")
+  auIdNmber              String      @default("")
+  dateIssued             DateTime    @default(now())
+  validUntil             DateTime    @default(now())
+  dateOfBirth            DateTime    @default(now())
+  departmentId           String
+  department             Department  @relation(fields: [departmentId], references: [id])
+  locationId             String
+  location               Location    @relation(fields: [locationId], references: [id])
+  floorId                String
+  floor                  Floor       @relation(fields: [floorId], references: [id])
+  officeNumber           String      @default("")
+  specialConditions      String      @default("")
+  medicallyTrained       Boolean     @default(false)
+  zone                   String      @default("")
+  team                   String      @default("")
+  createdAt              DateTime    @default(now())
+  updatedAt              DateTime    @updatedAt
+  addresses              Address[]
+  dependants             Dependant[]
+  spouses                Spouse[]
+  vehicles               Vehicle[]
+}
+
+model Address {
+  id                    String   @id @default(cuid())
+  employeeId            String
+  employee              Employee @relation(fields: [employeeId], references: [id])
+  houseNumber           String   @default("")
+  houseTelephoneNumber  String   @default("")
+  mobileTelephoneNumber String   @default("")
+  officeTelephoneNumber String   @default("")
+  email                 String   @default("")
+  specificLocation      String   @default("")
+  gpsLocation           String   @default("")
+  homeCountryAddress    String   @default("")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model Dependant {
+  id             String       @id @default(cuid())
+  employeeId     String
+  employee       Employee     @relation(fields: [employeeId], references: [id])
+  firstName      String       @default("")
+  familyName     String       @default("")
+  middleName     String       @default("")
+  auIdNmber      String       @default("")
+  dateIssued     DateTime     @default(now())
+  validUntil     DateTime     @default(now())
+  dateOfBirth    DateTime     @default(now())
+  relationshipId String
+  relationship   Relationship @relation(fields: [relationshipId], references: [id])
+  nameOfSchool   String       @default("")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model Spouse {
+  id              String   @id @default(cuid())
+  employeeId      String
+  employee        Employee @relation(fields: [employeeId], references: [id])
+  firstName       String   @default("")
+  familyName      String   @default("")
+  middleName      String   @default("")
+  auIdNmber       String   @default("")
+  dateIssued      DateTime @default(now())
+  validUntil      DateTime @default(now())
+  telephoneNumber String   @default("")
+  dateOfBirth     DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Vehicle {
+  id          String   @id @default(cuid())
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id])
+  make        String   @default("")
+  model       String   @default("")
+  year        String   @default("")
+  color       String   @default("")
+  plateNumber String   @default("")
+  capacity    String   @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
