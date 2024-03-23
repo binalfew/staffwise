@@ -9,19 +9,15 @@ export const navigation: NavigationItem[] = [
 		href: '/dashboard',
 	},
 	{
-		name: 'Team',
-		href: '/team',
+		name: 'Profile',
+		href: '/profile',
 	},
 	{
-		name: 'Projects',
-		href: '/projects',
+		name: 'Incidents',
+		href: '/incidents',
 	},
 	{
-		name: 'Calendar',
-		href: '/calendar',
-	},
-	{
-		name: 'Reports',
-		href: '/reports',
+		name: 'Requests',
+		href: '/requests',
 	},
 ]

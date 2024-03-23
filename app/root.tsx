@@ -161,7 +161,7 @@ function ThemeSwitch({ userPreference }: { userPreference?: Theme }) {
 	)
 }
 
-export function Layout({
+function Layout({
 	children,
 	theme,
 	env,
@@ -311,7 +311,7 @@ function App() {
 					<Outlet />
 				</main>
 
-				<footer className="flex w-full items-center justify-between border-t p-4">
+				<footer className="flex w-full items-center justify-between border-t p-3">
 					<p className="text-sm text-muted-foreground">
 						© 2024 AUC. All rights reserved.
 					</p>
