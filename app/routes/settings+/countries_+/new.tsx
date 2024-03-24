@@ -76,7 +76,7 @@ export default function NewCountryRoute() {
 		<div className="flex flex-col gap-8">
 			<Card className="w-full">
 				<CardHeader>
-					<CardTitle>Country Registration</CardTitle>
+					<CardTitle>Add New Country</CardTitle>
 					<CardDescription>
 						Please fill out the form to register a new country.
 					</CardDescription>

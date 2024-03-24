@@ -1,10 +1,10 @@
-import * as React from 'react'
 import { type DialogProps } from '@radix-ui/react-dialog'
 import { Command as CommandPrimitive } from 'cmdk'
 import { Search } from 'lucide-react'
+import * as React from 'react'
 
-import { cn } from '~/utils/misc.tsx'
 import { Dialog, DialogContent } from '~/components/ui/dialog'
+import { cn } from '~/utils/misc.tsx'
 
 const Command = React.forwardRef<
 	React.ElementRef<typeof CommandPrimitive>,
@@ -111,16 +111,18 @@ CommandSeparator.displayName = CommandPrimitive.Separator.displayName
 const CommandItem = React.forwardRef<
 	React.ElementRef<typeof CommandPrimitive.Item>,
 	React.ComponentPropsWithoutRef<typeof CommandPrimitive.Item>
->(({ className, ...props }, ref) => (
-	<CommandPrimitive.Item
-		ref={ref}
-		className={cn(
-			'relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none aria-selected:bg-accent aria-selected:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
-			className,
-		)}
-		{...props}
-	/>
-))
+>(({ className, ...props }, ref) => {
+	return (
+		<CommandPrimitive.Item
+			ref={ref}
+			className={cn(
+				'relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none aria-selected:bg-accent aria-selected:text-accent-foreground',
+				className,
+			)}
+			{...props}
+		/>
+	)
+})
 
 CommandItem.displayName = CommandPrimitive.Item.displayName
 
@@ -143,11 +145,11 @@ CommandShortcut.displayName = 'CommandShortcut'
 export {
 	Command,
 	CommandDialog,
-	CommandInput,
-	CommandList,
 	CommandEmpty,
 	CommandGroup,
+	CommandInput,
 	CommandItem,
-	CommandShortcut,
+	CommandList,
 	CommandSeparator,
+	CommandShortcut,
 }
