@@ -1,11 +1,17 @@
-import { LoaderFunctionArgs, json, redirect } from '@remix-run/node'
+import { LoaderFunctionArgs, json } from '@remix-run/node'
 import { Link, useLoaderData } from '@remix-run/react'
 import { EditIcon, PlusCircle } from 'lucide-react'
-import { z } from 'zod'
 import { ErrorList } from '~/components/ErrorList'
+import { Paginator } from '~/components/Paginator'
 import { SearchBar } from '~/components/SearchBar'
 import { Button } from '~/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
+import {
+	Card,
+	CardContent,
+	CardFooter,
+	CardHeader,
+	CardTitle,
+} from '~/components/ui/card'
 import {
 	Table,
 	TableBody,
@@ -14,45 +20,27 @@ import {
 	TableHeader,
 	TableRow,
 } from '~/components/ui/table'
-import { prisma } from '~/utils/db.server'
-
-const CountrySearchResultSchema = z.object({
-	id: z.string().optional(),
-	name: z.string({ required_error: 'Name is required' }),
-	code: z.string({ required_error: 'Code is required' }),
-	isMemberState: z.boolean().default(false),
-})
-
-const CountrySearchResultsSchema = z.array(CountrySearchResultSchema)
+import { filterAndPaginate, prisma } from '~/utils/db.server'
 
 export async function loader({ request }: LoaderFunctionArgs) {
-	const searchTerm = new URL(request.url).searchParams.get('search')
-	if (searchTerm === '') {
-		return redirect('/settings/countries')
-	}
+	const { data, totalPages, currentPage } = await filterAndPaginate({
+		request,
+		model: prisma.country,
+		searchFields: ['name', 'code'],
+		orderBy: [{ name: 'asc' }],
+	})
 
-	const like = `%${searchTerm ?? ''}%`
-	const likePattern = `%${like}%`
-	const rawCountries = await prisma.$queryRaw`
-    SELECT id, name, code, "isMemberState"
-    FROM "Country"
-    WHERE name ILIKE ${likePattern}
-    OR code ILIKE ${likePattern}
-    ORDER BY name DESC
-    LIMIT 50
-`
-
-	const result = CountrySearchResultsSchema.safeParse(rawCountries)
-	if (!result.success) {
-		return json({ status: 'error', error: result.error.message } as const, {
-			status: 400,
-		})
-	}
-	return json({ status: 'idle', countries: result.data } as const)
+	return json({
+		status: 'idle',
+		countries: data,
+		totalPages,
+		currentPage,
+	} as const)
 }
 
 export default function CountriesRoute() {
 	const data = useLoaderData<typeof loader>()
+	const { totalPages, currentPage } = data
 
 	return (
 		<div className="flex flex-col gap-8">
@@ -131,6 +119,9 @@ export default function CountriesRoute() {
 						</Table>
 					</div>
 				</CardContent>
+				<CardFooter className="border-t px-6 py-4 flex items-center justify-end">
+					<Paginator totalPages={totalPages} currentPage={currentPage} />
+				</CardFooter>
 			</Card>
 		</div>
 	)

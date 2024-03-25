@@ -14,6 +14,7 @@ import {
 	Card,
 	CardContent,
 	CardDescription,
+	CardFooter,
 	CardHeader,
 	CardTitle,
 } from '~/components/ui/card'
@@ -91,16 +92,19 @@ export function CountryEditor({
 									<FieldError>{fields.isMemberState.errors}</FieldError>
 								)}
 							</Field>
-
-							<div className="flex items-center justify-end space-x-2">
-								<Button type="submit">Save</Button>
-								<Button asChild variant="destructive">
-									<Link to="/settings/countries">Cancel</Link>
-								</Button>
-							</div>
 						</Form>
 					</FormProvider>
 				</CardContent>
+				<CardFooter className="border-t px-6 py-4">
+					<div className="flex items-center justify-end space-x-2">
+						<Button type="submit" form={form.id}>
+							Save
+						</Button>
+						<Button asChild variant="destructive">
+							<Link to="/settings/countries">Cancel</Link>
+						</Button>
+					</div>
+				</CardFooter>
 			</Card>
 		</div>
 	)
