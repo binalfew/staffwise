@@ -1,30 +1,11 @@
 import { LoaderFunctionArgs, json, redirect } from '@remix-run/node'
-import { useLoaderData } from '@remix-run/react'
-import { PlusCircle } from 'lucide-react'
+import { Link, useLoaderData } from '@remix-run/react'
+import { EditIcon, PlusCircle } from 'lucide-react'
 import { z } from 'zod'
 import { ErrorList } from '~/components/ErrorList'
 import { SearchBar } from '~/components/SearchBar'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
-import { Checkbox } from '~/components/ui/checkbox'
-import {
-	Dialog,
-	DialogClose,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from '~/components/ui/dialog'
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from '~/components/ui/dropdown-menu'
-import { Input } from '~/components/ui/input'
-import { Label } from '~/components/ui/label'
 import {
 	Table,
 	TableBody,
@@ -36,10 +17,10 @@ import {
 import { prisma } from '~/utils/db.server'
 
 const CountrySearchResultSchema = z.object({
-	id: z.string(),
-	name: z.string(),
-	code: z.string(),
-	isMemberState: z.boolean(),
+	id: z.string().optional(),
+	name: z.string({ required_error: 'Name is required' }),
+	code: z.string({ required_error: 'Code is required' }),
+	isMemberState: z.boolean().default(false),
 })
 
 const CountrySearchResultsSchema = z.array(CountrySearchResultSchema)
@@ -51,7 +32,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 	}
 
 	const like = `%${searchTerm ?? ''}%`
-	const likePattern = `%${like}%` // Ensure 'like' is properly escaped to prevent SQL injection
+	const likePattern = `%${like}%`
 	const rawCountries = await prisma.$queryRaw`
     SELECT id, name, code, "isMemberState"
     FROM "Country"
@@ -82,62 +63,13 @@ export default function CountriesRoute() {
 					</div>
 					<div className="flex items-center gap-2 ml-auto">
 						<SearchBar status={data.status} autoSubmit />
-						{/* <Button asChild size="sm" className="ml-auto gap-1">
+
+						<Button asChild size="sm" className="ml-auto gap-1">
 							<Link to="new">
 								<PlusCircle className="h-4 w-4" />
-								Add New
+								Add
 							</Link>
-						</Button> */}
-						<Dialog>
-							<DialogTrigger asChild>
-								<Button size="sm" className="ml-auto gap-1">
-									<PlusCircle className="h-4 w-4" /> Add New
-								</Button>
-							</DialogTrigger>
-							<DialogContent
-								className="sm:max-w-[425px]"
-								onInteractOutside={e => e.preventDefault()}
-							>
-								<DialogHeader>
-									<DialogTitle>Add New Country</DialogTitle>
-									<DialogDescription>
-										Please fill out the form to register a new country.
-									</DialogDescription>
-								</DialogHeader>
-								<div className="grid gap-4 py-4">
-									<div className="grid gap-2">
-										<Label htmlFor="name">Country Name</Label>
-										<Input
-											id="name"
-											placeholder="Enter country name"
-											required
-										/>
-									</div>
-									<div className="grid gap-2">
-										<Label htmlFor="code">Country Code</Label>
-										<Input
-											id="code"
-											placeholder="Enter country code"
-											required
-										/>
-									</div>
-									<div className="flex items-center space-x-2">
-										<Checkbox id="member-state" />
-										<Label htmlFor="member-state">Is a member state?</Label>
-									</div>
-								</div>
-								<DialogFooter className="sm:justify-start">
-									<Button className="w-full" type="submit">
-										Save
-									</Button>
-									<DialogClose asChild>
-										<Button className="w-full" variant="outline">
-											Cancel
-										</Button>
-									</DialogClose>
-								</DialogFooter>
-							</DialogContent>
-						</Dialog>
+						</Button>
 					</div>
 				</CardHeader>
 				<CardContent>
@@ -164,15 +96,12 @@ export default function CountriesRoute() {
 													{country.isMemberState ? 'Yes' : 'No'}
 												</TableCell>
 												<TableCell className="py-1 text-right">
-													<DropdownMenu>
-														<DropdownMenuTrigger asChild>
-															<Button variant="ghost">...</Button>
-														</DropdownMenuTrigger>
-														<DropdownMenuContent align="end">
-															<DropdownMenuItem>Edit</DropdownMenuItem>
-															<DropdownMenuItem>Delete</DropdownMenuItem>
-														</DropdownMenuContent>
-													</DropdownMenu>
+													<Button asChild size="xs">
+														<Link to={`${country.id}/edit`}>
+															<EditIcon className="h-4 w-4 mr-1" />
+															Edit
+														</Link>
+													</Button>
 												</TableCell>
 											</TableRow>
 										))
