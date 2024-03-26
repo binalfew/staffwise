@@ -1,6 +1,6 @@
 import { LoaderFunctionArgs, json } from '@remix-run/node'
 import { Link, useLoaderData } from '@remix-run/react'
-import { EditIcon, PlusCircle } from 'lucide-react'
+import { EditIcon, PlusCircle, TrashIcon } from 'lucide-react'
 import { ErrorList } from '~/components/ErrorList'
 import { Paginator } from '~/components/Paginator'
 import { SearchBar } from '~/components/SearchBar'
@@ -83,11 +83,15 @@ export default function CountriesRoute() {
 												<TableCell className="py-1">
 													{country.isMemberState ? 'Yes' : 'No'}
 												</TableCell>
-												<TableCell className="py-1 text-right">
+												<TableCell className="py-1 text-right space-x-1">
 													<Button asChild size="xs">
 														<Link to={`${country.id}/edit`}>
-															<EditIcon className="h-4 w-4 mr-1" />
-															Edit
+															<EditIcon className="h-4 w-4" />
+														</Link>
+													</Button>
+													<Button asChild size="xs" variant="destructive">
+														<Link to={`${country.id}/delete`}>
+															<TrashIcon className="h-4 w-4" />
 														</Link>
 													</Button>
 												</TableCell>

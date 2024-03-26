@@ -7,8 +7,10 @@ import { Checkbox } from '~/components/ui/checkbox'
 
 export function CheckboxField({
 	meta,
+	disabled,
 }: {
 	meta: FieldMetadata<string | boolean | undefined>
+	disabled?: boolean
 }) {
 	const checkboxRef = useRef<ElementRef<typeof Checkbox>>(null)
 	const control = useControl(meta)
@@ -28,6 +30,7 @@ export function CheckboxField({
 				ref={checkboxRef}
 				id={meta.id}
 				checked={control.value === 'on'}
+				disabled={disabled}
 				onCheckedChange={checked => {
 					control.change(checked ? 'on' : '')
 				}}

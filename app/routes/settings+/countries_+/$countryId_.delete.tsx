@@ -19,5 +19,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
 export default function EditCountryRoute() {
 	const { country } = useLoaderData<typeof loader>()
-	return <CountryEditor country={country} title="Edit Country" />
+	return (
+		<CountryEditor country={country} title="Delete Country" intent="delete" />
+	)
 }

@@ -4,12 +4,31 @@ import { z } from 'zod'
 import { validateCSRF } from '~/utils/csrf.server'
 import { prisma } from '~/utils/db.server'
 import { checkHoneypot } from '~/utils/honeypot.server'
-import { CountryEditorSchema } from './__country-editor'
+import { CountryDeleteSchema, CountryEditorSchema } from './__country-editor'
 
 export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData()
 	checkHoneypot(formData)
 	await validateCSRF(formData, request.headers)
+
+	const intent = formData.get('intent')
+
+	if (intent === 'delete') {
+		const submission = await parseWithZod(formData, {
+			schema: CountryDeleteSchema,
+			async: true,
+		})
+		if (submission.status !== 'success') {
+			return json(
+				{ result: submission.reply() },
+				{ status: submission.status === 'error' ? 400 : 200 },
+			)
+		}
+		await prisma.country.delete({
+			where: { id: submission.value.id },
+		})
+		return redirect('/settings/countries')
+	}
 
 	const submission = await parseWithZod(formData, {
 		schema: CountryEditorSchema.superRefine(async (data, ctx) => {

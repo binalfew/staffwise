@@ -1,4 +1,4 @@
-import { FormProvider, getFormProps, useForm } from '@conform-to/react'
+import { getFormProps, useForm } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod'
 import { Country } from '@prisma/client'
 import { SerializeFrom } from '@remix-run/node'
@@ -28,79 +28,105 @@ export const CountryEditorSchema = z.object({
 	isMemberState: z.boolean().default(false),
 })
 
+export const CountryDeleteSchema = z.object({
+	id: z.string(),
+})
+
 export function CountryEditor({
 	country,
+	title,
+	intent,
 }: {
 	country?: SerializeFrom<
 		Pick<Country, 'id' | 'name' | 'code' | 'isMemberState'>
 	>
+	title: string
+	intent?: 'add' | 'edit' | 'delete'
 }) {
 	const actionData = useActionData<typeof action>()
+	const disabled = intent === 'delete'
+	const schema = intent === 'delete' ? CountryDeleteSchema : CountryEditorSchema
 	const [form, fields] = useForm({
 		id: 'register-country',
-		constraint: getZodConstraint(CountryEditorSchema),
+		constraint: getZodConstraint(schema),
 		lastResult: actionData?.result,
 		onValidate({ formData }) {
-			return parseWithZod(formData, { schema: CountryEditorSchema })
+			return parseWithZod(formData, { schema })
 		},
 		shouldValidate: 'onBlur',
 		shouldRevalidate: 'onInput',
 		defaultValue: country,
 	})
 
-	const title = country?.id ? 'Edit Country' : 'New Country'
-
 	return (
 		<div className="flex flex-col gap-8">
 			<Card className="w-full">
 				<CardHeader>
 					<CardTitle>{title}</CardTitle>
-					<CardDescription>
-						Please fill out the form to register a new country.
-					</CardDescription>
+					{intent === 'delete' && (
+						<CardDescription className="text-red-500 py-2">
+							Are you sure you want to delete this country? This action cannot
+							be undone.
+						</CardDescription>
+					)}
 				</CardHeader>
 				<CardContent>
-					<FormProvider context={form.context}>
-						<Form className="grid gap-4" method="POST" {...getFormProps(form)}>
-							<AuthenticityTokenInput />
-							<HoneypotInputs />
-							<InputField meta={fields.id} type="hidden" />
-							<Field>
-								<Label htmlFor={fields.name.id}>Name</Label>
-								<InputField meta={fields.name} type="text" autoComplete="off" />
-								{fields.name.errors && (
-									<FieldError>{fields.name.errors}</FieldError>
-								)}
-							</Field>
+					<Form className="grid gap-4" method="POST" {...getFormProps(form)}>
+						<AuthenticityTokenInput />
+						<HoneypotInputs />
+						<InputField meta={fields.id} type="hidden" />
+						<Field>
+							<Label htmlFor={fields.name.id}>Name</Label>
+							<InputField
+								meta={fields.name}
+								type="text"
+								autoComplete="off"
+								disabled={disabled}
+							/>
+							{fields.name.errors && (
+								<FieldError>{fields.name.errors}</FieldError>
+							)}
+						</Field>
 
-							<Field>
-								<Label htmlFor={fields.code.id}>Code</Label>
-								<InputField meta={fields.code} type="text" autoComplete="off" />
-								{fields.code.errors && (
-									<FieldError>{fields.code.errors}</FieldError>
-								)}
-							</Field>
+						<Field>
+							<Label htmlFor={fields.code.id}>Code</Label>
+							<InputField
+								meta={fields.code}
+								type="text"
+								autoComplete="off"
+								disabled={disabled}
+							/>
+							{fields.code.errors && (
+								<FieldError>{fields.code.errors}</FieldError>
+							)}
+						</Field>
 
-							<Field>
-								<div className="flex items-center gap-2">
-									<CheckboxField meta={fields.isMemberState} />
-									<Label htmlFor={fields.isMemberState.id}>
-										Is Member State
-									</Label>
-								</div>
-								{fields.isMemberState.errors && (
-									<FieldError>{fields.isMemberState.errors}</FieldError>
-								)}
-							</Field>
-						</Form>
-					</FormProvider>
+						<Field>
+							<div className="flex items-center gap-2">
+								<CheckboxField
+									meta={fields.isMemberState}
+									disabled={disabled}
+								/>
+								<Label htmlFor={fields.isMemberState.id}>Is Member State</Label>
+							</div>
+							{fields.isMemberState.errors && (
+								<FieldError>{fields.isMemberState.errors}</FieldError>
+							)}
+						</Field>
+					</Form>
 				</CardContent>
 				<CardFooter className="border-t px-6 py-4">
 					<div className="flex items-center justify-end space-x-2">
-						<Button type="submit" form={form.id}>
-							Save
+						<Button
+							type="submit"
+							form={form.id}
+							name="intent"
+							value={intent}
+							variant={intent === 'delete' ? 'destructive' : 'default'}
+						>
+							{intent === 'delete' ? 'Delete' : 'Save'}
 						</Button>
-						<Button asChild variant="destructive">
+						<Button asChild variant="outline">
 							<Link to="/settings/countries">Cancel</Link>
 						</Button>
 					</div>
