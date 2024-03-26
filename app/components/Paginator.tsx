@@ -68,7 +68,7 @@ export const Paginator: React.FC<PaginationProps> = ({
 	const pagesArray = Array.from(pageNumbers).sort((a, b) => a - b) // Sort the pages for correct display order
 
 	return (
-		<Pagination>
+		<Pagination className="justify-end">
 			<PaginationContent>
 				<PaginationItem>
 					<Select

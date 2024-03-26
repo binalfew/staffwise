@@ -123,7 +123,7 @@ export default function CountriesRoute() {
 						</Table>
 					</div>
 				</CardContent>
-				<CardFooter className="border-t px-6 py-4 flex items-center justify-end">
+				<CardFooter className="border-t px-6 py-4">
 					<Paginator totalPages={totalPages} currentPage={currentPage} />
 				</CardFooter>
 			</Card>
