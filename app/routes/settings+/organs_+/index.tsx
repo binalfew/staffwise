@@ -25,21 +25,30 @@ import { filterAndPaginate, prisma } from '~/utils/db.server'
 export async function loader({ request }: LoaderFunctionArgs) {
 	const { data, totalPages, currentPage } = await filterAndPaginate({
 		request,
-		model: prisma.country,
-		searchFields: ['name', 'code'],
+		model: prisma.organ,
+		searchFields: ['name', 'code', 'address'],
 		orderBy: [{ name: 'asc' }],
+		select: {
+			id: true,
+			name: true,
+			code: true,
+			countryId: true,
+			address: true,
+			country: { select: { name: true } },
+		},
 	})
 
 	return json({
 		status: 'idle',
-		countries: data,
+		organs: data,
 		totalPages,
 		currentPage,
 	} as const)
 }
 
-export default function CountriesRoute() {
+export default function OrgansRoute() {
 	const data = useLoaderData<typeof loader>()
+
 	const { totalPages, currentPage } = data
 
 	return (
@@ -47,12 +56,12 @@ export default function CountriesRoute() {
 			<Card className="w-full">
 				<CardHeader className="flex flex-row items-center">
 					<div className="grid gap-2">
-						<CardTitle>Countries</CardTitle>
+						<CardTitle>Organs</CardTitle>
 					</div>
 					<div className="flex items-center gap-2 ml-auto">
 						<SearchBar
 							status={data.status}
-							action="/settings/countries"
+							action="/settings/organs"
 							autoSubmit
 						/>
 
@@ -69,32 +78,32 @@ export default function CountriesRoute() {
 						<Table>
 							<TableHeader>
 								<TableRow>
-									<TableHead className="w-1/3">Name</TableHead>
-									<TableHead className="w-1/4">Code</TableHead>
-									<TableHead className="w-1/4">Member State</TableHead>
-									<TableHead className="w-1/6 text-right pr-6">
-										Actions
-									</TableHead>
+									<TableHead>Name</TableHead>
+									<TableHead>Code</TableHead>
+									<TableHead>Country</TableHead>
+									<TableHead>Address</TableHead>
+									<TableHead className="text-right pr-6">Actions</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
 								{data.status === 'idle' ? (
-									data.countries.length > 0 ? (
-										data.countries.map(country => (
-											<TableRow key={country.id}>
-												<TableCell className="py-1">{country.name}</TableCell>
-												<TableCell className="py-1">{country.code}</TableCell>
+									data.organs.length > 0 ? (
+										data.organs.map((organ: any) => (
+											<TableRow key={organ.id}>
+												<TableCell className="py-1">{organ.name}</TableCell>
+												<TableCell className="py-1">{organ.code}</TableCell>
 												<TableCell className="py-1">
-													{country.isMemberState ? 'Yes' : 'No'}
+													{organ.country.name}
 												</TableCell>
+												<TableCell className="py-1">{organ.address}</TableCell>
 												<TableCell className="py-1 text-right space-x-1">
 													<Button asChild size="xs">
-														<Link to={`${country.id}/edit`}>
+														<Link to={`${organ.id}/edit`}>
 															<EditIcon className="h-4 w-4" />
 														</Link>
 													</Button>
 													<Button asChild size="xs" variant="destructive">
-														<Link to={`${country.id}/delete`}>
+														<Link to={`${organ.id}/delete`}>
 															<TrashIcon className="h-4 w-4" />
 														</Link>
 													</Button>
@@ -104,7 +113,7 @@ export default function CountriesRoute() {
 									) : (
 										<TableRow>
 											<TableCell colSpan={4} className="text-center">
-												No countries found
+												No organs found
 											</TableCell>
 										</TableRow>
 									)
@@ -127,9 +136,11 @@ export default function CountriesRoute() {
 						</Table>
 					</div>
 				</CardContent>
-				<CardFooter className="border-t px-6 py-4">
-					<Paginator totalPages={totalPages} currentPage={currentPage} />
-				</CardFooter>
+				{totalPages > 0 ? (
+					<CardFooter className="border-t px-6 py-4">
+						<Paginator totalPages={totalPages} currentPage={currentPage} />
+					</CardFooter>
+				) : null}
 			</Card>
 		</div>
 	)

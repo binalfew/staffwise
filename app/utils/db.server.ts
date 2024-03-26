@@ -40,7 +40,27 @@ const prisma = singleton('prisma', () => {
 	return client
 })
 
-type PaginationAndFilterParams<TWhereInput, TOrderByInput, TResult> = {
+// type PaginationAndFilterParams<TWhereInput, TOrderByInput, TResult> = {
+// 	request: LoaderFunctionArgs['request']
+// 	model: {
+// 		count: (args?: { where?: TWhereInput }) => Promise<number>
+// 		findMany: (args?: {
+// 			where?: TWhereInput
+// 			orderBy?: TOrderByInput[]
+// 			take?: number
+// 			skip?: number
+// 		}) => Promise<TResult[]>
+// 	}
+// 	searchFields: Array<keyof TWhereInput>
+// 	orderBy: TOrderByInput[]
+// }
+type PaginationAndFilterParams<
+	TWhereInput,
+	TOrderByInput,
+	TResult,
+	TSelect = any,
+	TInclude = any,
+> = {
 	request: LoaderFunctionArgs['request']
 	model: {
 		count: (args?: { where?: TWhereInput }) => Promise<number>
@@ -49,18 +69,77 @@ type PaginationAndFilterParams<TWhereInput, TOrderByInput, TResult> = {
 			orderBy?: TOrderByInput[]
 			take?: number
 			skip?: number
+			select?: TSelect
+			include?: TInclude
 		}) => Promise<TResult[]>
 	}
 	searchFields: Array<keyof TWhereInput>
 	orderBy: TOrderByInput[]
+	select?: TSelect
+	include?: TInclude
 }
 
-export async function filterAndPaginate<TWhereInput, TOrderByInput, TResult>({
+// export async function filterAndPaginate<TWhereInput, TOrderByInput, TResult>({
+// 	request,
+// 	model,
+// 	searchFields = [] as Array<keyof TWhereInput>,
+// 	orderBy = [] as TOrderByInput[],
+// }: PaginationAndFilterParams<TWhereInput, TOrderByInput, TResult>) {
+// 	const url = new URL(request.url)
+// 	const searchTerm = url.searchParams.get('search') || ''
+// 	const page = parseInt(url.searchParams.get('page') || '1', 10)
+// 	const pageSizeParam = url.searchParams.get('pageSize')
+// 	const pageSize =
+// 		pageSizeParam === 'All' ? undefined : parseInt(pageSizeParam || '10', 10)
+
+// 	let searchConditions: any = {}
+// 	if (searchTerm) {
+// 		searchConditions = {
+// 			OR: searchFields.map(field => ({
+// 				[field]: { contains: searchTerm, mode: 'insensitive' },
+// 			})),
+// 		}
+// 	}
+
+// 	const totalItems = await model.count({
+// 		where: searchConditions,
+// 	})
+
+// 	const totalPages = pageSize ? Math.ceil(totalItems / pageSize) : 1
+
+// 	const data = await model.findMany({
+// 		where: searchConditions,
+// 		orderBy,
+// 		take: pageSize,
+// 		skip: pageSize ? (page - 1) * pageSize : undefined,
+// 	})
+
+// 	return {
+// 		data,
+// 		totalPages,
+// 		currentPage: page,
+// 	}
+// }
+export async function filterAndPaginate<
+	TWhereInput,
+	TOrderByInput,
+	TResult,
+	TSelect,
+	TInclude,
+>({
 	request,
 	model,
 	searchFields = [] as Array<keyof TWhereInput>,
 	orderBy = [] as TOrderByInput[],
-}: PaginationAndFilterParams<TWhereInput, TOrderByInput, TResult>) {
+	select,
+	include,
+}: PaginationAndFilterParams<
+	TWhereInput,
+	TOrderByInput,
+	TResult,
+	TSelect,
+	TInclude
+>) {
 	const url = new URL(request.url)
 	const searchTerm = url.searchParams.get('search') || ''
 	const page = parseInt(url.searchParams.get('page') || '1', 10)
@@ -77,9 +156,7 @@ export async function filterAndPaginate<TWhereInput, TOrderByInput, TResult>({
 		}
 	}
 
-	const totalItems = await model.count({
-		where: searchConditions,
-	})
+	const totalItems = await model.count({ where: searchConditions })
 
 	const totalPages = pageSize ? Math.ceil(totalItems / pageSize) : 1
 
@@ -88,6 +165,8 @@ export async function filterAndPaginate<TWhereInput, TOrderByInput, TResult>({
 		orderBy,
 		take: pageSize,
 		skip: pageSize ? (page - 1) * pageSize : undefined,
+		...(select ? { select } : {}),
+		...(include ? { include } : {}),
 	})
 
 	return {

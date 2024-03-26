@@ -9,16 +9,18 @@ import { StatusButton } from './ui/status-button'
 export function SearchBar({
 	status,
 	autoSubmit = false,
+	action,
 }: {
 	status: 'idle' | 'pending' | 'success' | 'error'
 	autoSubmit?: boolean
+	action: string
 }) {
 	const id = useId()
 	const [searchParams] = useSearchParams()
 	const submit = useSubmit()
 	const isSubmitting = useIsPending({
 		formMethod: 'GET',
-		formAction: '/settings/countries',
+		formAction: action,
 	})
 
 	const handleFormChange = useDebounce((form: HTMLFormElement) => {
@@ -28,7 +30,7 @@ export function SearchBar({
 	return (
 		<Form
 			method="GET"
-			action="/settings/countries"
+			action={action}
 			className="flex flex-wrap items-center justify-center gap-2"
 			onChange={e => autoSubmit && handleFormChange(e.currentTarget)}
 		>
