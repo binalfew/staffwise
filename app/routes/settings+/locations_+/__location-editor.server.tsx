@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { validateCSRF } from '~/utils/csrf.server'
 import { prisma } from '~/utils/db.server'
 import { checkHoneypot } from '~/utils/honeypot.server'
-import { OrganDeleteSchema, OrganEditorSchema } from './__organ-editor'
+import { LocationDeleteSchema, LocationEditorSchema } from './__location-editor'
 
 export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData()
@@ -15,7 +15,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 	if (intent === 'delete') {
 		const submission = await parseWithZod(formData, {
-			schema: OrganDeleteSchema,
+			schema: LocationDeleteSchema,
 			async: true,
 		})
 		if (submission.status !== 'success') {
@@ -24,28 +24,28 @@ export async function action({ request }: ActionFunctionArgs) {
 				{ status: submission.status === 'error' ? 400 : 200 },
 			)
 		}
-		await prisma.organ.delete({
+		await prisma.location.delete({
 			where: { id: submission.value.id },
 		})
-		return redirect('/settings/organs')
+		return redirect('/settings/locations')
 	}
 
 	const submission = await parseWithZod(formData, {
-		schema: OrganEditorSchema.superRefine(async (data, ctx) => {
-			const organ = await prisma.organ.findFirst({
+		schema: LocationEditorSchema.superRefine(async (data, ctx) => {
+			const location = await prisma.location.findFirst({
 				where: {
 					name: data.name,
-					countryId: data.countryId,
+					organId: data.organId,
 				},
 				select: { id: true },
 			})
 
-			if (organ && organ.id !== data.id) {
+			if (location && location.id !== data.id) {
 				ctx.addIssue({
 					path: ['name'],
 					code: z.ZodIssueCode.custom,
 					message:
-						'Organ with this name already exists in the selected country.',
+						'Location with this name already exists in the selected organ.',
 				})
 				return
 			}
@@ -60,21 +60,20 @@ export async function action({ request }: ActionFunctionArgs) {
 		)
 	}
 
-	const { id: organId, name, code, address, countryId } = submission.value
+	const { id: locationId, name, code, organId } = submission.value
 
 	const data = {
 		name,
 		code,
-		address,
-		countryId,
+		organId,
 	}
 
-	await prisma.organ.upsert({
+	await prisma.location.upsert({
 		select: { id: true },
-		where: { id: organId ?? '__new_organ__' },
+		where: { id: locationId ?? '__new_location__' },
 		create: data,
 		update: data,
 	})
 
-	return redirect('/settings/organs')
+	return redirect('/settings/locations')
 }
