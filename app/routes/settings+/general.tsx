@@ -1,10 +1,12 @@
-import { json, useLoaderData } from '@remix-run/react'
+import { Link, json, useLoaderData } from '@remix-run/react'
 import {
 	ActivityIcon,
+	ArrowUpRightIcon,
 	CreditCardIcon,
 	DollarSignIcon,
 	UsersIcon,
 } from 'lucide-react'
+import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
 import {
 	Table,
@@ -23,10 +25,12 @@ export async function loader() {
 	const countriesCount = await prisma.country.count()
 
 	const countries = await prisma.country.findMany({
+		take: 5,
 		select: { id: true, name: true, code: true },
 	})
 
 	const organs = await prisma.organ.findMany({
+		take: 5,
 		select: { id: true, name: true, code: true },
 	})
 
@@ -97,11 +101,22 @@ export default function GeneralRoute() {
 				</div>
 				<div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
 					<Card className="xl:col-span-2">
-						<CardHeader>
+						<CardHeader className="flex flex-row items-center">
 							<div className="grid gap-2">
-								<CardTitle>Organs</CardTitle>
+								<CardTitle className="text-base font-semibold leading-6 text-gray-900">
+									Organs
+								</CardTitle>
+							</div>
+							<div className="flex items-center gap-2 ml-auto">
+								<Button asChild size="xs" className="ml-auto gap-1">
+									<Link to="/settings/organs">
+										<ArrowUpRightIcon className="h-4 w-4" />
+										View All
+									</Link>
+								</Button>
 							</div>
 						</CardHeader>
+
 						<CardContent className="grid gap-8">
 							<Table>
 								<TableHeader>
@@ -127,7 +142,17 @@ export default function GeneralRoute() {
 					<Card>
 						<CardHeader className="flex flex-row items-center">
 							<div className="grid gap-2">
-								<CardTitle>Countries</CardTitle>
+								<CardTitle className="text-base font-semibold leading-6 text-gray-900">
+									Countries
+								</CardTitle>
+							</div>
+							<div className="flex items-center gap-2 ml-auto">
+								<Button asChild size="xs" className="ml-auto gap-1">
+									<Link to="/settings/countries">
+										<ArrowUpRightIcon className="h-4 w-4" />
+										View All
+									</Link>
+								</Button>
 							</div>
 						</CardHeader>
 						<CardContent>

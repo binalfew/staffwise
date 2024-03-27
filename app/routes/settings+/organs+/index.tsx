@@ -56,7 +56,9 @@ export default function OrgansRoute() {
 			<Card className="w-full">
 				<CardHeader className="flex flex-row items-center">
 					<div className="grid gap-2">
-						<CardTitle>Organs</CardTitle>
+						<CardTitle className="text-base font-semibold leading-6 text-gray-900">
+							Organs
+						</CardTitle>
 					</div>
 					<div className="flex items-center gap-2 ml-auto">
 						<SearchBar
