@@ -14,7 +14,7 @@ export async function loader() {
 	return json({ organs, locations })
 }
 
-export default function LocationsRoute() {
+export default function FloorsRoute() {
 	const { organs, locations } = useLoaderData<typeof loader>()
 	return <Outlet context={{ organs, locations }} />
 }

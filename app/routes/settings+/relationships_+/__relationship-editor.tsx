@@ -18,7 +18,7 @@ import {
 	CardTitle,
 } from '~/components/ui/card'
 import { Label } from '~/components/ui/label'
-import { type action } from './__relationship-editor.server' // Adjust import paths as necessary
+import { type action } from './__relationship-editor.server'
 
 export const RelationshipEditorSchema = z.object({
 	id: z.string().optional(),

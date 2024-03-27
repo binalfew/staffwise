@@ -44,11 +44,11 @@ export const settingsNavigation: NavigationItem[] = [
 		href: '/settings/locations',
 	},
 	{
-		name: 'Relationships',
-		href: '/settings/relationships',
+		name: 'Floors',
+		href: '/settings/floors',
 	},
 	{
-		name: 'Security',
-		href: '/settings/security',
+		name: 'Relationships',
+		href: '/settings/relationships',
 	},
 ]

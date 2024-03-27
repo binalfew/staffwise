@@ -12,21 +12,16 @@ export async function loader({ params }: LoaderFunctionArgs) {
 		where: { id: locationId },
 	})
 
-	const organs = await prisma.organ.findMany({
-		select: { id: true, name: true },
-	})
-
 	invariantResponse(location, 'Not Found', { status: 404 })
 
-	return json({ location, organs })
+	return json({ location })
 }
 
 export default function DeleteLocationRoute() {
-	const { location, organs } = useLoaderData<typeof loader>()
+	const { location } = useLoaderData<typeof loader>()
 	return (
 		<LocationEditor
 			location={location}
-			organs={organs}
 			title="Delete Location"
 			intent="delete"
 		/>

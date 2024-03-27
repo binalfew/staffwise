@@ -15,11 +15,13 @@ export const SelectField = ({
 	meta,
 	items,
 	placeholder,
+	onValueChange,
 	...props
 }: {
 	meta: FieldMetadata<string>
 	items: Array<{ name: string; value: string }>
 	placeholder: string
+	onValueChange?: (value: string) => void
 } & ComponentProps<typeof Select>) => {
 	const selectRef = useRef<ElementRef<typeof SelectTrigger>>(null)
 	const control = useControl(meta)
@@ -46,7 +48,10 @@ export const SelectField = ({
 			<Select
 				{...props}
 				value={control.value ?? ''}
-				onValueChange={control.change}
+				onValueChange={value => {
+					control.change(value)
+					onValueChange?.(value)
+				}}
 				onOpenChange={open => {
 					if (!open) {
 						control.blur()

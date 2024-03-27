@@ -25,7 +25,7 @@ import { filterAndPaginate, prisma } from '~/utils/db.server'
 export async function loader({ request }: LoaderFunctionArgs) {
 	const { data, totalPages, currentPage } = await filterAndPaginate({
 		request,
-		model: prisma.location,
+		model: prisma.department,
 		searchFields: ['name', 'code'],
 		orderBy: [{ name: 'asc' }],
 		select: {
@@ -39,13 +39,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 	return json({
 		status: 'idle',
-		locations: data,
+		departments: data,
 		totalPages,
 		currentPage,
 	} as const)
 }
 
-export default function locationsRoute() {
+export default function DepartmentsRoute() {
 	const data = useLoaderData<typeof loader>()
 
 	const { totalPages, currentPage } = data
@@ -55,12 +55,12 @@ export default function locationsRoute() {
 			<Card className="w-full">
 				<CardHeader className="flex flex-row items-center">
 					<div className="grid gap-2">
-						<CardTitle>locations</CardTitle>
+						<CardTitle>Departments</CardTitle>
 					</div>
 					<div className="flex items-center gap-2 ml-auto">
 						<SearchBar
 							status={data.status}
-							action="/settings/locations"
+							action="/settings/departments"
 							autoSubmit
 						/>
 
@@ -79,28 +79,32 @@ export default function locationsRoute() {
 								<TableRow>
 									<TableHead>Name</TableHead>
 									<TableHead>Code</TableHead>
-									<TableHead>Organ</TableHead> {/* Changed from 'Country' */}
+									<TableHead>Organ</TableHead>
 									<TableHead className="text-right pr-6">Actions</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
 								{data.status === 'idle' ? (
-									data.locations.length > 0 ? (
-										data.locations.map((location: any) => (
-											<TableRow key={location.id}>
-												<TableCell className="py-1">{location.name}</TableCell>
-												<TableCell className="py-1">{location.code}</TableCell>
+									data.departments.length > 0 ? (
+										data.departments.map((department: any) => (
+											<TableRow key={department.id}>
 												<TableCell className="py-1">
-													{location.organ.name}
-												</TableCell>{' '}
+													{department.name}
+												</TableCell>
+												<TableCell className="py-1">
+													{department.code}
+												</TableCell>
+												<TableCell className="py-1">
+													{department.organ.name}
+												</TableCell>
 												<TableCell className="py-1 text-right space-x-1">
 													<Button asChild size="xs">
-														<Link to={`${location.id}/edit`}>
+														<Link to={`${department.id}/edit`}>
 															<EditIcon className="h-4 w-4" />
 														</Link>
 													</Button>
 													<Button asChild size="xs" variant="destructive">
-														<Link to={`${location.id}/delete`}>
+														<Link to={`${department.id}/delete`}>
 															<TrashIcon className="h-4 w-4" />
 														</Link>
 													</Button>
@@ -110,7 +114,7 @@ export default function locationsRoute() {
 									) : (
 										<TableRow>
 											<TableCell colSpan={4} className="text-center">
-												No locations found
+												No departments found
 											</TableCell>
 										</TableRow>
 									)

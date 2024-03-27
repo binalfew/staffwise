@@ -25,27 +25,33 @@ import { filterAndPaginate, prisma } from '~/utils/db.server'
 export async function loader({ request }: LoaderFunctionArgs) {
 	const { data, totalPages, currentPage } = await filterAndPaginate({
 		request,
-		model: prisma.department,
+		model: prisma.floor,
 		searchFields: ['name', 'code'],
 		orderBy: [{ name: 'asc' }],
 		select: {
 			id: true,
 			name: true,
 			code: true,
-			organId: true,
-			organ: { select: { name: true } },
+			locationId: true,
+			location: {
+				select: {
+					name: true,
+					organId: true,
+					organ: { select: { name: true } },
+				},
+			},
 		},
 	})
 
 	return json({
 		status: 'idle',
-		departments: data,
+		floors: data,
 		totalPages,
 		currentPage,
 	} as const)
 }
 
-export default function DepartmentsRoute() {
+export default function FloorsRoute() {
 	const data = useLoaderData<typeof loader>()
 
 	const { totalPages, currentPage } = data
@@ -55,12 +61,12 @@ export default function DepartmentsRoute() {
 			<Card className="w-full">
 				<CardHeader className="flex flex-row items-center">
 					<div className="grid gap-2">
-						<CardTitle>Departments</CardTitle>
+						<CardTitle>Floors</CardTitle>
 					</div>
 					<div className="flex items-center gap-2 ml-auto">
 						<SearchBar
 							status={data.status}
-							action="/settings/departments"
+							action="/settings/floors"
 							autoSubmit
 						/>
 
@@ -79,32 +85,32 @@ export default function DepartmentsRoute() {
 								<TableRow>
 									<TableHead>Name</TableHead>
 									<TableHead>Code</TableHead>
-									<TableHead>Organ</TableHead> {/* Changed from 'Country' */}
+									<TableHead>Organ</TableHead>
+									<TableHead>Location</TableHead>
 									<TableHead className="text-right pr-6">Actions</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
 								{data.status === 'idle' ? (
-									data.departments.length > 0 ? (
-										data.departments.map((department: any) => (
-											<TableRow key={department.id}>
+									data.floors.length > 0 ? (
+										data.floors.map((floor: any) => (
+											<TableRow key={floor.id}>
+												<TableCell className="py-1">{floor.name}</TableCell>
+												<TableCell className="py-1">{floor.code}</TableCell>
 												<TableCell className="py-1">
-													{department.name}
+													{floor.location.organ.name}{' '}
 												</TableCell>
 												<TableCell className="py-1">
-													{department.code}
+													{floor.location.name}{' '}
 												</TableCell>
-												<TableCell className="py-1">
-													{department.organ.name}
-												</TableCell>{' '}
 												<TableCell className="py-1 text-right space-x-1">
 													<Button asChild size="xs">
-														<Link to={`${department.id}/edit`}>
+														<Link to={`${floor.id}/edit`}>
 															<EditIcon className="h-4 w-4" />
 														</Link>
 													</Button>
 													<Button asChild size="xs" variant="destructive">
-														<Link to={`${department.id}/delete`}>
+														<Link to={`${floor.id}/delete`}>
 															<TrashIcon className="h-4 w-4" />
 														</Link>
 													</Button>
@@ -114,7 +120,7 @@ export default function DepartmentsRoute() {
 									) : (
 										<TableRow>
 											<TableCell colSpan={4} className="text-center">
-												No departments found
+												No floors found
 											</TableCell>
 										</TableRow>
 									)

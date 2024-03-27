@@ -12,23 +12,12 @@ export async function loader({ params }: LoaderFunctionArgs) {
 		where: { id: departmentId },
 	})
 
-	const organs = await prisma.organ.findMany({
-		select: { id: true, name: true },
-	})
-
 	invariantResponse(department, 'Not Found', { status: 404 })
 
-	return json({ department, organs })
+	return json({ department })
 }
 
-export default function DeleteDepartmentRoute() {
-	const { department, organs } = useLoaderData<typeof loader>()
-	return (
-		<DepartmentEditor
-			department={department}
-			organs={organs}
-			title="Delete Department"
-			intent="delete"
-		/>
-	)
+export default function EditDepartmentRoute() {
+	const { department } = useLoaderData<typeof loader>()
+	return <DepartmentEditor department={department} title="Edit Department" />
 }

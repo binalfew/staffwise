@@ -1,8 +1,8 @@
 import { getFormProps, useForm } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod'
-import { Location, Organ } from '@prisma/client'
+import { Department, Organ } from '@prisma/client'
 import { SerializeFrom } from '@remix-run/node'
-import { Form, Link, useActionData } from '@remix-run/react'
+import { Form, Link, useActionData, useOutletContext } from '@remix-run/react'
 import { AuthenticityTokenInput } from 'remix-utils/csrf/react'
 import { HoneypotInputs } from 'remix-utils/honeypot/react'
 import { z } from 'zod'
@@ -19,42 +19,48 @@ import {
 	CardTitle,
 } from '~/components/ui/card'
 import { Label } from '~/components/ui/label'
-import { action } from './__location-editor.server'
+import { action } from './__department-editor.server'
 
-export const LocationEditorSchema = z.object({
+export const DepartmentEditorSchema = z.object({
 	id: z.string().optional(),
 	name: z.string({ required_error: 'Name is required' }),
 	code: z.string({ required_error: 'Code is required' }),
 	organId: z.string({ required_error: 'Organ is required' }),
 })
 
-export const LocationDeleteSchema = z.object({
+export const DepartmentDeleteSchema = z.object({
 	id: z.string(),
 })
 
-export function LocationEditor({
-	location,
-	organs,
+export type OutletContext = {
+	organs: SerializeFrom<Pick<Organ, 'id' | 'name'>[]>
+}
+
+export function DepartmentEditor({
+	department,
 	title,
 	intent,
 }: {
-	location?: SerializeFrom<Pick<Location, 'id' | 'name' | 'code' | 'organId'>>
-	organs: Array<Pick<Organ, 'id' | 'name'>>
+	department?: SerializeFrom<
+		Pick<Department, 'id' | 'name' | 'code' | 'organId'>
+	>
 	title: string
 	intent?: 'add' | 'edit' | 'delete'
 }) {
+	const { organs } = useOutletContext<OutletContext>()
+
 	const actionData = useActionData<typeof action>()
 	const disabled = intent === 'delete'
 	const schema =
-		intent === 'delete' ? LocationDeleteSchema : LocationEditorSchema
+		intent === 'delete' ? DepartmentDeleteSchema : DepartmentEditorSchema
 	const [form, fields] = useForm({
-		id: 'register-location',
+		id: 'register-department',
 		constraint: getZodConstraint(schema),
 		lastResult: actionData?.result,
 		onValidate({ formData }) {
 			return parseWithZod(formData, { schema })
 		},
-		defaultValue: location,
+		defaultValue: department,
 	})
 
 	return (
@@ -64,8 +70,8 @@ export function LocationEditor({
 					<CardTitle>{title}</CardTitle>
 					{intent === 'delete' && (
 						<CardDescription className="text-red-500 py-2">
-							Are you sure you want to delete this location? This action cannot
-							be undone.
+							Are you sure you want to delete this department? This action
+							cannot be undone.
 						</CardDescription>
 					)}
 				</CardHeader>
@@ -142,7 +148,7 @@ export function LocationEditor({
 							{intent === 'delete' ? 'Delete' : 'Save'}
 						</Button>
 						<Button asChild variant="outline">
-							<Link to="/settings/locations">Cancel</Link>
+							<Link to="/settings/departments">Cancel</Link>
 						</Button>
 					</div>
 				</CardFooter>
