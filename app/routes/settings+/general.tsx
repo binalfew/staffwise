@@ -56,130 +56,126 @@ export default function GeneralRoute() {
 
 	return (
 		<div className="grid gap-6">
-			<main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-				<div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-					<Card>
-						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-							<CardTitle className="text-sm font-medium">Countries</CardTitle>
-							<DollarSignIcon className="h-4 w-4 text-muted-foreground" />
-						</CardHeader>
-						<CardContent>
-							<div className="text-2xl font-bold">{countriesCount}</div>
-							<p className="text-xs text-muted-foreground"></p>
-						</CardContent>
-					</Card>
-					<Card>
-						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-							<CardTitle className="text-sm font-medium">Organs</CardTitle>
-							<UsersIcon className="h-4 w-4 text-muted-foreground" />
-						</CardHeader>
-						<CardContent>
-							<div className="text-2xl font-bold">{organsCount}</div>
-							<p className="text-xs text-muted-foreground"></p>
-						</CardContent>
-					</Card>
-					<Card>
-						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-							<CardTitle className="text-sm font-medium">Departments</CardTitle>
-							<CreditCardIcon className="h-4 w-4 text-muted-foreground" />
-						</CardHeader>
-						<CardContent>
-							<div className="text-2xl font-bold">{departmentsCount}</div>
-							<p className="text-xs text-muted-foreground"></p>
-						</CardContent>
-					</Card>
-					<Card>
-						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-							<CardTitle className="text-sm font-medium">Locations</CardTitle>
-							<ActivityIcon className="h-4 w-4 text-muted-foreground" />
-						</CardHeader>
-						<CardContent>
-							<div className="text-2xl font-bold">{locationsCount}</div>
-							<p className="text-xs text-muted-foreground"></p>
-						</CardContent>
-					</Card>
-				</div>
-				<div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
-					<Card className="xl:col-span-2">
-						<CardHeader className="flex flex-row items-center">
-							<div className="grid gap-2">
-								<CardTitle className="text-base font-semibold leading-6 text-gray-900">
-									Organs
-								</CardTitle>
-							</div>
-							<div className="flex items-center gap-2 ml-auto">
-								<Button asChild size="xs" className="ml-auto gap-1">
-									<Link to="/settings/organs">
-										<ArrowUpRightIcon className="h-4 w-4" />
-										View All
-									</Link>
-								</Button>
-							</div>
-						</CardHeader>
+			<div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+				<Card>
+					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+						<CardTitle className="text-sm font-medium">Countries</CardTitle>
+						<DollarSignIcon className="h-4 w-4 text-muted-foreground" />
+					</CardHeader>
+					<CardContent>
+						<div className="text-2xl font-bold">{countriesCount}</div>
+						<p className="text-xs text-muted-foreground"></p>
+					</CardContent>
+				</Card>
+				<Card>
+					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+						<CardTitle className="text-sm font-medium">Organs</CardTitle>
+						<UsersIcon className="h-4 w-4 text-muted-foreground" />
+					</CardHeader>
+					<CardContent>
+						<div className="text-2xl font-bold">{organsCount}</div>
+						<p className="text-xs text-muted-foreground"></p>
+					</CardContent>
+				</Card>
+				<Card>
+					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+						<CardTitle className="text-sm font-medium">Departments</CardTitle>
+						<CreditCardIcon className="h-4 w-4 text-muted-foreground" />
+					</CardHeader>
+					<CardContent>
+						<div className="text-2xl font-bold">{departmentsCount}</div>
+						<p className="text-xs text-muted-foreground"></p>
+					</CardContent>
+				</Card>
+				<Card>
+					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+						<CardTitle className="text-sm font-medium">Locations</CardTitle>
+						<ActivityIcon className="h-4 w-4 text-muted-foreground" />
+					</CardHeader>
+					<CardContent>
+						<div className="text-2xl font-bold">{locationsCount}</div>
+						<p className="text-xs text-muted-foreground"></p>
+					</CardContent>
+				</Card>
+			</div>
+			<div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
+				<Card className="xl:col-span-2">
+					<CardHeader className="flex flex-row items-center">
+						<div className="grid gap-2">
+							<CardTitle className="text-base font-semibold leading-6 text-gray-900">
+								Organs
+							</CardTitle>
+						</div>
+						<div className="flex items-center gap-2 ml-auto">
+							<Button asChild size="xs" className="ml-auto gap-1">
+								<Link to="/settings/organs">
+									<ArrowUpRightIcon className="h-4 w-4" />
+									View All
+								</Link>
+							</Button>
+						</div>
+					</CardHeader>
 
-						<CardContent className="grid gap-8">
-							<Table>
-								<TableHeader>
-									<TableRow>
-										<TableHead>Name</TableHead>
-										<TableHead className="text-right">Code</TableHead>
+					<CardContent className="grid gap-8">
+						<Table>
+							<TableHeader>
+								<TableRow>
+									<TableHead>Name</TableHead>
+									<TableHead className="text-right">Code</TableHead>
+								</TableRow>
+							</TableHeader>
+							<TableBody>
+								{organs.map(organ => (
+									<TableRow key={organ.id}>
+										<TableCell>
+											<div className="font-medium">{organ.name}</div>
+										</TableCell>
+										<TableCell className="text-right">{organ.code}</TableCell>
 									</TableRow>
-								</TableHeader>
-								<TableBody>
-									{organs.map(organ => (
-										<TableRow key={organ.id}>
-											<TableCell>
-												<div className="font-medium">{organ.name}</div>
-											</TableCell>
-											<TableCell className="text-right">{organ.code}</TableCell>
-										</TableRow>
-									))}
-								</TableBody>
-							</Table>
-						</CardContent>
-					</Card>
+								))}
+							</TableBody>
+						</Table>
+					</CardContent>
+				</Card>
 
-					<Card>
-						<CardHeader className="flex flex-row items-center">
-							<div className="grid gap-2">
-								<CardTitle className="text-base font-semibold leading-6 text-gray-900">
-									Countries
-								</CardTitle>
-							</div>
-							<div className="flex items-center gap-2 ml-auto">
-								<Button asChild size="xs" className="ml-auto gap-1">
-									<Link to="/settings/countries">
-										<ArrowUpRightIcon className="h-4 w-4" />
-										View All
-									</Link>
-								</Button>
-							</div>
-						</CardHeader>
-						<CardContent>
-							<Table>
-								<TableHeader>
-									<TableRow>
-										<TableHead>Name</TableHead>
-										<TableHead className="text-right">Code</TableHead>
+				<Card>
+					<CardHeader className="flex flex-row items-center">
+						<div className="grid gap-2">
+							<CardTitle className="text-base font-semibold leading-6 text-gray-900">
+								Countries
+							</CardTitle>
+						</div>
+						<div className="flex items-center gap-2 ml-auto">
+							<Button asChild size="xs" className="ml-auto gap-1">
+								<Link to="/settings/countries">
+									<ArrowUpRightIcon className="h-4 w-4" />
+									View All
+								</Link>
+							</Button>
+						</div>
+					</CardHeader>
+					<CardContent>
+						<Table>
+							<TableHeader>
+								<TableRow>
+									<TableHead>Name</TableHead>
+									<TableHead className="text-right">Code</TableHead>
+								</TableRow>
+							</TableHeader>
+							<TableBody>
+								{countries.map(country => (
+									<TableRow key={country.id}>
+										<TableCell>
+											<div className="font-medium">{country.name}</div>
+										</TableCell>
+										<TableCell className="text-right">{country.code}</TableCell>
 									</TableRow>
-								</TableHeader>
-								<TableBody>
-									{countries.map(country => (
-										<TableRow key={country.id}>
-											<TableCell>
-												<div className="font-medium">{country.name}</div>
-											</TableCell>
-											<TableCell className="text-right">
-												{country.code}
-											</TableCell>
-										</TableRow>
-									))}
-								</TableBody>
-							</Table>
-						</CardContent>
-					</Card>
-				</div>
-			</main>
+								))}
+							</TableBody>
+						</Table>
+					</CardContent>
+				</Card>
+			</div>
 		</div>
 	)
 }
