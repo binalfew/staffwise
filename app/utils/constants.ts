@@ -6,7 +6,7 @@ type NavigationItem = {
 export const mainNavigation: NavigationItem[] = [
 	{
 		name: 'Dashboard',
-		href: '/dashboard',
+		href: '/',
 	},
 	{
 		name: 'Profile',

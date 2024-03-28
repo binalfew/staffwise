@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { validateCSRF } from '~/utils/csrf.server'
 import { prisma } from '~/utils/db.server'
 import { checkHoneypot } from '~/utils/honeypot.server'
+import { toastSessionStorage } from '~/utils/toast.server'
 import { CountryDeleteSchema, CountryEditorSchema } from './__country-editor'
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -12,6 +13,9 @@ export async function action({ request }: ActionFunctionArgs) {
 	await validateCSRF(formData, request.headers)
 
 	const intent = formData.get('intent')
+	const toastCookieSession = await toastSessionStorage.getSession(
+		request.headers.get('cookie'),
+	)
 
 	if (intent === 'delete') {
 		const submission = await parseWithZod(formData, {
@@ -27,7 +31,20 @@ export async function action({ request }: ActionFunctionArgs) {
 		await prisma.country.delete({
 			where: { id: submission.value.id },
 		})
-		return redirect('/settings/countries')
+
+		toastCookieSession.flash('toast', {
+			type: 'success',
+			title: `Country Deleted`,
+			description: `Country deleted successfully.`,
+		})
+
+		return redirect('/settings/countries', {
+			headers: {
+				'set-cookie': await toastSessionStorage.commitSession(
+					toastCookieSession,
+				),
+			},
+		})
 	}
 
 	const submission = await parseWithZod(formData, {
@@ -71,5 +88,15 @@ export async function action({ request }: ActionFunctionArgs) {
 		update: data,
 	})
 
-	return redirect('/settings/countries')
+	toastCookieSession.flash('toast', {
+		type: 'success',
+		title: `Country ${countryId ? 'Updated' : 'Created'}`,
+		description: `Country ${countryId ? 'updated' : 'created'} successfully.`,
+	})
+
+	return redirect('/settings/countries', {
+		headers: {
+			'set-cookie': await toastSessionStorage.commitSession(toastCookieSession),
+		},
+	})
 }

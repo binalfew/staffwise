@@ -27,6 +27,8 @@ import { HoneypotProvider } from 'remix-utils/honeypot/react'
 import tailwindStyleSheetUrl from '~/styles/tailwind.css?url'
 
 import clsx from 'clsx'
+import { useEffect } from 'react'
+import { Toaster, toast as showToast } from 'sonner'
 import { z } from 'zod'
 import { Button } from '~/components/ui/button'
 import {
@@ -45,8 +47,9 @@ import { mainNavigation } from './utils/constants'
 import { csrf } from './utils/csrf.server'
 import { getEnv } from './utils/env.server'
 import { honeypot } from './utils/honeypot.server'
-import { invariantResponse } from './utils/misc'
+import { combineHeaders, invariantResponse } from './utils/misc'
 import { Theme, getTheme, setTheme } from './utils/theme.server'
+import { toastSessionStorage } from './utils/toast.server'
 
 const ThemeFormSchema = z.object({
 	theme: z.enum(['light', 'dark']),
@@ -59,26 +62,33 @@ export const links: LinksFunction = () => {
 	].filter(Boolean)
 }
 
-export const meta: MetaFunction = () => {
-	return [{ title: 'Staffwise' }, { name: 'description', content: 'Staffwise' }]
-}
-
 export async function loader({ request }: LoaderFunctionArgs) {
 	const honeypotProps = honeypot.getInputProps()
-
-	const [csrfToken, csrfTokenHeader] = await csrf.commitToken(request)
+	const toastCookieSession = await toastSessionStorage.getSession(
+		request.headers.get('cookie'),
+	)
+	const toast = toastCookieSession.get('toast')
+	const [csrfToken, csrfCookieHeader] = await csrf.commitToken(request)
 
 	return json(
 		{
 			username: os.userInfo().username,
 			theme: getTheme(request),
+			toast,
 			ENV: getEnv(),
 			navigation: mainNavigation,
 			honeypotProps,
 			csrfToken,
 		},
 		{
-			headers: csrfTokenHeader ? { 'set-cookie': csrfTokenHeader } : {},
+			headers: combineHeaders(
+				csrfCookieHeader ? { 'set-cookie': csrfCookieHeader } : {},
+				{
+					'set-cookie': await toastSessionStorage.commitSession(
+						toastCookieSession,
+					),
+				},
+			),
 		},
 	)
 }
@@ -90,6 +100,7 @@ export async function action({ request }: ActionFunctionArgs) {
 		'Invalid intent',
 		{ status: 400 },
 	)
+
 	const submission = parseWithZod(formData, {
 		schema: ThemeFormSchema,
 	})
@@ -105,60 +116,6 @@ export async function action({ request }: ActionFunctionArgs) {
 	return json(submission.reply(), {
 		headers: { 'set-cookie': setTheme(theme) },
 	})
-}
-
-function useTheme() {
-	const data = useLoaderData<typeof loader>()
-	const fetchers = useFetchers()
-	const fetcher = fetchers.find(
-		fetcher => fetcher.formData?.get('intent') === 'update-theme',
-	)
-	const optimisticTheme = fetcher?.formData?.get('theme') as Theme | undefined
-	if (optimisticTheme === 'light' || optimisticTheme === 'dark') {
-		return optimisticTheme
-	}
-
-	return data.theme
-}
-
-function ThemeSwitch({ userPreference }: { userPreference?: Theme }) {
-	const fetcher = useFetcher<typeof action>()
-
-	const [form] = useForm({
-		id: 'theme-switch',
-		lastResult: fetcher.data,
-		onValidate({ formData }) {
-			return parseWithZod(formData, { schema: ThemeFormSchema })
-		},
-	})
-
-	const mode = userPreference ?? 'light'
-	const nextMode = mode === 'light' ? 'dark' : 'light'
-	const modeLabel = {
-		light: (
-			<Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-		),
-		dark: (
-			<Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-		),
-	}
-
-	return (
-		<fetcher.Form method="POST" {...getFormProps(form)}>
-			<input type="hidden" name="theme" value={nextMode} />
-			<div className="flex gap-2">
-				<button
-					name="intent"
-					value="update-theme"
-					type="submit"
-					className="flex h-8 w-8 cursor-pointer items-center justify-center"
-				>
-					{modeLabel[mode]}
-				</button>
-			</div>
-			<ErrorList errors={form.errors} id={form.errorId} />
-		</fetcher.Form>
-	)
 }
 
 function Layout({
@@ -185,6 +142,7 @@ function Layout({
 						__html: `window.ENV = ${JSON.stringify(env)}`,
 					}}
 				/>
+				<Toaster closeButton position="top-center" />
 				<ScrollRestoration
 					getKey={location => {
 						return location.pathname
@@ -306,6 +264,7 @@ function App() {
 								<DropdownMenuItem>Logout</DropdownMenuItem>
 							</DropdownMenuContent>
 						</DropdownMenu>
+
 						<ThemeSwitch userPreference={theme} />
 					</div>
 				</header>
@@ -333,6 +292,8 @@ function App() {
 					</nav>
 				</footer>
 			</div>
+
+			{data.toast ? <ShowToast toast={data.toast} /> : null}
 		</Layout>
 	)
 }
@@ -346,6 +307,88 @@ export default function AppWithProviders() {
 			</HoneypotProvider>
 		</AuthenticityTokenProvider>
 	)
+}
+
+function useTheme() {
+	const data = useLoaderData<typeof loader>()
+	const fetchers = useFetchers()
+	const fetcher = fetchers.find(
+		fetcher => fetcher.formData?.get('intent') === 'update-theme',
+	)
+	const optimisticTheme = fetcher?.formData?.get('theme') as Theme | undefined
+	if (optimisticTheme === 'light' || optimisticTheme === 'dark') {
+		return optimisticTheme
+	}
+
+	return data.theme
+}
+
+function ThemeSwitch({ userPreference }: { userPreference?: Theme }) {
+	const fetcher = useFetcher<typeof action>()
+
+	const [form] = useForm({
+		id: 'theme-switch',
+		lastResult: fetcher.data,
+		onValidate({ formData }) {
+			return parseWithZod(formData, { schema: ThemeFormSchema })
+		},
+	})
+
+	const mode = userPreference ?? 'light'
+	const nextMode = mode === 'light' ? 'dark' : 'light'
+	const modeLabel = {
+		light: (
+			<Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+		),
+		dark: (
+			<Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+		),
+	}
+
+	return (
+		<fetcher.Form method="POST" {...getFormProps(form)}>
+			<input type="hidden" name="theme" value={nextMode} />
+			<div className="flex gap-2">
+				<button
+					name="intent"
+					value="update-theme"
+					type="submit"
+					className="flex h-8 w-8 cursor-pointer items-center justify-center"
+				>
+					{modeLabel[mode]}
+				</button>
+			</div>
+			<ErrorList errors={form.errors} id={form.errorId} />
+		</fetcher.Form>
+	)
+}
+
+export const meta: MetaFunction = () => {
+	return [{ title: 'Staffwise' }, { name: 'description', content: 'Staffwise' }]
+}
+
+function ShowToast({ toast }: { toast: any }) {
+	const { id, type, title, description } = toast as {
+		id: string
+		type: 'success' | 'message'
+		title: string
+		description: string
+	}
+	useEffect(() => {
+		// This is a workaround to prevent the toast from showing up twice
+		let isActive = true
+		setTimeout(() => {
+			if (isActive) {
+				showToast[type](title, { id, description, closeButton: false })
+			}
+		}, 0)
+
+		return () => {
+			isActive = false
+		}
+	}, [description, id, title, type])
+
+	return null
 }
 
 export function ErrorBoundary() {
