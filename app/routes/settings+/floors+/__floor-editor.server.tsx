@@ -1,17 +1,17 @@
 // Schema for deleting a floor entity, typically needing only the id
 import { parseWithZod } from '@conform-to/zod'
-import { ActionFunctionArgs, json, redirect } from '@remix-run/node'
+import { ActionFunctionArgs, json } from '@remix-run/node'
 import { z } from 'zod'
 import { validateCSRF } from '~/utils/csrf.server'
 import { prisma } from '~/utils/db.server'
 import { checkHoneypot } from '~/utils/honeypot.server'
+import { redirectWithToast } from '~/utils/toast.server'
 import { FloorDeleteSchema, FloorEditorSchema } from './__floor-editor'
 
 export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData()
 	checkHoneypot(formData)
 	await validateCSRF(formData, request.headers)
-
 	const intent = formData.get('intent')
 
 	if (intent === 'delete') {
@@ -28,7 +28,12 @@ export async function action({ request }: ActionFunctionArgs) {
 		await prisma.floor.delete({
 			where: { id: submission.value.id },
 		})
-		return redirect('/settings/floors')
+
+		return redirectWithToast('/settings/floors', {
+			type: 'success',
+			title: `Floor Deleted`,
+			description: `Floor deleted successfully.`,
+		})
 	}
 
 	const submission = await parseWithZod(formData, {
@@ -76,5 +81,9 @@ export async function action({ request }: ActionFunctionArgs) {
 		update: data,
 	})
 
-	return redirect('/settings/floors')
+	return redirectWithToast('/settings/floors', {
+		type: 'success',
+		title: `Floor ${floorId ? 'Updated' : 'Created'}`,
+		description: `Floor ${floorId ? 'updated' : 'created'} successfully.`,
+	})
 }

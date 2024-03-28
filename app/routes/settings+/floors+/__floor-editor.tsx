@@ -1,5 +1,5 @@
 import { getFormProps, useForm } from '@conform-to/react'
-import { getZodConstraint } from '@conform-to/zod'
+import { parseWithZod } from '@conform-to/zod'
 import { Floor, Location, Organ } from '@prisma/client'
 import { SerializeFrom } from '@remix-run/node'
 import { Form, Link, useActionData, useOutletContext } from '@remix-run/react'
@@ -53,15 +53,22 @@ export function FloorEditor({
 	const { organs, locations } = useOutletContext<OutletContext>()
 	const actionData = useActionData<typeof action>()
 	const disabled = intent === 'delete'
+
 	const [form, fields] = useForm({
 		id: 'register-floor',
-		constraint: getZodConstraint(FloorEditorSchema),
 		lastResult: actionData?.result,
 		defaultValue: {
 			...floor,
 			organId: floor?.locationId
 				? locations.find(location => location.id === floor.locationId)?.organId
 				: undefined,
+		},
+		onSubmit(e) {
+			e.preventDefault()
+			const form = e.currentTarget
+			const formData = new FormData(form)
+			const result = parseWithZod(formData, { schema: FloorEditorSchema })
+			alert(JSON.stringify(result, null, 2))
 		},
 	})
 

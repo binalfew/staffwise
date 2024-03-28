@@ -1,9 +1,10 @@
 import { parseWithZod } from '@conform-to/zod'
-import { ActionFunctionArgs, json, redirect } from '@remix-run/node'
+import { ActionFunctionArgs, json } from '@remix-run/node'
 import { z } from 'zod'
 import { validateCSRF } from '~/utils/csrf.server'
 import { prisma } from '~/utils/db.server'
 import { checkHoneypot } from '~/utils/honeypot.server'
+import { redirectWithToast } from '~/utils/toast.server'
 import {
 	RelationshipDeleteSchema,
 	RelationshipEditorSchema,
@@ -30,7 +31,12 @@ export async function action({ request }: ActionFunctionArgs) {
 		await prisma.relationship.delete({
 			where: { id: submission.value.id },
 		})
-		return redirect('/settings/relationships')
+
+		return redirectWithToast('/settings/relationships', {
+			type: 'success',
+			title: `Relationship Deleted`,
+			description: `Relationship deleted successfully.`,
+		})
 	}
 
 	const submission = await parseWithZod(formData, {
@@ -61,19 +67,11 @@ export async function action({ request }: ActionFunctionArgs) {
 		)
 	}
 
-	const {
-		id: relationshipId,
-		name,
-		code,
-		address,
-		countryId,
-	} = submission.value
+	const { id: relationshipId, name, code } = submission.value
 
 	const data = {
 		name,
 		code,
-		address,
-		countryId,
 	}
 
 	await prisma.relationship.upsert({
@@ -83,5 +81,9 @@ export async function action({ request }: ActionFunctionArgs) {
 		update: data,
 	})
 
-	return redirect('/settings/relationships')
+	return redirectWithToast('/settings/relationships', {
+		type: 'success',
+		title: `Relationship Saved`,
+		description: `Relationship saved successfully.`,
+	})
 }

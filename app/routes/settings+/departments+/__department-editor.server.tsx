@@ -1,9 +1,10 @@
 import { parseWithZod } from '@conform-to/zod'
-import { ActionFunctionArgs, json, redirect } from '@remix-run/node'
+import { ActionFunctionArgs, json } from '@remix-run/node'
 import { z } from 'zod'
 import { validateCSRF } from '~/utils/csrf.server'
 import { prisma } from '~/utils/db.server'
 import { checkHoneypot } from '~/utils/honeypot.server'
+import { redirectWithToast } from '~/utils/toast.server'
 import {
 	DepartmentDeleteSchema,
 	DepartmentEditorSchema,
@@ -30,7 +31,12 @@ export async function action({ request }: ActionFunctionArgs) {
 		await prisma.department.delete({
 			where: { id: submission.value.id },
 		})
-		return redirect('/settings/departments')
+
+		return redirectWithToast('/settings/departments', {
+			type: 'success',
+			title: `Department Deleted`,
+			description: `Department deleted successfully.`,
+		})
 	}
 
 	const submission = await parseWithZod(formData, {
@@ -78,5 +84,11 @@ export async function action({ request }: ActionFunctionArgs) {
 		update: data,
 	})
 
-	return redirect('/settings/departments')
+	return redirectWithToast('/settings/departments', {
+		type: 'success',
+		title: `Department ${departmentId ? 'Updated' : 'Created'}`,
+		description: `Department ${
+			departmentId ? 'updated' : 'created'
+		} successfully.`,
+	})
 }

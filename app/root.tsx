@@ -49,7 +49,7 @@ import { getEnv } from './utils/env.server'
 import { honeypot } from './utils/honeypot.server'
 import { combineHeaders, invariantResponse } from './utils/misc'
 import { Theme, getTheme, setTheme } from './utils/theme.server'
-import { toastSessionStorage } from './utils/toast.server'
+import { Toast, getToast } from './utils/toast.server'
 
 const ThemeFormSchema = z.object({
 	theme: z.enum(['light', 'dark']),
@@ -64,10 +64,7 @@ export const links: LinksFunction = () => {
 
 export async function loader({ request }: LoaderFunctionArgs) {
 	const honeypotProps = honeypot.getInputProps()
-	const toastCookieSession = await toastSessionStorage.getSession(
-		request.headers.get('cookie'),
-	)
-	const toast = toastCookieSession.get('toast')
+	const { toast, headers: toastHeaders } = await getToast(request)
 	const [csrfToken, csrfCookieHeader] = await csrf.commitToken(request)
 
 	return json(
@@ -82,12 +79,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		},
 		{
 			headers: combineHeaders(
-				csrfCookieHeader ? { 'set-cookie': csrfCookieHeader } : {},
-				{
-					'set-cookie': await toastSessionStorage.commitSession(
-						toastCookieSession,
-					),
-				},
+				csrfCookieHeader ? { 'set-cookie': csrfCookieHeader } : null,
+				toastHeaders,
 			),
 		},
 	)
@@ -367,13 +360,8 @@ export const meta: MetaFunction = () => {
 	return [{ title: 'Staffwise' }, { name: 'description', content: 'Staffwise' }]
 }
 
-function ShowToast({ toast }: { toast: any }) {
-	const { id, type, title, description } = toast as {
-		id: string
-		type: 'success' | 'message'
-		title: string
-		description: string
-	}
+function ShowToast({ toast }: { toast: Toast }) {
+	const { id, type, title, description } = toast
 	useEffect(() => {
 		// This is a workaround to prevent the toast from showing up twice
 		let isActive = true

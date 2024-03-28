@@ -1,9 +1,10 @@
 import { parseWithZod } from '@conform-to/zod'
-import { ActionFunctionArgs, json, redirect } from '@remix-run/node'
+import { ActionFunctionArgs, json } from '@remix-run/node'
 import { z } from 'zod'
 import { validateCSRF } from '~/utils/csrf.server'
 import { prisma } from '~/utils/db.server'
 import { checkHoneypot } from '~/utils/honeypot.server'
+import { redirectWithToast } from '~/utils/toast.server'
 import { LocationDeleteSchema, LocationEditorSchema } from './__location-editor'
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -27,7 +28,12 @@ export async function action({ request }: ActionFunctionArgs) {
 		await prisma.location.delete({
 			where: { id: submission.value.id },
 		})
-		return redirect('/settings/locations')
+
+		return redirectWithToast('/settings/locations', {
+			type: 'success',
+			title: `Location Deleted`,
+			description: `Location deleted successfully.`,
+		})
 	}
 
 	const submission = await parseWithZod(formData, {
@@ -75,5 +81,9 @@ export async function action({ request }: ActionFunctionArgs) {
 		update: data,
 	})
 
-	return redirect('/settings/locations')
+	return redirectWithToast('/settings/locations', {
+		type: 'success',
+		title: `Location ${locationId ? 'Updated' : 'Added'}`,
+		description: `Location ${locationId ? 'updated' : 'added'} successfully.`,
+	})
 }
