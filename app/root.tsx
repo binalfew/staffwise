@@ -6,8 +6,10 @@ import {
 	LinksFunction,
 	LoaderFunctionArgs,
 	MetaFunction,
+	redirect,
 } from '@remix-run/node'
 import {
+	Form,
 	Link,
 	Links,
 	Meta,
@@ -19,16 +21,31 @@ import {
 	useFetcher,
 	useFetchers,
 	useLoaderData,
+	useLocation,
+	useSubmit,
 } from '@remix-run/react'
 import { CircleUser, Menu, Moon, Search, Sun, Users } from 'lucide-react'
-import { AuthenticityTokenProvider } from 'remix-utils/csrf/react'
+import {
+	AuthenticityTokenInput,
+	AuthenticityTokenProvider,
+} from 'remix-utils/csrf/react'
 import { HoneypotProvider } from 'remix-utils/honeypot/react'
 import tailwindStyleSheetUrl from '~/styles/tailwind.css?url'
 
 import clsx from 'clsx'
-import { useEffect } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Toaster, toast as showToast } from 'sonner'
 import { z } from 'zod'
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from '~/components/ui/alert-dialog'
 import { Button } from '~/components/ui/button'
 import {
 	DropdownMenu,
@@ -79,6 +96,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		  })
 		: null
 
+	if (userId && !user) {
+		// Something weird happened
+		// The usesr is authenticated but we can't find them in the database.
+		// Maybe they were deleted or the database was reset.
+		// Log them out
+		throw redirect('/', {
+			headers: {
+				'set-cookie': await sessionStorage.destroySession(cookieSession),
+			},
+		})
+	}
+
 	return json(
 		{
 			theme: getTheme(request),
@@ -127,10 +156,12 @@ function Layout({
 	children,
 	theme,
 	env,
+	isLoggedIn,
 }: {
 	children: React.ReactNode
 	theme?: Theme
 	env?: Record<string, string>
+	isLoggedIn?: boolean
 }) {
 	return (
 		<html lang="en" className={`${theme}`}>
@@ -147,6 +178,7 @@ function Layout({
 						__html: `window.ENV = ${JSON.stringify(env)}`,
 					}}
 				/>
+				{isLoggedIn ? <LogoutTimer /> : null}
 				<Toaster closeButton position="top-center" />
 				<ScrollRestoration
 					getKey={location => {
@@ -166,7 +198,7 @@ function App() {
 	const user = useOptionalUser()
 
 	return (
-		<Layout theme={theme} env={data.ENV}>
+		<Layout isLoggedIn={Boolean(user)} theme={theme} env={data.ENV}>
 			<div className="flex min-h-screen w-full flex-col">
 				<header className="sticky top-0 flex h-12 items-center gap-4 border-b bg-background px-4 md:px-6">
 					<nav className="hidden flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
@@ -273,7 +305,19 @@ function App() {
 										</DropdownMenuItem>
 										<DropdownMenuItem>Support</DropdownMenuItem>
 										<DropdownMenuSeparator />
-										<DropdownMenuItem>Logout</DropdownMenuItem>
+										<DropdownMenuItem>
+											<Form action="/logout" method="POST">
+												<AuthenticityTokenInput />
+												<Button
+													size="sm"
+													type="submit"
+													variant={'link'}
+													className="items-center px-0 text-sm text-left font-medium text-gray-900 no-underline"
+												>
+													Sign out
+												</Button>
+											</Form>
+										</DropdownMenuItem>
 									</DropdownMenuContent>
 								</DropdownMenu>
 							</>
@@ -386,6 +430,71 @@ function ThemeSwitch({ userPreference }: { userPreference?: Theme }) {
 
 export const meta: MetaFunction = () => {
 	return [{ title: 'Staffwise' }, { name: 'description', content: 'Staffwise' }]
+}
+
+function LogoutTimer() {
+	const [status, setStatus] = useState<'idle' | 'show-modal'>('idle')
+	const location = useLocation()
+	const submit = useSubmit()
+	// 🦉 normally you'd want these numbers to be much higher, but for the purpose
+	// of this exercise, we'll make it short:
+	const logoutTime = 5000
+	const modalTime = 2000
+	// 🦉 here's what would be more likely:
+	// const logoutTime = 1000 * 60 * 60; // 1 hour
+	// const modalTime = logoutTime - 1000 * 60 * 2; // 58 minutes
+	const modalTimer = useRef<ReturnType<typeof setTimeout>>()
+	const logoutTimer = useRef<ReturnType<typeof setTimeout>>()
+
+	const logout = useCallback(() => {
+		submit(null, { method: 'POST', action: '/logout' })
+	}, [submit])
+
+	const cleanupTimers = useCallback(() => {
+		clearTimeout(modalTimer.current)
+		clearTimeout(logoutTimer.current)
+	}, [])
+
+	const resetTimers = useCallback(() => {
+		cleanupTimers()
+		modalTimer.current = setTimeout(() => {
+			setStatus('show-modal')
+		}, modalTime)
+		logoutTimer.current = setTimeout(logout, logoutTime)
+	}, [cleanupTimers, logout, logoutTime, modalTime])
+
+	useEffect(() => resetTimers(), [resetTimers, location.key])
+	useEffect(() => cleanupTimers, [cleanupTimers])
+
+	function closeModal() {
+		setStatus('idle')
+		resetTimers()
+	}
+
+	return (
+		<AlertDialog
+			aria-label="Pending Logout Notification"
+			open={status === 'show-modal'}
+		>
+			<AlertDialogContent>
+				<AlertDialogHeader>
+					<AlertDialogTitle>Are you still there?</AlertDialogTitle>
+				</AlertDialogHeader>
+				<AlertDialogDescription>
+					You are going to be logged out due to inactivity. Close this modal to
+					stay logged in.
+				</AlertDialogDescription>
+				<AlertDialogFooter className="flex items-end gap-8">
+					<AlertDialogCancel onClick={closeModal}>
+						Remain Logged In
+					</AlertDialogCancel>
+					<Form method="POST" action="/logout">
+						<AlertDialogAction type="submit">Logout</AlertDialogAction>
+					</Form>
+				</AlertDialogFooter>
+			</AlertDialogContent>
+		</AlertDialog>
+	)
 }
 
 function ShowToast({ toast }: { toast: Toast }) {

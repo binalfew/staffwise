@@ -23,7 +23,7 @@ import {
 	CardTitle,
 } from '~/components/ui/card'
 import { Label } from '~/components/ui/label'
-import { bcrypt } from '~/utils/auth.server'
+import { bcrypt, getSessionExpirationDate } from '~/utils/auth.server'
 import { validateCSRF } from '~/utils/csrf.server'
 import { prisma } from '~/utils/db.server'
 import { checkHoneypot } from '~/utils/honeypot.server'
@@ -45,6 +45,7 @@ const SignupFormSchema = z
 		agreeToTermsOfServiceAndPrivacyPolicy: z.boolean({
 			required_error: 'You must agree to the terms of service',
 		}),
+		remember: z.boolean().optional(),
 	})
 	.superRefine(({ confirmPassword, password }, ctx) => {
 		if (confirmPassword !== password) {
@@ -103,7 +104,7 @@ export async function action({ request }: ActionFunctionArgs) {
 		)
 	}
 
-	const { user } = submission.value
+	const { user, remember } = submission.value
 
 	const cookieSession = await sessionStorage.getSession(
 		request.headers.get('cookie'),
@@ -112,7 +113,9 @@ export async function action({ request }: ActionFunctionArgs) {
 
 	return redirect('/', {
 		headers: {
-			'set-cookie': await sessionStorage.commitSession(cookieSession),
+			'set-cookie': await sessionStorage.commitSession(cookieSession, {
+				expires: remember ? getSessionExpirationDate() : undefined,
+			}),
 		},
 	})
 }
@@ -203,6 +206,16 @@ export default function SignupRoute() {
 								<FieldError>
 									{fields.agreeToTermsOfServiceAndPrivacyPolicy.errors}
 								</FieldError>
+							)}
+						</Field>
+
+						<Field>
+							<div className="flex items-center gap-2">
+								<CheckboxField meta={fields.remember} />
+								<Label htmlFor={fields.remember.id}>Remember me</Label>
+							</div>
+							{fields.remember.errors && (
+								<FieldError>{fields.remember.errors}</FieldError>
 							)}
 						</Field>
 

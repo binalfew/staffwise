@@ -7,6 +7,7 @@ import { HoneypotInputs } from 'remix-utils/honeypot/react'
 import { z } from 'zod'
 import { ErrorList } from '~/components/ErrorList'
 import { Field, FieldError } from '~/components/Field'
+import { CheckboxField } from '~/components/conform/CheckboxField'
 import { InputField } from '~/components/conform/InputField'
 import { Button } from '~/components/ui/button'
 import {
@@ -17,7 +18,7 @@ import {
 	CardTitle,
 } from '~/components/ui/card'
 import { Label } from '~/components/ui/label'
-import { bcrypt } from '~/utils/auth.server'
+import { bcrypt, getSessionExpirationDate } from '~/utils/auth.server'
 import { prisma } from '~/utils/db.server'
 import { checkHoneypot } from '~/utils/honeypot.server'
 import { sessionStorage } from '~/utils/session.server'
@@ -26,6 +27,7 @@ import { PasswordSchema, UsernameSchema } from '~/utils/validation'
 const LoginFormSchema = z.object({
 	username: UsernameSchema,
 	password: PasswordSchema,
+	remember: z.boolean().optional(),
 })
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -74,7 +76,8 @@ export async function action({ request }: ActionFunctionArgs) {
 		)
 	}
 
-	const { user } = submission.value
+	const { user, remember } = submission.value
+
 	const cookieSession = await sessionStorage.getSession(
 		request.headers.get('cookie'),
 	)
@@ -82,7 +85,9 @@ export async function action({ request }: ActionFunctionArgs) {
 
 	return redirect('/', {
 		headers: {
-			'set-cookie': await sessionStorage.commitSession(cookieSession),
+			'set-cookie': await sessionStorage.commitSession(cookieSession, {
+				expires: remember ? getSessionExpirationDate() : undefined,
+			}),
 		},
 	})
 }
@@ -132,6 +137,16 @@ export default function LoginRoute() {
 								<FieldError>{fields.username.errors}</FieldError>
 							)}
 						</div>
+
+						<Field>
+							<div className="flex items-center gap-2">
+								<CheckboxField meta={fields.remember} />
+								<Label htmlFor={fields.remember.id}>Remember me</Label>
+							</div>
+							{fields.remember.errors && (
+								<FieldError>{fields.remember.errors}</FieldError>
+							)}
+						</Field>
 
 						<ErrorList errors={form.errors} id={form.errorId} />
 
