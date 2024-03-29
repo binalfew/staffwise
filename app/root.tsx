@@ -21,7 +21,6 @@ import {
 	useLoaderData,
 } from '@remix-run/react'
 import { CircleUser, Menu, Moon, Search, Sun, Users } from 'lucide-react'
-import os from 'node:os'
 import { AuthenticityTokenProvider } from 'remix-utils/csrf/react'
 import { HoneypotProvider } from 'remix-utils/honeypot/react'
 import tailwindStyleSheetUrl from '~/styles/tailwind.css?url'
@@ -45,9 +44,11 @@ import { ErrorList } from './components/ErrorList'
 import { GeneralErrorBoundary } from './components/ui/error-boundary'
 import { mainNavigation } from './utils/constants'
 import { csrf } from './utils/csrf.server'
+import { prisma } from './utils/db.server'
 import { getEnv } from './utils/env.server'
 import { honeypot } from './utils/honeypot.server'
 import { combineHeaders, invariantResponse } from './utils/misc'
+import { sessionStorage } from './utils/session.server'
 import { Theme, getTheme, setTheme } from './utils/theme.server'
 import { Toast, getToast } from './utils/toast.server'
 
@@ -63,15 +64,25 @@ export const links: LinksFunction = () => {
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
+	const [csrfToken, csrfCookieHeader] = await csrf.commitToken(request)
 	const honeypotProps = honeypot.getInputProps()
 	const { toast, headers: toastHeaders } = await getToast(request)
-	const [csrfToken, csrfCookieHeader] = await csrf.commitToken(request)
+	const cookieSession = await sessionStorage.getSession(
+		request.headers.get('cookie'),
+	)
+	const userId = cookieSession.get('userId')
+	const user = userId
+		? await prisma.user.findUnique({
+				select: { id: true, username: true, name: true },
+				where: { id: userId },
+		  })
+		: null
 
 	return json(
 		{
-			username: os.userInfo().username,
 			theme: getTheme(request),
 			toast,
+			user,
 			ENV: getEnv(),
 			navigation: mainNavigation,
 			honeypotProps,
@@ -235,28 +246,43 @@ function App() {
 								/>
 							</div>
 						</form>
-						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<Button
-									variant="secondary"
-									size="icon"
-									className="rounded-full h-8 w-8"
-								>
-									<CircleUser className="h-5 w-5" />
-									<span className="sr-only">Toggle user menu</span>
-								</Button>
-							</DropdownMenuTrigger>
-							<DropdownMenuContent align="end">
-								<DropdownMenuLabel>Account</DropdownMenuLabel>
-								<DropdownMenuSeparator />
-								<DropdownMenuItem asChild>
-									<Link to="/settings/general">Settings</Link>
-								</DropdownMenuItem>
-								<DropdownMenuItem>Support</DropdownMenuItem>
-								<DropdownMenuSeparator />
-								<DropdownMenuItem>Logout</DropdownMenuItem>
-							</DropdownMenuContent>
-						</DropdownMenu>
+
+						{data.user ? (
+							<>
+								<span className="ml-4 text-sm font-medium text-gray-900 dark:text-gray-100">
+									{data.user?.name}
+								</span>
+								<DropdownMenu>
+									<DropdownMenuTrigger asChild>
+										<Button
+											variant="secondary"
+											size="icon"
+											className="rounded-full h-8 w-8"
+										>
+											<CircleUser className="h-5 w-5" />
+											<span className="sr-only">Toggle user menu</span>
+										</Button>
+									</DropdownMenuTrigger>
+									<DropdownMenuContent align="end">
+										<DropdownMenuLabel>Account</DropdownMenuLabel>
+										<DropdownMenuSeparator />
+										<DropdownMenuItem asChild>
+											<Link to="/settings/general">Settings</Link>
+										</DropdownMenuItem>
+										<DropdownMenuItem>Support</DropdownMenuItem>
+										<DropdownMenuSeparator />
+										<DropdownMenuItem>Logout</DropdownMenuItem>
+									</DropdownMenuContent>
+								</DropdownMenu>
+							</>
+						) : (
+							<NavLink
+								className="ml-4 text-sm font-medium text-gray-900 dark:text-gray-100"
+								to="/login"
+							>
+								Login
+							</NavLink>
+						)}
 
 						<ThemeSwitch userPreference={theme} />
 					</div>
