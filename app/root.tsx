@@ -51,6 +51,7 @@ import { combineHeaders, invariantResponse } from './utils/misc'
 import { sessionStorage } from './utils/session.server'
 import { Theme, getTheme, setTheme } from './utils/theme.server'
 import { Toast, getToast } from './utils/toast.server'
+import { useOptionalUser } from './utils/user'
 
 const ThemeFormSchema = z.object({
 	theme: z.enum(['light', 'dark']),
@@ -162,6 +163,7 @@ function App() {
 	const data = useLoaderData<typeof loader>()
 	const { navigation } = data
 	const theme = useTheme()
+	const user = useOptionalUser()
 
 	return (
 		<Layout theme={theme} env={data.ENV}>
@@ -247,10 +249,10 @@ function App() {
 							</div>
 						</form>
 
-						{data.user ? (
+						{user ? (
 							<>
 								<span className="ml-4 text-sm font-medium text-gray-900 dark:text-gray-100">
-									{data.user?.name}
+									{user?.name}
 								</span>
 								<DropdownMenu>
 									<DropdownMenuTrigger asChild>

@@ -17,35 +17,11 @@ import {
 	CardTitle,
 } from '~/components/ui/card'
 import { Label } from '~/components/ui/label'
+import { bcrypt } from '~/utils/auth.server'
 import { prisma } from '~/utils/db.server'
 import { checkHoneypot } from '~/utils/honeypot.server'
 import { sessionStorage } from '~/utils/session.server'
-
-export const UsernameSchema = z
-	.string({ required_error: 'Username is required' })
-	.min(3, { message: 'Username is too short' })
-	.max(20, { message: 'Username is too long' })
-	.regex(/^[a-zA-Z0-9_]+$/, {
-		message: 'Username can only include letters, numbers, and underscores',
-	})
-	.transform(value => value.toLowerCase())
-
-export const PasswordSchema = z
-	.string({ required_error: 'Password is required' })
-	.min(6, { message: 'Password is too short' })
-	.max(100, { message: 'Password is too long' })
-
-export const NameSchema = z
-	.string({ required_error: 'Name is required' })
-	.min(3, { message: 'Name is too short' })
-	.max(40, { message: 'Name is too long' })
-
-export const EmailSchema = z
-	.string({ required_error: 'Email is required' })
-	.email({ message: 'Email is invalid' })
-	.min(3, { message: 'Email is too short' })
-	.max(100, { message: 'Email is too long' })
-	.transform(value => value.toLowerCase())
+import { PasswordSchema, UsernameSchema } from '~/utils/validation'
 
 const LoginFormSchema = z.object({
 	username: UsernameSchema,
@@ -61,12 +37,12 @@ export async function action({ request }: ActionFunctionArgs) {
 			LoginFormSchema.transform(async (data, ctx) => {
 				if (intent !== null) return { ...data, user: null }
 
-				const user = await prisma.user.findUnique({
-					select: { id: true },
+				const userAndPassword = await prisma.user.findUnique({
+					select: { id: true, password: { select: { hash: true } } },
 					where: { username: data.username },
 				})
 
-				if (!user) {
+				if (!userAndPassword || !userAndPassword.password) {
 					ctx.addIssue({
 						code: z.ZodIssueCode.custom,
 						message: 'Invalid username or password',
@@ -74,7 +50,19 @@ export async function action({ request }: ActionFunctionArgs) {
 					return z.NEVER
 				}
 
-				return { ...data, user }
+				const isValid = await bcrypt.compare(
+					data.password,
+					userAndPassword.password.hash,
+				)
+				if (!isValid) {
+					ctx.addIssue({
+						code: z.ZodIssueCode.custom,
+						message: 'Invalid username or password',
+					})
+					return z.NEVER
+				}
+
+				return { ...data, user: { id: userAndPassword.id } }
 			}),
 		async: true,
 	})
@@ -159,9 +147,9 @@ export default function LoginRoute() {
 					</div>
 				</Form>
 
-				<div className="mt-4 text-center text-sm">
-					Don&apos;t have an account?{' '}
-					<Link to="#" className="underline">
+				<div className="mt-4 text-center text-sm space-x-1">
+					<span>Don&apos;t have an account?</span>
+					<Link to="/signup" className="underline">
 						Sign up
 					</Link>
 				</div>
