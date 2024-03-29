@@ -438,11 +438,12 @@ function LogoutTimer() {
 	const submit = useSubmit()
 	// 🦉 normally you'd want these numbers to be much higher, but for the purpose
 	// of this exercise, we'll make it short:
-	const logoutTime = 5000
-	const modalTime = 2000
+	// const logoutTime = 5000
+	// const modalTime = 2000
+
 	// 🦉 here's what would be more likely:
-	// const logoutTime = 1000 * 60 * 60; // 1 hour
-	// const modalTime = logoutTime - 1000 * 60 * 2; // 58 minutes
+	const logoutTime = 1000 * 60 * 60 // 1 hour
+	const modalTime = logoutTime - 1000 * 60 * 2 // 58 minutes
 	const modalTimer = useRef<ReturnType<typeof setTimeout>>()
 	const logoutTimer = useRef<ReturnType<typeof setTimeout>>()
 

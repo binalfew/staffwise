@@ -1,3 +1,4 @@
+import { LoaderFunctionArgs } from '@remix-run/node'
 import { Link, json, useLoaderData } from '@remix-run/react'
 import {
 	ActivityIcon,
@@ -16,9 +17,11 @@ import {
 	TableHeader,
 	TableRow,
 } from '~/components/ui/table'
+import { requireUserId } from '~/utils/auth.server'
 import { prisma } from '~/utils/db.server'
 
-export async function loader() {
+export async function loader({ request }: LoaderFunctionArgs) {
+	await requireUserId(request)
 	const organsCount = await prisma.organ.count()
 	const departmentsCount = await prisma.department.count()
 	const locationsCount = await prisma.location.count()

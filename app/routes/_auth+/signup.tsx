@@ -2,6 +2,7 @@ import { getFormProps, useForm } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod'
 import {
 	ActionFunctionArgs,
+	LoaderFunctionArgs,
 	MetaFunction,
 	json,
 	redirect,
@@ -23,7 +24,11 @@ import {
 	CardTitle,
 } from '~/components/ui/card'
 import { Label } from '~/components/ui/label'
-import { bcrypt, getSessionExpirationDate } from '~/utils/auth.server'
+import {
+	getSessionExpirationDate,
+	requireAnonymous,
+	signup,
+} from '~/utils/auth.server'
 import { validateCSRF } from '~/utils/csrf.server'
 import { prisma } from '~/utils/db.server'
 import { checkHoneypot } from '~/utils/honeypot.server'
@@ -57,7 +62,13 @@ const SignupFormSchema = z
 		}
 	})
 
+export async function loader({ request }: LoaderFunctionArgs) {
+	await requireAnonymous(request)
+	return json({})
+}
+
 export async function action({ request }: ActionFunctionArgs) {
+	await requireAnonymous(request)
 	const formData = await request.formData()
 	await validateCSRF(formData, request.headers)
 	checkHoneypot(formData)
@@ -76,22 +87,7 @@ export async function action({ request }: ActionFunctionArgs) {
 				return
 			}
 		}).transform(async data => {
-			const { username, email, name, password } = data
-
-			const user = await prisma.user.create({
-				select: { id: true },
-				data: {
-					email: email.toLowerCase(),
-					username: username.toLowerCase(),
-					name,
-					password: {
-						create: {
-							hash: await bcrypt.hash(password, 10),
-						},
-					},
-				},
-			})
-
+			const user = await signup(data)
 			return { ...data, user }
 		}),
 		async: true,

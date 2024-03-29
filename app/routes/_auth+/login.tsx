@@ -1,9 +1,15 @@
 import { getFormProps, useForm } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod'
-import { ActionFunctionArgs, json, redirect } from '@remix-run/node'
-import { Form, Link, useActionData } from '@remix-run/react'
+import {
+	ActionFunctionArgs,
+	LoaderFunctionArgs,
+	json,
+	redirect,
+} from '@remix-run/node'
+import { Form, Link, useActionData, useSearchParams } from '@remix-run/react'
 import { AuthenticityTokenInput } from 'remix-utils/csrf/react'
 import { HoneypotInputs } from 'remix-utils/honeypot/react'
+import { safeRedirect } from 'remix-utils/safe-redirect'
 import { z } from 'zod'
 import { ErrorList } from '~/components/ErrorList'
 import { Field, FieldError } from '~/components/Field'
@@ -18,8 +24,11 @@ import {
 	CardTitle,
 } from '~/components/ui/card'
 import { Label } from '~/components/ui/label'
-import { bcrypt, getSessionExpirationDate } from '~/utils/auth.server'
-import { prisma } from '~/utils/db.server'
+import {
+	getSessionExpirationDate,
+	login,
+	requireAnonymous,
+} from '~/utils/auth.server'
 import { checkHoneypot } from '~/utils/honeypot.server'
 import { sessionStorage } from '~/utils/session.server'
 import { PasswordSchema, UsernameSchema } from '~/utils/validation'
@@ -27,10 +36,17 @@ import { PasswordSchema, UsernameSchema } from '~/utils/validation'
 const LoginFormSchema = z.object({
 	username: UsernameSchema,
 	password: PasswordSchema,
+	redirectTo: z.string().optional(),
 	remember: z.boolean().optional(),
 })
 
+export async function loader({ request }: LoaderFunctionArgs) {
+	await requireAnonymous(request)
+	return json({})
+}
+
 export async function action({ request }: ActionFunctionArgs) {
+	await requireAnonymous(request)
 	const formData = await request.formData()
 	checkHoneypot(formData)
 
@@ -39,12 +55,8 @@ export async function action({ request }: ActionFunctionArgs) {
 			LoginFormSchema.transform(async (data, ctx) => {
 				if (intent !== null) return { ...data, user: null }
 
-				const userAndPassword = await prisma.user.findUnique({
-					select: { id: true, password: { select: { hash: true } } },
-					where: { username: data.username },
-				})
-
-				if (!userAndPassword || !userAndPassword.password) {
+				const user = await login(data)
+				if (!user) {
 					ctx.addIssue({
 						code: z.ZodIssueCode.custom,
 						message: 'Invalid username or password',
@@ -52,19 +64,7 @@ export async function action({ request }: ActionFunctionArgs) {
 					return z.NEVER
 				}
 
-				const isValid = await bcrypt.compare(
-					data.password,
-					userAndPassword.password.hash,
-				)
-				if (!isValid) {
-					ctx.addIssue({
-						code: z.ZodIssueCode.custom,
-						message: 'Invalid username or password',
-					})
-					return z.NEVER
-				}
-
-				return { ...data, user: { id: userAndPassword.id } }
+				return { ...data, user }
 			}),
 		async: true,
 	})
@@ -76,14 +76,14 @@ export async function action({ request }: ActionFunctionArgs) {
 		)
 	}
 
-	const { user, remember } = submission.value
+	const { user, remember, redirectTo } = submission.value
 
 	const cookieSession = await sessionStorage.getSession(
 		request.headers.get('cookie'),
 	)
 	cookieSession.set('userId', user.id)
 
-	return redirect('/', {
+	return redirect(safeRedirect(redirectTo), {
 		headers: {
 			'set-cookie': await sessionStorage.commitSession(cookieSession, {
 				expires: remember ? getSessionExpirationDate() : undefined,
@@ -94,10 +94,13 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function LoginRoute() {
 	const actionData = useActionData<typeof action>()
+	const [searchParams] = useSearchParams()
+	const redirectTo = searchParams.get('redirectTo')
 	const [form, fields] = useForm({
 		id: 'login-form',
 		constraint: getZodConstraint(LoginFormSchema),
 		lastResult: actionData?.result,
+		defaultValue: { redirectTo },
 		onValidate({ formData }) {
 			return parseWithZod(formData, { schema: LoginFormSchema })
 		},
@@ -148,6 +151,7 @@ export default function LoginRoute() {
 							)}
 						</Field>
 
+						<InputField meta={fields.redirectTo} type="hidden" />
 						<ErrorList errors={form.errors} id={form.errorId} />
 
 						<Button type="submit" className="w-full">
