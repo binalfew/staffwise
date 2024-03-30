@@ -47,14 +47,6 @@ import {
 	AlertDialogTitle,
 } from '~/components/ui/alert-dialog'
 import { Button } from '~/components/ui/button'
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuLabel,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from '~/components/ui/dropdown-menu'
 import { Input } from '~/components/ui/input'
 import { Sheet, SheetContent, SheetTrigger } from '~/components/ui/sheet'
 import { ErrorList } from './components/ErrorList'
@@ -68,7 +60,7 @@ import { combineHeaders, invariantResponse } from './utils/misc'
 import { sessionStorage } from './utils/session.server'
 import { Theme, getTheme, setTheme } from './utils/theme.server'
 import { Toast, getToast } from './utils/toast.server'
-import { useOptionalUser } from './utils/user'
+import { useOptionalUser, userHasRole } from './utils/user'
 
 const ThemeFormSchema = z.object({
 	theme: z.enum(['light', 'dark']),
@@ -91,7 +83,23 @@ export async function loader({ request }: LoaderFunctionArgs) {
 	const userId = cookieSession.get('userId')
 	const user = userId
 		? await prisma.user.findUnique({
-				select: { id: true, username: true, name: true },
+				select: {
+					id: true,
+					name: true,
+					username: true,
+					roles: {
+						select: {
+							name: true,
+							permissions: {
+								select: {
+									action: true,
+									entity: true,
+									access: true,
+								},
+							},
+						},
+					},
+				},
 				where: { id: userId },
 		  })
 		: null
@@ -196,6 +204,7 @@ function App() {
 	const { navigation } = data
 	const theme = useTheme()
 	const user = useOptionalUser()
+	const isAdmin = userHasRole(user, 'admin')
 
 	return (
 		<Layout isLoggedIn={Boolean(user)} theme={theme} env={data.ENV}>
@@ -210,23 +219,56 @@ function App() {
 							<span className="sr-only">Staffwise</span>
 						</NavLink>
 
-						{navigation.map(item => {
-							return (
-								<NavLink
-									key={item.name}
-									to={item.href}
-									className={({ isActive }) =>
-										clsx(
-											isActive ? 'text-foreground' : 'text-muted-foreground',
-											'transition-colors hover:text-foreground',
-										)
-									}
-								>
-									{item.name}
-								</NavLink>
-							)
-						})}
+						{isAdmin ? (
+							<NavLink
+								to="/dashboard"
+								className={({ isActive }) =>
+									clsx(
+										isActive ? 'text-foreground' : 'text-muted-foreground',
+										'transition-colors hover:text-foreground',
+									)
+								}
+							>
+								Dashboard
+							</NavLink>
+						) : null}
+
+						{user
+							? navigation.map(item => {
+									return (
+										<NavLink
+											key={item.name}
+											to={item.href}
+											className={({ isActive }) =>
+												clsx(
+													isActive
+														? 'text-foreground'
+														: 'text-muted-foreground',
+													'transition-colors hover:text-foreground',
+												)
+											}
+										>
+											{item.name}
+										</NavLink>
+									)
+							  })
+							: null}
+
+						{isAdmin ? (
+							<NavLink
+								to="/settings"
+								className={({ isActive }) =>
+									clsx(
+										isActive ? 'text-foreground' : 'text-muted-foreground',
+										'transition-colors hover:text-foreground',
+									)
+								}
+							>
+								Settings
+							</NavLink>
+						) : null}
 					</nav>
+
 					<Sheet>
 						<SheetTrigger asChild>
 							<Button
@@ -269,6 +311,7 @@ function App() {
 							</nav>
 						</SheetContent>
 					</Sheet>
+
 					<div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
 						<form className="ml-auto flex-1 sm:flex-initial">
 							<div className="relative">
@@ -282,51 +325,31 @@ function App() {
 						</form>
 
 						{user ? (
-							<>
-								<span className="ml-4 text-sm font-medium text-gray-900 dark:text-gray-100">
-									{user?.name}
-								</span>
-								<DropdownMenu>
-									<DropdownMenuTrigger asChild>
-										<Button
-											variant="secondary"
-											size="icon"
-											className="rounded-full h-8 w-8"
-										>
-											<CircleUser className="h-5 w-5" />
-											<span className="sr-only">Toggle user menu</span>
-										</Button>
-									</DropdownMenuTrigger>
-									<DropdownMenuContent align="end">
-										<DropdownMenuLabel>Account</DropdownMenuLabel>
-										<DropdownMenuSeparator />
-										<DropdownMenuItem asChild>
-											<Link to="/settings/general">Settings</Link>
-										</DropdownMenuItem>
-										<DropdownMenuItem>Support</DropdownMenuItem>
-										<DropdownMenuSeparator />
-										<DropdownMenuItem>
-											<Form action="/logout" method="POST">
-												<AuthenticityTokenInput />
-												<Button
-													size="sm"
-													type="submit"
-													variant={'link'}
-													className="items-center px-0 text-sm text-left font-medium text-gray-900 no-underline"
-												>
-													Sign out
-												</Button>
-											</Form>
-										</DropdownMenuItem>
-									</DropdownMenuContent>
-								</DropdownMenu>
-							</>
+							<div className="flex flex-row">
+								<div className="flex flex-row items-center justify-between">
+									<span className="ml-4 text-sm font-medium text-gray-900 dark:text-gray-100 mr-2">
+										{user?.name}
+									</span>
+									<CircleUser className="h-5 w-5" />
+								</div>
+								<Form action="/logout" method="POST">
+									<AuthenticityTokenInput />
+									<Button
+										size="sm"
+										type="submit"
+										variant={'link'}
+										className="ml-4 text-sm font-medium text-gray-900 dark:text-gray-100"
+									>
+										<span>Logout</span>
+									</Button>
+								</Form>
+							</div>
 						) : (
 							<NavLink
 								className="ml-4 text-sm font-medium text-gray-900 dark:text-gray-100"
 								to="/login"
 							>
-								Login
+								<span>Login</span>
 							</NavLink>
 						)}
 

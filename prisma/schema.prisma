@@ -7,16 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        String    @id @default(cuid())
-  email     String    @unique
-  username  String    @unique
-  name      String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  password  Password?
-}
-
 model Password {
   hash   String
   userId String @unique
@@ -186,4 +176,38 @@ model Vehicle {
   capacity    String   @default("")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  username  String    @unique
+  name      String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  password  Password?
+  roles     Role[]
+}
+
+model Permission {
+  id          String   @id @default(cuid())
+  action      String // create, read, update, delete
+  entity      String // user, organ, department
+  access      String // own, any
+  description String   @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  roles       Role[]
+
+  @@unique([action, entity, access])
+}
+
+model Role {
+  id          String       @id @default(cuid())
+  name        String       @unique
+  description String       @default("")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  permissions Permission[]
+  users       User[]
 }

@@ -109,8 +109,10 @@ export default function RelationshipsRoute() {
 										))
 									) : (
 										<TableRow>
-											<TableCell colSpan={4} className="text-center">
-												No relationships found
+											<TableCell colSpan={3} className="text-center">
+												<h3 className="mt-2 text-sm font-semibold text-muted-foreground">
+													No relationships found
+												</h3>
 											</TableCell>
 										</TableRow>
 									)

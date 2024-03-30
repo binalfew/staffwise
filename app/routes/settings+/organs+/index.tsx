@@ -114,8 +114,10 @@ export default function OrgansRoute() {
 										))
 									) : (
 										<TableRow>
-											<TableCell colSpan={4} className="text-center">
-												No organs found
+											<TableCell colSpan={5} className="text-center">
+												<h3 className="mt-2 text-sm font-semibold text-muted-foreground">
+													No organs found
+												</h3>
 											</TableCell>
 										</TableRow>
 									)

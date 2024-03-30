@@ -121,8 +121,10 @@ export default function FloorsRoute() {
 										))
 									) : (
 										<TableRow>
-											<TableCell colSpan={4} className="text-center">
-												No floors found
+											<TableCell colSpan={5} className="text-center">
+												<h3 className="mt-2 text-sm font-semibold text-muted-foreground">
+													No floors found
+												</h3>
 											</TableCell>
 										</TableRow>
 									)

@@ -116,7 +116,9 @@ export default function DepartmentsRoute() {
 									) : (
 										<TableRow>
 											<TableCell colSpan={4} className="text-center">
-												No departments found
+												<h3 className="mt-2 text-sm font-semibold text-muted-foreground">
+													No departments found
+												</h3>
 											</TableCell>
 										</TableRow>
 									)

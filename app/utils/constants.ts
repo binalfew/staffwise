@@ -5,20 +5,16 @@ type NavigationItem = {
 
 export const mainNavigation: NavigationItem[] = [
 	{
-		name: 'Dashboard',
-		href: '/',
-	},
-	{
 		name: 'Profile',
 		href: '/profile',
 	},
 	{
-		name: 'Incidents',
-		href: '/incidents',
+		name: 'Guests',
+		href: '/guests',
 	},
 	{
-		name: 'Requests',
-		href: '/requests',
+		name: 'Incidents',
+		href: '/incidents',
 	},
 ]
 

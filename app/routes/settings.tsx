@@ -1,8 +1,12 @@
+import { LoaderFunctionArgs } from '@remix-run/node'
 import { NavLink, Outlet, json, useLoaderData } from '@remix-run/react'
 import clsx from 'clsx'
+import { GeneralErrorBoundary } from '~/components/ui/error-boundary'
 import { settingsNavigation } from '~/utils/constants'
+import { requireUserWithRole } from '~/utils/permission.server'
 
-export async function loader() {
+export async function loader({ request }: LoaderFunctionArgs) {
+	await requireUserWithRole(request, 'admin')
 	return json({ navigation: settingsNavigation })
 }
 
@@ -34,5 +38,14 @@ export default function SettingsRoute() {
 				</div>
 			</div>
 		</>
+	)
+}
+export function ErrorBoundary() {
+	return (
+		<GeneralErrorBoundary
+			statusHandlers={{
+				403: () => <p>You are not allowed to do that</p>,
+			}}
+		/>
 	)
 }

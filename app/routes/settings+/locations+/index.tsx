@@ -80,7 +80,7 @@ export default function LocationsRoute() {
 								<TableRow>
 									<TableHead>Name</TableHead>
 									<TableHead>Code</TableHead>
-									<TableHead>Organ</TableHead> {/* Changed from 'Country' */}
+									<TableHead>Organ</TableHead>
 									<TableHead className="text-right pr-6">Actions</TableHead>
 								</TableRow>
 							</TableHeader>
@@ -111,7 +111,9 @@ export default function LocationsRoute() {
 									) : (
 										<TableRow>
 											<TableCell colSpan={4} className="text-center">
-												No locations found
+												<h3 className="mt-2 text-sm font-semibold text-muted-foreground">
+													No locations found
+												</h3>
 											</TableCell>
 										</TableRow>
 									)

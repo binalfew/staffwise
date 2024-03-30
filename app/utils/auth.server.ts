@@ -162,6 +162,9 @@ export async function signup({
 					hash: hashedPassword,
 				},
 			},
+			roles: {
+				connect: { name: 'user' },
+			},
 		},
 	})
 

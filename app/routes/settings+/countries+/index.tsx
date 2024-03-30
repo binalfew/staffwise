@@ -106,7 +106,9 @@ export default function CountriesRoute() {
 									) : (
 										<TableRow>
 											<TableCell colSpan={4} className="text-center">
-												No countries found
+												<h3 className="mt-2 text-sm font-semibold text-muted-foreground">
+													No countries found
+												</h3>
 											</TableCell>
 										</TableRow>
 									)
