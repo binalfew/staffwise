@@ -205,6 +205,8 @@ function App() {
 	const theme = useTheme()
 	const user = useOptionalUser()
 	const isAdmin = userHasRole(user, 'admin')
+	// const canDelete = userHasPermission(user, 'delete:country:any')
+	// console.log('canDelete', canDelete)
 
 	return (
 		<Layout isLoggedIn={Boolean(user)} theme={theme} env={data.ENV}>
