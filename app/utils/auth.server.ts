@@ -111,7 +111,7 @@ export async function requireUser(request: Request) {
 
 	const user = await prisma.user.findUnique({
 		where: { id: userId },
-		select: { id: true, username: true },
+		select: { id: true, username: true, email: true, name: true },
 	})
 
 	if (!user) {

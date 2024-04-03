@@ -63,6 +63,7 @@ type PaginationAndFilterParams<
 		}) => Promise<TResult[]>
 	}
 	searchFields: Array<keyof TWhereInput>
+	where?: TWhereInput
 	orderBy: TOrderByInput[]
 	select?: TSelect
 	include?: TInclude
@@ -78,6 +79,7 @@ export async function filterAndPaginate<
 	request,
 	model,
 	searchFields = [] as Array<keyof TWhereInput>,
+	where = {} as TWhereInput,
 	orderBy = [] as TOrderByInput[],
 	select,
 	include,
@@ -104,12 +106,18 @@ export async function filterAndPaginate<
 		}
 	}
 
-	const totalItems = await model.count({ where: searchConditions })
+	// Combine `where` conditions with search conditions
+	const combinedWhere = {
+		...where,
+		...searchConditions,
+	}
+
+	const totalItems = await model.count({ where: combinedWhere })
 
 	const totalPages = pageSize ? Math.ceil(totalItems / pageSize) : 1
 
 	const data = await model.findMany({
-		where: searchConditions,
+		where: combinedWhere,
 		orderBy,
 		take: pageSize,
 		skip: pageSize ? (page - 1) * pageSize : undefined,

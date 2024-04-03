@@ -7,6 +7,40 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  username  String    @unique
+  name      String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  password  Password?
+  roles     Role[]
+}
+
+model Permission {
+  id          String   @id @default(cuid())
+  action      String // create, read, update, delete
+  entity      String // user, organ, department
+  access      String // own, any
+  description String   @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  roles       Role[]
+
+  @@unique([action, entity, access])
+}
+
+model Role {
+  id          String       @id @default(cuid())
+  name        String       @unique
+  description String       @default("")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  permissions Permission[]
+  users       User[]
+}
+
 model Password {
   hash   String
   userId String @unique
@@ -36,6 +70,7 @@ model Organ {
   updatedAt   DateTime     @updatedAt
   departments Department[]
   locations   Location[]
+  employees   Employee[]
 }
 
 model Department {
@@ -81,63 +116,73 @@ model Relationship {
   dependants Dependant[]
 }
 
-model Employee {
-  id                     String      @id @default(cuid())
-  firstName              String      @default("")
-  familyName             String      @default("")
-  middleName             String      @default("")
-  email                  String      @default("")
-  countryId              String
-  country                Country     @relation(fields: [countryId], references: [id])
-  nationalPassportNumber String      @default("")
-  auPassportNumber       String      @default("")
-  auIdNmber              String      @default("")
-  dateIssued             DateTime    @default(now())
-  validUntil             DateTime    @default(now())
-  dateOfBirth            DateTime    @default(now())
-  departmentId           String
-  department             Department  @relation(fields: [departmentId], references: [id])
-  locationId             String
-  location               Location    @relation(fields: [locationId], references: [id])
-  floorId                String
-  floor                  Floor       @relation(fields: [floorId], references: [id])
-  officeNumber           String      @default("")
-  specialConditions      String      @default("")
-  medicallyTrained       Boolean     @default(false)
-  zone                   String      @default("")
-  team                   String      @default("")
-  createdAt              DateTime    @default(now())
-  updatedAt              DateTime    @updatedAt
-  addresses              Address[]
-  dependants             Dependant[]
-  spouses                Spouse[]
-  vehicles               Vehicle[]
+model IncidentType {
+  id        String     @id @default(cuid())
+  name      String
+  code      String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  incidents Incident[]
 }
 
-model Address {
-  id                    String   @id @default(cuid())
-  employeeId            String
-  employee              Employee @relation(fields: [employeeId], references: [id])
-  houseNumber           String   @default("")
-  houseTelephoneNumber  String   @default("")
-  mobileTelephoneNumber String   @default("")
-  officeTelephoneNumber String   @default("")
-  email                 String   @default("")
-  specificLocation      String   @default("")
-  gpsLocation           String   @default("")
-  homeCountryAddress    String   @default("")
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+model Employee {
+  id                     String     @id @default(cuid())
+  firstName              String     @default("")
+  familyName             String     @default("")
+  middleName             String     @default("")
+  email                  String     @default("")
+  countryId              String
+  country                Country    @relation(fields: [countryId], references: [id])
+  nationalPassportNumber String     @unique @default("")
+  auPassportNumber       String     @unique @default("")
+  auIdNumber             String     @unique @default("")
+  dateIssued             DateTime   @default(now())
+  validUntil             DateTime   @default(now())
+  dateOfBirth            DateTime   @default(now())
+  organId                String
+  organ                  Organ      @relation(fields: [organId], references: [id])
+  departmentId           String
+  department             Department @relation(fields: [departmentId], references: [id])
+  locationId             String
+  location               Location   @relation(fields: [locationId], references: [id])
+  floorId                String
+  floor                  Floor      @relation(fields: [floorId], references: [id])
+  officeNumber           String     @default("")
+  specialConditions      String     @default("")
+  medicallyTrained       Boolean    @default(false)
+  zone                   String     @default("")
+  team                   String     @default("")
+
+  city                  String @default("")
+  subcity               String @default("")
+  woreda                String @default("")
+  street                String @default("")
+  kebele                String @default("")
+  houseNumber           String @default("")
+  houseTelephoneNumber  String @default("")
+  mobileTelephoneNumber String @default("")
+  officeTelephoneNumber String @default("")
+  specificLocation      String @default("")
+  gpsLocation           String @default("")
+  homeCountryAddress    String @default("")
+
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  dependants     Dependant[]
+  spouses        Spouse[]
+  vehicles       Vehicle[]
+  incidents      Incident[]
+  accessRequests AccessRequest[]
 }
 
 model Dependant {
   id             String       @id @default(cuid())
   employeeId     String
-  employee       Employee     @relation(fields: [employeeId], references: [id])
+  employee       Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   firstName      String       @default("")
   familyName     String       @default("")
   middleName     String       @default("")
-  auIdNmber      String       @default("")
+  auIdNumber     String       @default("")
   dateIssued     DateTime     @default(now())
   validUntil     DateTime     @default(now())
   dateOfBirth    DateTime     @default(now())
@@ -151,11 +196,11 @@ model Dependant {
 model Spouse {
   id              String   @id @default(cuid())
   employeeId      String
-  employee        Employee @relation(fields: [employeeId], references: [id])
+  employee        Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   firstName       String   @default("")
   familyName      String   @default("")
   middleName      String   @default("")
-  auIdNmber       String   @default("")
+  auIdNumber      String   @default("")
   dateIssued      DateTime @default(now())
   validUntil      DateTime @default(now())
   telephoneNumber String   @default("")
@@ -167,7 +212,7 @@ model Spouse {
 model Vehicle {
   id          String   @id @default(cuid())
   employeeId  String
-  employee    Employee @relation(fields: [employeeId], references: [id])
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   make        String   @default("")
   model       String   @default("")
   year        String   @default("")
@@ -178,36 +223,64 @@ model Vehicle {
   updatedAt   DateTime @updatedAt
 }
 
-model User {
-  id        String    @id @default(cuid())
-  email     String    @unique
-  username  String    @unique
-  name      String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  password  Password?
-  roles     Role[]
+model Incident {
+  id             String       @id @default(cuid())
+  employeeId     String
+  employee       Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  incidentNumber String       @default("")
+  incidentTypeId String
+  incidentType   IncidentType @relation(fields: [incidentTypeId], references: [id])
+  location       String       @default("")
+  description    String       @default("")
+  eyeWitnesses   String       @default("")
+  occuredWhile   String       @default("")
+  occuredAt      DateTime     @default(now())
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  Assessment     Assessment?
 }
 
-model Permission {
-  id          String   @id @default(cuid())
-  action      String // create, read, update, delete
-  entity      String // user, organ, department
-  access      String // own, any
-  description String   @default("")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  roles       Role[]
-
-  @@unique([action, entity, access])
+model Assessment {
+  id                String   @id @default(cuid())
+  incidentId        String   @unique
+  incident          Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  cause             String   @default("")
+  actionTaken       String   @default("")
+  severity          String   @default("")
+  impactType        String   @default("")
+  likelihood        String   @default("")
+  training          String   @default("")
+  changeOfProcedure String   @default("")
+  physicalMeasures  String   @default("")
+  status            String   @default("")
+  officer           String   @default("")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
 
-model Role {
-  id          String       @id @default(cuid())
-  name        String       @unique
-  description String       @default("")
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  permissions Permission[]
-  users       User[]
+model AccessRequest {
+  id            String    @id @default(cuid())
+  requestorId   String
+  requestor     Employee  @relation(fields: [requestorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  requestNumber String    @default("")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  visitors      Visitor[]
+}
+
+model Visitor {
+  id              String        @id @default(cuid())
+  accessRequestId String
+  accessRequest   AccessRequest @relation(fields: [accessRequestId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  firstName       String        @default("")
+  familyName      String        @default("")
+  telephone       String        @default("")
+  organization    String        @default("")
+  whomToVisit     String        @default("")
+  destination     String        @default("")
+  carPlateNumber  String        @default("")
+  timeIn          DateTime      @default(now())
+  timeOut         DateTime      @default(now())
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 }

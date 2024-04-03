@@ -221,26 +221,16 @@ function App() {
 							<span className="sr-only">Staffwise</span>
 						</NavLink>
 
-						{isAdmin ? (
-							<NavLink
-								to="/dashboard"
-								className={({ isActive }) =>
-									clsx(
-										isActive ? 'text-foreground' : 'text-muted-foreground',
-										'transition-colors hover:text-foreground',
-									)
-								}
-							>
-								Dashboard
-							</NavLink>
-						) : null}
-
 						{user
 							? navigation.map(item => {
 									return (
 										<NavLink
 											key={item.name}
-											to={item.href}
+											to={
+												item.href.includes('profile')
+													? `/profile/${user.id}`
+													: item.href
+											}
 											className={({ isActive }) =>
 												clsx(
 													isActive
@@ -257,17 +247,54 @@ function App() {
 							: null}
 
 						{isAdmin ? (
-							<NavLink
-								to="/settings"
-								className={({ isActive }) =>
-									clsx(
-										isActive ? 'text-foreground' : 'text-muted-foreground',
-										'transition-colors hover:text-foreground',
-									)
-								}
-							>
-								Settings
-							</NavLink>
+							<>
+								<NavLink
+									to="/dashboard"
+									className={({ isActive }) =>
+										clsx(
+											isActive ? 'text-foreground' : 'text-muted-foreground',
+											'transition-colors hover:text-foreground',
+										)
+									}
+								>
+									Dashboard
+								</NavLink>
+								<NavLink
+									to="/guests"
+									className={({ isActive }) =>
+										clsx(
+											isActive ? 'text-foreground' : 'text-muted-foreground',
+											'transition-colors hover:text-foreground',
+										)
+									}
+								>
+									Guests
+								</NavLink>
+
+								<NavLink
+									to="/incidents"
+									className={({ isActive }) =>
+										clsx(
+											isActive ? 'text-foreground' : 'text-muted-foreground',
+											'transition-colors hover:text-foreground',
+										)
+									}
+								>
+									Incidents
+								</NavLink>
+
+								<NavLink
+									to="/settings"
+									className={({ isActive }) =>
+										clsx(
+											isActive ? 'text-foreground' : 'text-muted-foreground',
+											'transition-colors hover:text-foreground',
+										)
+									}
+								>
+									Settings
+								</NavLink>
+							</>
 						) : null}
 					</nav>
 
@@ -471,6 +498,30 @@ function LogoutTimer() {
 	const modalTime = logoutTime - 1000 * 60 * 2 // 58 minutes
 	const modalTimer = useRef<ReturnType<typeof setTimeout>>()
 	const logoutTimer = useRef<ReturnType<typeof setTimeout>>()
+	const [timeLeft, setTimeLeft] = useState<number>(0) // New state for time left
+	const countdownTimer = useRef<ReturnType<typeof setInterval>>() // New ref for countdown timer
+
+	const startCountdown = useCallback(() => {
+		const initialTimeLeft = logoutTime / 1000 // Convert logoutTime to seconds
+		setTimeLeft(initialTimeLeft)
+		countdownTimer.current = setInterval(() => {
+			setTimeLeft(prevTime => {
+				if (prevTime <= 1) {
+					clearInterval(countdownTimer.current)
+					return 0
+				}
+				return prevTime - 1
+			})
+		}, 1000)
+	}, [logoutTime])
+
+	useEffect(() => {
+		if (status === 'show-modal') {
+			startCountdown()
+		} else {
+			clearInterval(countdownTimer.current)
+		}
+	}, [status, startCountdown])
 
 	const logout = useCallback(() => {
 		submit(null, { method: 'POST', action: '/logout' })
@@ -507,8 +558,8 @@ function LogoutTimer() {
 					<AlertDialogTitle>Are you still there?</AlertDialogTitle>
 				</AlertDialogHeader>
 				<AlertDialogDescription>
-					You are going to be logged out due to inactivity. Close this modal to
-					stay logged in.
+					You are going to be logged out in {timeLeft} due to inactivity. Close
+					this modal to stay logged in.
 				</AlertDialogDescription>
 				<AlertDialogFooter className="flex items-end gap-8">
 					<AlertDialogCancel onClick={closeModal}>

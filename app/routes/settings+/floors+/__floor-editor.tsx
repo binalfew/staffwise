@@ -1,15 +1,13 @@
 import { getFormProps, useForm } from '@conform-to/react'
-import { parseWithZod } from '@conform-to/zod'
 import { Floor, Location, Organ } from '@prisma/client'
 import { SerializeFrom } from '@remix-run/node'
 import { Form, Link, useActionData, useOutletContext } from '@remix-run/react'
-import { useEffect, useState } from 'react'
 import { AuthenticityTokenInput } from 'remix-utils/csrf/react'
 import { HoneypotInputs } from 'remix-utils/honeypot/react'
 import { z } from 'zod'
 import { Field, FieldError } from '~/components/Field'
 import { InputField } from '~/components/conform/InputField'
-import { SelectField } from '~/components/conform/SelectField'
+import { SelectFieldGroup } from '~/components/conform/SelectFieldGroup'
 import { Button } from '~/components/ui/button'
 import {
 	Card,
@@ -27,19 +25,22 @@ export const FloorDeleteSchema = z.object({
 })
 
 export type OutletContext = {
-	organs: SerializeFrom<Pick<Organ, 'id' | 'name'>[]>
-	locations: SerializeFrom<Pick<Location, 'id' | 'name' | 'organId'>[]>
+	organs: SerializeFrom<
+		Pick<
+			Organ & {
+				locations: Pick<Location, 'id' | 'name' | 'organId'>[]
+			},
+			'id' | 'name' | 'locations'
+		>[]
+	>
 }
 
 export const FloorEditorSchema = z.object({
 	id: z.string().optional(),
 	name: z.string({ required_error: 'Name is required' }),
 	code: z.string({ required_error: 'Code is required' }),
-	organId: z.string({ required_error: 'Organ is required' }),
 	locationId: z.string({ required_error: 'Location is required' }),
 })
-
-type LocationType = Pick<Location, 'id' | 'name' | 'organId'>
 
 export function FloorEditor({
 	floor,
@@ -50,7 +51,7 @@ export function FloorEditor({
 	title: string
 	intent?: 'add' | 'edit' | 'delete'
 }) {
-	const { organs, locations } = useOutletContext<OutletContext>()
+	const { organs } = useOutletContext<OutletContext>()
 	const actionData = useActionData<typeof action>()
 	const disabled = intent === 'delete'
 
@@ -59,32 +60,8 @@ export function FloorEditor({
 		lastResult: actionData?.result,
 		defaultValue: {
 			...floor,
-			organId: floor?.locationId
-				? locations.find(location => location.id === floor.locationId)?.organId
-				: undefined,
-		},
-		onSubmit(e) {
-			e.preventDefault()
-			const form = e.currentTarget
-			const formData = new FormData(form)
-			const result = parseWithZod(formData, { schema: FloorEditorSchema })
-			alert(JSON.stringify(result, null, 2))
 		},
 	})
-
-	const [selectedOrganId, setSelectedOrganId] = useState(
-		floor?.locationId
-			? locations.find(location => location.id === floor.locationId)?.organId
-			: undefined,
-	)
-	const [filteredLocations, setFilteredLocations] = useState<LocationType[]>([])
-
-	useEffect(() => {
-		const filtered = locations.filter(
-			location => location.organId === selectedOrganId,
-		)
-		setFilteredLocations(filtered)
-	}, [selectedOrganId, locations])
 
 	return (
 		<div className="flex flex-col gap-8">
@@ -104,33 +81,18 @@ export function FloorEditor({
 						<HoneypotInputs />
 						<InputField meta={fields.id} type="hidden" />
 						<Field>
-							<Label htmlFor={fields.organId.id}>Organ</Label>
-							<SelectField
-								meta={fields.organId}
-								items={organs.map(organ => ({
-									name: organ.name,
-									value: organ.id,
-								}))}
-								disabled={disabled}
-								placeholder="Select an organ"
-								onValueChange={value => {
-									setSelectedOrganId(value)
-								}}
-							/>
-							{fields.organId.errors && (
-								<FieldError>{fields.organId.errors}</FieldError>
-							)}
-						</Field>
-						<Field>
 							<Label htmlFor={fields.locationId.id}>Location</Label>
-							<SelectField
+							<SelectFieldGroup
 								meta={fields.locationId}
-								items={filteredLocations.map(location => ({
-									name: location.name,
-									value: location.id,
-								}))}
 								disabled={disabled}
 								placeholder="Select a location"
+								items={organs.map(organ => ({
+									name: organ.name,
+									children: organ.locations.map(location => ({
+										name: location.name,
+										value: location.id,
+									})),
+								}))}
 							/>
 							{fields.locationId.errors && (
 								<FieldError>{fields.locationId.errors}</FieldError>

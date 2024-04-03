@@ -8,14 +8,6 @@ export const mainNavigation: NavigationItem[] = [
 		name: 'Profile',
 		href: '/profile',
 	},
-	{
-		name: 'Guests',
-		href: '/guests',
-	},
-	{
-		name: 'Incidents',
-		href: '/incidents',
-	},
 ]
 
 export const settingsNavigation: NavigationItem[] = [

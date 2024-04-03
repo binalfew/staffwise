@@ -31,7 +31,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 	if (isAdmin) {
 		throw redirect('/dashboard')
 	} else {
-		throw redirect('/profile')
+		throw redirect(`/profile/${user?.id}`)
 	}
 }
 
