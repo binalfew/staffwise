@@ -117,7 +117,6 @@ export function IncidentEditor({
 							)}
 						</Field>
 
-						{/* Location */}
 						<Field>
 							<Label
 								htmlFor={fields.location.id}
@@ -129,14 +128,12 @@ export function IncidentEditor({
 								meta={fields.location}
 								type="text"
 								disabled={disabled}
-								placeholder="Location"
 							/>
 							{fields.location.errors && (
 								<FieldError>{fields.location.errors}</FieldError>
 							)}
 						</Field>
 
-						{/* Description */}
 						<Field>
 							<Label
 								htmlFor={fields.description.id}
@@ -148,14 +145,12 @@ export function IncidentEditor({
 								meta={fields.description}
 								type="text"
 								disabled={disabled}
-								placeholder="Description"
 							/>
 							{fields.description.errors && (
 								<FieldError>{fields.description.errors}</FieldError>
 							)}
 						</Field>
 
-						{/* Eye Witnesses */}
 						<Field>
 							<Label
 								htmlFor={fields.eyeWitnesses.id}
@@ -167,14 +162,12 @@ export function IncidentEditor({
 								meta={fields.eyeWitnesses}
 								type="text"
 								disabled={disabled}
-								placeholder="Eye Witnesses"
 							/>
 							{fields.eyeWitnesses.errors && (
 								<FieldError>{fields.eyeWitnesses.errors}</FieldError>
 							)}
 						</Field>
 
-						{/* Occured While */}
 						<Field>
 							<Label
 								htmlFor={fields.occuredWhile.id}
@@ -186,14 +179,12 @@ export function IncidentEditor({
 								meta={fields.occuredWhile}
 								type="text"
 								disabled={disabled}
-								placeholder="Occured While"
 							/>
 							{fields.occuredWhile.errors && (
 								<FieldError>{fields.occuredWhile.errors}</FieldError>
 							)}
 						</Field>
 
-						{/* Occured At */}
 						<Field>
 							<Label
 								htmlFor={fields.occuredAt.id}

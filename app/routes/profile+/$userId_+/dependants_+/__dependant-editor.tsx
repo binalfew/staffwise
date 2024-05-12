@@ -114,7 +114,6 @@ export function DependantEditor({
 								meta={fields.firstName}
 								type="text"
 								disabled={disabled}
-								placeholder="First Name"
 							/>
 							{fields.firstName.errors && (
 								<FieldError>{fields.firstName.errors}</FieldError>
@@ -132,7 +131,6 @@ export function DependantEditor({
 								meta={fields.familyName}
 								type="text"
 								disabled={disabled}
-								placeholder="Family Name"
 							/>
 							{fields.familyName.errors && (
 								<FieldError>{fields.familyName.errors}</FieldError>
@@ -150,7 +148,6 @@ export function DependantEditor({
 								meta={fields.middleName}
 								type="text"
 								disabled={disabled}
-								placeholder="Middle Name"
 							/>
 							{fields.middleName.errors && (
 								<FieldError>{fields.middleName.errors}</FieldError>
@@ -167,7 +164,6 @@ export function DependantEditor({
 								meta={fields.auIdNumber}
 								type="text"
 								disabled={disabled}
-								placeholder="AU ID Number"
 							/>
 							{fields.auIdNumber.errors && (
 								<FieldError>{fields.auIdNumber.errors}</FieldError>
@@ -230,7 +226,6 @@ export function DependantEditor({
 							<InputField
 								meta={fields.nameOfSchool}
 								type="text"
-								placeholder="Name of School"
 								disabled={disabled}
 							/>
 							{fields.nameOfSchool.errors && (

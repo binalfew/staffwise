@@ -107,7 +107,6 @@ export function SpouseEditor({
 								meta={fields.firstName}
 								type="text"
 								disabled={disabled}
-								placeholder="First Name"
 							/>
 							{fields.firstName.errors && (
 								<FieldError>{fields.firstName.errors}</FieldError>
@@ -125,7 +124,6 @@ export function SpouseEditor({
 								meta={fields.familyName}
 								type="text"
 								disabled={disabled}
-								placeholder="Family Name"
 							/>
 							{fields.familyName.errors && (
 								<FieldError>{fields.familyName.errors}</FieldError>
@@ -143,7 +141,6 @@ export function SpouseEditor({
 								meta={fields.middleName}
 								type="text"
 								disabled={disabled}
-								placeholder="Middle Name"
 							/>
 							{fields.middleName.errors && (
 								<FieldError>{fields.middleName.errors}</FieldError>
@@ -161,7 +158,6 @@ export function SpouseEditor({
 								meta={fields.auIdNumber}
 								type="text"
 								disabled={disabled}
-								placeholder="AU ID Number"
 							/>
 							{fields.auIdNumber.errors && (
 								<FieldError>{fields.auIdNumber.errors}</FieldError>
@@ -205,7 +201,6 @@ export function SpouseEditor({
 								meta={fields.telephoneNumber}
 								type="text"
 								disabled={disabled}
-								placeholder="Telephone Number"
 							/>
 							{fields.telephoneNumber.errors && (
 								<FieldError>{fields.telephoneNumber.errors}</FieldError>

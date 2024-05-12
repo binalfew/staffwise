@@ -221,6 +221,57 @@ function App() {
 							<span className="sr-only">Staffwise</span>
 						</NavLink>
 
+						{isAdmin ? (
+							<>
+								<NavLink
+									to="/dashboard"
+									className={({ isActive }) =>
+										clsx(
+											isActive ? 'text-foreground' : 'text-muted-foreground',
+											'transition-colors hover:text-foreground',
+										)
+									}
+								>
+									Dashboard
+								</NavLink>
+								{/* <NavLink
+									to="/guests"
+									className={({ isActive }) =>
+										clsx(
+											isActive ? 'text-foreground' : 'text-muted-foreground',
+											'transition-colors hover:text-foreground',
+										)
+									}
+								>
+									Guests
+								</NavLink>
+
+								<NavLink
+									to="/incidents"
+									className={({ isActive }) =>
+										clsx(
+											isActive ? 'text-foreground' : 'text-muted-foreground',
+											'transition-colors hover:text-foreground',
+										)
+									}
+								>
+									Incidents
+								</NavLink> */}
+
+								<NavLink
+									to="/settings/general"
+									className={({ isActive }) =>
+										clsx(
+											isActive ? 'text-foreground' : 'text-muted-foreground',
+											'transition-colors hover:text-foreground',
+										)
+									}
+								>
+									Settings
+								</NavLink>
+							</>
+						) : null}
+
 						{user
 							? navigation.map(item => {
 									return (
@@ -245,57 +296,6 @@ function App() {
 									)
 							  })
 							: null}
-
-						{isAdmin ? (
-							<>
-								<NavLink
-									to="/dashboard"
-									className={({ isActive }) =>
-										clsx(
-											isActive ? 'text-foreground' : 'text-muted-foreground',
-											'transition-colors hover:text-foreground',
-										)
-									}
-								>
-									Dashboard
-								</NavLink>
-								<NavLink
-									to="/guests"
-									className={({ isActive }) =>
-										clsx(
-											isActive ? 'text-foreground' : 'text-muted-foreground',
-											'transition-colors hover:text-foreground',
-										)
-									}
-								>
-									Guests
-								</NavLink>
-
-								<NavLink
-									to="/incidents"
-									className={({ isActive }) =>
-										clsx(
-											isActive ? 'text-foreground' : 'text-muted-foreground',
-											'transition-colors hover:text-foreground',
-										)
-									}
-								>
-									Incidents
-								</NavLink>
-
-								<NavLink
-									to="/settings"
-									className={({ isActive }) =>
-										clsx(
-											isActive ? 'text-foreground' : 'text-muted-foreground',
-											'transition-colors hover:text-foreground',
-										)
-									}
-								>
-									Settings
-								</NavLink>
-							</>
-						) : null}
 					</nav>
 
 					<Sheet>

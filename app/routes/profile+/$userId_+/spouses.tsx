@@ -85,7 +85,7 @@ export default function SpousesRoute() {
 					<div className="flex items-center gap-2 ml-auto">
 						<SearchBar
 							status={status}
-							action={`/profile/${user.id}/incidents`}
+							action={`/profile/${user.id}/spouses`}
 							autoSubmit
 						/>
 
@@ -96,7 +96,7 @@ export default function SpousesRoute() {
 							</Link>
 						</Button>
 						<Button asChild size="sm" className="ml-auto gap-1">
-							<Link to="/">
+							<Link to={`/profile/${user.id}`}>
 								<ArrowLeftIcon className="h-4 w-4" />
 								Back
 							</Link>

@@ -77,7 +77,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 }
 
 export default function DependantsRoute() {
-	const { dependants, totalPages, currentPage, status } =
+	const { dependants, totalPages, currentPage, status, user } =
 		useLoaderData<typeof loader>()
 
 	return (
@@ -88,7 +88,7 @@ export default function DependantsRoute() {
 					<div className="flex items-center gap-2">
 						<SearchBar
 							status={status}
-							action={`/profile/dependants`}
+							action={`/profile/${user.id}/dependants`}
 							autoSubmit
 						/>
 						<Button asChild size="sm">
@@ -98,7 +98,7 @@ export default function DependantsRoute() {
 							</Link>
 						</Button>
 						<Button asChild size="sm">
-							<Link to="/">
+							<Link to={`/profile/${user.id}`}>
 								<ArrowLeftIcon className="h-4 w-4" />
 								Back
 							</Link>
