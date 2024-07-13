@@ -140,10 +140,14 @@ export default function LoginRoute() {
 						<ErrorList errors={form.errors} id={form.errorId} />
 
 						<Button type="submit" className="w-full">
-							Login
+							Login with Email
 						</Button>
 					</div>
 				</Form>
+
+				<div className="mt-4">
+					<ProviderConnectionForm type="Login" providerName="microsoft" />
+				</div>
 
 				<div className="mt-4">
 					<ProviderConnectionForm type="Login" providerName="github" />

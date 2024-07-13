@@ -3,18 +3,24 @@ import { Form } from '@remix-run/react'
 import { z } from 'zod'
 import { Button } from '~/components/ui/button.tsx'
 
+const MICROSOFT_PROVIDER_NAME = 'microsoft'
 const GITHUB_PROVIDER_NAME = 'github'
 // to add another provider, set their name here and add it to the providerNames below
 
-export const providerNames = [GITHUB_PROVIDER_NAME] as const
+export const providerNames = [
+	MICROSOFT_PROVIDER_NAME,
+	GITHUB_PROVIDER_NAME,
+] as const
 export const ProviderNameSchema = z.enum(providerNames)
 export type ProviderName = z.infer<typeof ProviderNameSchema>
 
 export const providerLabels: Record<ProviderName, string> = {
+	[MICROSOFT_PROVIDER_NAME]: 'Microsoft',
 	[GITHUB_PROVIDER_NAME]: 'GitHub',
 } as const
 
 export const providerIcons: Record<ProviderName, React.ReactNode> = {
+	[MICROSOFT_PROVIDER_NAME]: <GitHubLogoIcon />,
 	[GITHUB_PROVIDER_NAME]: <GitHubLogoIcon />,
 } as const
 

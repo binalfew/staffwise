@@ -6,6 +6,9 @@ const schema = z.object({
 	SESSION_SECRET: z.string(),
 	GITHUB_CLIENT_ID: z.string(),
 	GITHUB_CLIENT_SECRET: z.string(),
+	AZURE_CLIENT_ID: z.string(),
+	AZURE_CLIENT_SECRET: z.string(),
+	AZURE_TENANT_ID: z.string(),
 })
 
 declare global {

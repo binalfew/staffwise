@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs'
 import { Authenticator } from 'remix-auth'
 import { GitHubStrategy } from 'remix-auth-github'
 import { safeRedirect } from 'remix-utils/safe-redirect'
+import { MicrosoftStrategy } from '~/strategies/microsoft'
 import { connectionSessionStorage } from './connections.server'
 import { prisma } from './db.server'
 import { combineResponses } from './misc'
@@ -28,6 +29,39 @@ type ProviderUser = {
 
 export const authenticator = new Authenticator<ProviderUser>(
 	connectionSessionStorage,
+)
+
+authenticator.use(
+	new MicrosoftStrategy(
+		{
+			clientId: process.env.AZURE_CLIENT_ID,
+			clientSecret: process.env.AZURE_CLIENT_SECRET,
+			tenantId: process.env.AZURE_TENANT_ID,
+			redirectUri: '/auth/microsoft/callback',
+			scope: 'openid profile email',
+			prompt: 'login',
+		},
+		async ({ profile }) => {
+			const email = profile.emails?.[0]?.value.trim().toLowerCase()
+			if (!email) {
+				throw redirectWithToast('/login', {
+					type: 'error',
+					title: 'No email found',
+					description:
+						'Please add a verified email address to your Microsoft account to login.',
+				})
+			}
+
+			return {
+				id: profile.id,
+				email,
+				username: profile.displayName,
+				name: profile.name.givenName,
+				imageUrl: profile.photos?.[0]?.value,
+			}
+		},
+	),
+	'microsoft',
 )
 
 authenticator.use(
