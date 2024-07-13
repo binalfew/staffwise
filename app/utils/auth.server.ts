@@ -26,7 +26,10 @@ type ProviderUser = {
 	imageUrl?: string
 }
 
-const authenticator = new Authenticator<ProviderUser>(connectionSessionStorage)
+export const authenticator = new Authenticator<ProviderUser>(
+	connectionSessionStorage,
+)
+
 authenticator.use(
 	new GitHubStrategy(
 		{

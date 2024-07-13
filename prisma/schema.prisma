@@ -8,14 +8,15 @@ datasource db {
 }
 
 model User {
-  id        String    @id @default(cuid())
-  email     String    @unique
-  username  String    @unique
-  name      String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  password  Password?
-  roles     Role[]
+  id          String       @id @default(cuid())
+  email       String       @unique
+  username    String       @unique
+  name        String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  password    Password?
+  roles       Role[]
+  connections Connection[]
 }
 
 model Permission {
@@ -283,4 +284,19 @@ model Visitor {
   timeOut         DateTime      @default(now())
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+}
+
+model Connection {
+  id           String @id @default(cuid())
+  providerName String
+  providerId   String
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([providerName, providerId])
+  @@index([userId])
 }

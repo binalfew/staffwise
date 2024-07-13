@@ -1,15 +1,9 @@
 import { getFormProps, useForm } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod'
-import {
-	ActionFunctionArgs,
-	LoaderFunctionArgs,
-	json,
-	redirect,
-} from '@remix-run/node'
+import { ActionFunctionArgs, LoaderFunctionArgs, json } from '@remix-run/node'
 import { Form, Link, useActionData, useSearchParams } from '@remix-run/react'
 import { AuthenticityTokenInput } from 'remix-utils/csrf/react'
 import { HoneypotInputs } from 'remix-utils/honeypot/react'
-import { safeRedirect } from 'remix-utils/safe-redirect'
 import { z } from 'zod'
 import { ErrorList } from '~/components/ErrorList'
 import { Field, FieldError } from '~/components/Field'
@@ -24,16 +18,13 @@ import {
 	CardTitle,
 } from '~/components/ui/card'
 import { Label } from '~/components/ui/label'
-import {
-	getSessionExpirationDate,
-	login,
-	requireAnonymous,
-} from '~/utils/auth.server'
+import { login, requireAnonymous } from '~/utils/auth.server'
+import { ProviderConnectionForm } from '~/utils/connections'
 import { checkHoneypot } from '~/utils/honeypot.server'
-import { sessionStorage } from '~/utils/session.server'
+import { handleNewSession } from '~/utils/session.server'
 import { PasswordSchema, UsernameSchema } from '~/utils/validation'
 
-const LoginFormSchema = z.object({
+export const LoginFormSchema = z.object({
 	username: UsernameSchema,
 	password: PasswordSchema,
 	redirectTo: z.string().optional(),
@@ -78,17 +69,11 @@ export async function action({ request }: ActionFunctionArgs) {
 
 	const { user, remember, redirectTo } = submission.value
 
-	const cookieSession = await sessionStorage.getSession(
-		request.headers.get('cookie'),
-	)
-	cookieSession.set('userId', user.id)
-
-	return redirect(safeRedirect(redirectTo), {
-		headers: {
-			'set-cookie': await sessionStorage.commitSession(cookieSession, {
-				expires: remember ? getSessionExpirationDate() : undefined,
-			}),
-		},
+	return handleNewSession({
+		request,
+		user,
+		remember: remember ?? false,
+		redirectTo,
 	})
 }
 
@@ -131,9 +116,9 @@ export default function LoginRoute() {
 						<div className="grid gap-2">
 							<div className="flex items-center">
 								<Label htmlFor="password">Password</Label>
-								<Link to="#" className="ml-auto inline-block text-sm underline">
+								{/* <Link to="#" className="ml-auto inline-block text-sm underline">
 									Forgot your password?
-								</Link>
+								</Link> */}
 							</div>
 							<InputField meta={fields.password} type="password" />
 							{fields.password.errors && (
@@ -157,14 +142,12 @@ export default function LoginRoute() {
 						<Button type="submit" className="w-full">
 							Login
 						</Button>
-						{/* <Button variant="outline" className="w-full">
-						Login with Microsoft
-					</Button>
-					<Button variant="outline" className="w-full">
-						Login with Google
-					</Button> */}
 					</div>
 				</Form>
+
+				<div className="mt-4">
+					<ProviderConnectionForm type="Login" providerName="github" />
+				</div>
 
 				<div className="mt-4 text-center text-sm space-x-1">
 					<span>Don&apos;t have an account?</span>
