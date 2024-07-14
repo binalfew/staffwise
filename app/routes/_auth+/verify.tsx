@@ -125,8 +125,7 @@ async function validateRequest(
 export async function loader({ request }: LoaderFunctionArgs) {
 	const params = new URL(request.url).searchParams
 	if (!params.has(codeQueryParam)) {
-		// we don't want to show an error message on page load if the otp hasn't be
-		// prefilled in yet, so we'll send a response with an empty submission.
+		// we don't want to show an error message on page load if the otp hasn't be prefilled in yet, so we'll send a response with an empty submission.
 		return json({
 			status: 'idle',
 			submission: {
