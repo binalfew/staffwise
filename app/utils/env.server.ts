@@ -9,6 +9,7 @@ const schema = z.object({
 	AZURE_CLIENT_ID: z.string(),
 	AZURE_CLIENT_SECRET: z.string(),
 	AZURE_TENANT_ID: z.string(),
+	EMAIL_CONNECTION_STRING: z.string(),
 })
 
 declare global {

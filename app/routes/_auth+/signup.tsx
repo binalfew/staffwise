@@ -1,5 +1,6 @@
 import { getFormProps, useForm } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod'
+import { generateTOTP } from '@epic-web/totp'
 import {
 	ActionFunctionArgs,
 	LoaderFunctionArgs,
@@ -13,7 +14,6 @@ import { HoneypotInputs } from 'remix-utils/honeypot/react'
 import { z } from 'zod'
 import { ErrorList } from '~/components/ErrorList'
 import { Field, FieldError } from '~/components/Field'
-import { CheckboxField } from '~/components/conform/CheckboxField'
 import { InputField } from '~/components/conform/InputField'
 import { Button } from '~/components/ui/button'
 import {
@@ -24,43 +24,19 @@ import {
 	CardTitle,
 } from '~/components/ui/card'
 import { Label } from '~/components/ui/label'
-import {
-	getSessionExpirationDate,
-	requireAnonymous,
-	signup,
-} from '~/utils/auth.server'
+import { requireAnonymous } from '~/utils/auth.server'
 import { validateCSRF } from '~/utils/csrf.server'
 import { prisma } from '~/utils/db.server'
+import { sendEmail } from '~/utils/email.server'
 import { checkHoneypot } from '~/utils/honeypot.server'
-import { sessionStorage } from '~/utils/session.server'
-import {
-	EmailSchema,
-	NameSchema,
-	PasswordSchema,
-	UsernameSchema,
-} from '~/utils/validation'
+import { getDomainUrl } from '~/utils/misc'
+import { EmailSchema } from '~/utils/validation'
+import { codeQueryParam, targetQueryParam, typeQueryParam } from './verify'
 
-const SignupFormSchema = z
-	.object({
-		username: UsernameSchema,
-		name: NameSchema,
-		email: EmailSchema,
-		password: PasswordSchema,
-		confirmPassword: PasswordSchema,
-		agreeToTermsOfServiceAndPrivacyPolicy: z.boolean({
-			required_error: 'You must agree to the terms of service',
-		}),
-		remember: z.boolean().optional(),
-	})
-	.superRefine(({ confirmPassword, password }, ctx) => {
-		if (confirmPassword !== password) {
-			ctx.addIssue({
-				path: ['confirmPassword'],
-				code: 'custom',
-				message: 'The passwords must match',
-			})
-		}
-	})
+const SignupSchema = z.object({
+	email: EmailSchema,
+	redirect: z.string().optional(),
+})
 
 export async function loader({ request }: LoaderFunctionArgs) {
 	await requireAnonymous(request)
@@ -73,22 +49,20 @@ export async function action({ request }: ActionFunctionArgs) {
 	await validateCSRF(formData, request.headers)
 	checkHoneypot(formData)
 	const submission = await parseWithZod(formData, {
-		schema: SignupFormSchema.superRefine(async (data, ctx) => {
+		schema: SignupSchema.superRefine(async (data, ctx) => {
 			const existingUser = await prisma.user.findUnique({
-				where: { username: data.username },
+				where: { email: data.email },
 				select: { id: true },
 			})
+
 			if (existingUser) {
 				ctx.addIssue({
-					path: ['username'],
+					path: ['email'],
 					code: z.ZodIssueCode.custom,
 					message: 'A user already exists with this username',
 				})
 				return
 			}
-		}).transform(async data => {
-			const user = await signup(data)
-			return { ...data, user }
 		}),
 		async: true,
 	})
@@ -100,24 +74,43 @@ export async function action({ request }: ActionFunctionArgs) {
 		)
 	}
 
-	const { user, remember } = submission.value
+	const { email } = submission.value
 
-	const cookieSession = await sessionStorage.getSession(
-		request.headers.get('cookie'),
-	)
-	cookieSession.set('userId', user.id)
-
-	return redirect('/', {
-		headers: {
-			'set-cookie': await sessionStorage.commitSession(cookieSession, {
-				expires: remember ? getSessionExpirationDate() : undefined,
-			}),
-		},
+	const { otp, ...verificationConfig } = generateTOTP({
+		algorithm: 'SHA256',
+		period: 10 * 60, // valid for 10 minutes
 	})
+	const type = 'onboarding'
+	const redirectToUrl = new URL(`${getDomainUrl(request)}/verify`)
+	redirectToUrl.searchParams.set(typeQueryParam, type)
+	redirectToUrl.searchParams.set(targetQueryParam, email)
+	const verifyUrl = new URL(redirectToUrl)
+	verifyUrl.searchParams.set(codeQueryParam, otp)
+
+	const verificationData = {
+		type,
+		target: email,
+		...verificationConfig,
+		expiresAt: new Date(Date.now() + verificationConfig.period * 1000),
+	}
+	await prisma.verification.upsert({
+		where: { target_type: { target: email, type } },
+		create: verificationData,
+		update: verificationData,
+	})
+
+	sendEmail({
+		to: email,
+		subject: 'Welcome to Africa Union',
+		plainText: `Here's your code: ${otp}. Or open this: ${verifyUrl.toString()}`,
+		html: `Here's your code: <strong>${otp}</strong>. Or open this: <a href="${verifyUrl.toString()}">${verifyUrl.toString()}</a>`,
+	})
+
+	return redirect(redirectToUrl.toString())
 }
 
 export const meta: MetaFunction = () => {
-	return [{ title: 'Setup Epic Notes Account' }]
+	return [{ title: 'Setup Staffwise Account' }]
 }
 
 export default function SignupRoute() {
@@ -125,10 +118,10 @@ export default function SignupRoute() {
 
 	const [form, fields] = useForm({
 		id: 'signup-form',
-		constraint: getZodConstraint(SignupFormSchema),
+		constraint: getZodConstraint(SignupSchema),
 		lastResult: actionData?.result,
 		onValidate({ formData }) {
-			return parseWithZod(formData, { schema: SignupFormSchema })
+			return parseWithZod(formData, { schema: SignupSchema })
 		},
 		shouldRevalidate: 'onBlur',
 	})
@@ -154,74 +147,12 @@ export default function SignupRoute() {
 							)}
 						</Field>
 
-						<Field>
-							<Label htmlFor={fields.username.id}>Username</Label>
-							<InputField meta={fields.username} type="text" />
-							{fields.username.errors && (
-								<FieldError>{fields.username.errors}</FieldError>
-							)}
-						</Field>
-
-						<Field>
-							<Label htmlFor={fields.name.id}>Name</Label>
-							<InputField meta={fields.name} type="text" />
-							{fields.name.errors && (
-								<FieldError>{fields.name.errors}</FieldError>
-							)}
-						</Field>
-
-						<Field>
-							<Label htmlFor={fields.password.id}>Password</Label>
-							<InputField meta={fields.password} type="password" />
-							{fields.password.errors && (
-								<FieldError>{fields.password.errors}</FieldError>
-							)}
-						</Field>
-
-						<Field>
-							<Label htmlFor={fields.confirmPassword.id}>
-								Confirm Password
-							</Label>
-							<InputField meta={fields.confirmPassword} type="password" />
-							{fields.confirmPassword.errors && (
-								<FieldError>{fields.confirmPassword.errors}</FieldError>
-							)}
-						</Field>
-						<Field>
-							<div className="flex items-center gap-2">
-								<CheckboxField
-									meta={fields.agreeToTermsOfServiceAndPrivacyPolicy}
-								/>
-								<Label
-									htmlFor={fields.agreeToTermsOfServiceAndPrivacyPolicy.id}
-								>
-									Agree to our Terms of Service?
-								</Label>
-							</div>
-							{fields.agreeToTermsOfServiceAndPrivacyPolicy.errors && (
-								<FieldError>
-									{fields.agreeToTermsOfServiceAndPrivacyPolicy.errors}
-								</FieldError>
-							)}
-						</Field>
-
-						<Field>
-							<div className="flex items-center gap-2">
-								<CheckboxField meta={fields.remember} />
-								<Label htmlFor={fields.remember.id}>Remember me</Label>
-							</div>
-							{fields.remember.errors && (
-								<FieldError>{fields.remember.errors}</FieldError>
-							)}
-						</Field>
+						<InputField meta={fields.redirect} type="hidden" />
 
 						<ErrorList errors={form.errors} id={form.errorId} />
 
 						<Button type="submit" className="w-full">
 							Create an account
-						</Button>
-						<Button variant="outline" className="w-full">
-							Sign up with Outlook
 						</Button>
 					</div>
 				</Form>

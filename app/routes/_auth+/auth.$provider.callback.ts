@@ -5,12 +5,13 @@ import { prisma } from '~/utils/db.server'
 import { handleNewSession } from '~/utils/session.server'
 import { createToastHeaders, redirectWithToast } from '~/utils/toast.server'
 
+import { sendEmail } from '~/utils/email.server'
 import { verifySessionStorage } from '~/utils/verification.server'
 import {
 	onboardingEmailSessionKey,
 	prefilledProfileKey,
 	providerIdKey,
-} from './onboarding.$provider'
+} from './onboarding_.$provider'
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
 	const providerName = ProviderNameSchema.parse(params.provider)
@@ -29,6 +30,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 				description: `There was an error authenticating with ${label}. Please try again.`,
 			})
 		})
+
+	sendEmail({
+		// to: 'binalfewk@africa-union.org',
+		to: 'binalfew@gmail.com',
+		subject: 'Welcome to Africa Union',
+		plainText: 'Hello, Welcome to Africa Union',
+		html: '<html><body><h1>Hello, Welcome to Africa Union</h1></body></html>',
+	})
 
 	const existingConnection = await prisma.connection.findUnique({
 		select: {

@@ -23,6 +23,7 @@ async function seed() {
 	await prisma.relationship.deleteMany()
 	await prisma.incidentType.deleteMany()
 	await prisma.user.deleteMany()
+	await prisma.verification.deleteMany()
 	await prisma.role.deleteMany()
 	await prisma.permission.deleteMany()
 	console.timeEnd('🧹 Cleaned up the database...')
@@ -323,7 +324,7 @@ async function seed() {
 	console.time(`🐨 Created admin user "binalfew"`)
 	await prisma.user.create({
 		data: {
-			email: 'binalfew@staffwise.com',
+			email: 'binalfewk@africa-union.org',
 			username: 'binalfew',
 			name: 'Binalfew',
 			password: {

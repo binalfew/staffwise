@@ -300,3 +300,18 @@ model Connection {
   @@unique([providerName, providerId])
   @@index([userId])
 }
+
+model Verification {
+  id        String    @id @default(cuid())
+  type      String
+  target    String
+  secret    String
+  algorithm String
+  digits    Int
+  period    Int
+  charSet   String
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@unique([target, type])
+}

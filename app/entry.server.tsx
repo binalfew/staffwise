@@ -11,9 +11,16 @@ import { createReadableStreamFromReadable } from '@remix-run/node'
 import { RemixServer } from '@remix-run/react'
 import { isbot } from 'isbot'
 import { renderToPipeableStream } from 'react-dom/server'
+import { server } from './mocks/node'
 import { getEnv, init } from './utils/env.server'
 
 const ABORT_DELAY = 5_000
+
+if (process.env.NODE_ENV === 'development') {
+	server.listen({
+		onUnhandledRequest: 'bypass',
+	})
+}
 
 init()
 global.ENV = getEnv()
