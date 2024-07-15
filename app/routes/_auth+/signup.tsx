@@ -31,10 +31,21 @@ import { checkHoneypot } from '~/utils/honeypot.server'
 import { EmailSchema } from '~/utils/validation'
 import { prepareVerification } from '~/utils/verification.server'
 
-const SignupSchema = z.object({
-	email: EmailSchema,
-	redirect: z.string().optional(),
-})
+const SignupSchema = z
+	.object({
+		email: EmailSchema,
+		redirect: z.string().optional(),
+	})
+	.refine(
+		({ email }) => {
+			const africanUnionEmailPattern = /^[a-zA-Z0-9._%+-]+@africa-union\.org$/
+			return africanUnionEmailPattern.test(email)
+		},
+		{
+			message: 'Email must be a valid African Union email',
+			path: ['email'],
+		},
+	)
 
 export async function loader({ request }: LoaderFunctionArgs) {
 	await requireAnonymous(request)
@@ -57,7 +68,7 @@ export async function action({ request }: ActionFunctionArgs) {
 				ctx.addIssue({
 					path: ['email'],
 					code: z.ZodIssueCode.custom,
-					message: 'A user already exists with this username',
+					message: 'A user already exists with this email address',
 				})
 				return
 			}
@@ -110,7 +121,7 @@ export default function SignupRoute() {
 	})
 
 	return (
-		<Card className="mx-auto max-w-sm">
+		<Card className="mx-auto max-w-md">
 			<CardHeader>
 				<CardTitle className="text-xl">Sign Up</CardTitle>
 				<CardDescription>
@@ -139,8 +150,8 @@ export default function SignupRoute() {
 						</Button>
 					</div>
 				</Form>
-				<div className="mt-4 text-center text-sm">
-					Already have an account?
+				<div className="mt-4 text-center text-sm space-x-1">
+					<span>Already have an account?</span>
 					<Link to="/login" className="underline">
 						Sign in
 					</Link>
