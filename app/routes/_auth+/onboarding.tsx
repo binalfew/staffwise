@@ -35,9 +35,12 @@ import { prisma } from '~/utils/db.server'
 import { checkHoneypot } from '~/utils/honeypot.server'
 import { sessionStorage } from '~/utils/session.server'
 import { NameSchema, PasswordSchema, UsernameSchema } from '~/utils/validation'
-import { verifySessionStorage } from '~/utils/verification.server'
+import {
+	requireOnboardingEmail,
+	verifySessionStorage,
+} from '~/utils/verification.server'
 
-export const onBoardingEmailSessionKey = 'onboardingEmail'
+export const onboardingEmailSessionKey = 'onboardingEmail'
 
 const SignupFormSchema = z
 	.object({
@@ -60,18 +63,6 @@ const SignupFormSchema = z
 			})
 		}
 	})
-
-async function requireOnboardingEmail(request: Request) {
-	const verifySession = await verifySessionStorage.getSession(
-		request.headers.get('cookie'),
-	)
-	const email = verifySession.get(onBoardingEmailSessionKey)
-	if (typeof email !== 'string' || !email) {
-		throw redirect('/signup')
-	}
-
-	return email
-}
 
 export async function loader({ request }: LoaderFunctionArgs) {
 	await requireAnonymous(request)
@@ -141,7 +132,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export const meta: MetaFunction = () => {
-	return [{ title: 'Setup Epic Notes Account' }]
+	return [{ title: 'Setup Staffwise Account' }]
 }
 
 export default function SignupRoute() {

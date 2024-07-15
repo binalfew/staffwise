@@ -4,7 +4,12 @@ import {
 	type ActionFunctionArgs,
 	type LoaderFunctionArgs,
 } from '@remix-run/node'
-import { redirect, useLoaderData, type Params } from '@remix-run/react'
+import {
+	redirect,
+	useLoaderData,
+	useNavigation,
+	type Params,
+} from '@remix-run/react'
 import { z } from 'zod'
 import {
 	authenticator,
@@ -85,7 +90,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 	const verifySession = await verifySessionStorage.getSession(
 		request.headers.get('cookie'),
 	)
-	const prefilledProfile = verifySession.get(prefilledProfileKey)
+	const prefilledProfile: {
+		username?: string
+		name?: string
+		agreeToTermsOfServiceAndPrivacyPolicy?: boolean
+		remember?: boolean
+	} = verifySession.get(prefilledProfileKey)
 
 	const formError = cookieSession.get(authenticator.sessionErrorKey)
 
@@ -94,7 +104,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 		status: 'idle',
 		submission: {
 			intent: '',
-			payload: (prefilledProfile ?? {}) as Record<string, unknown>,
+			payload: prefilledProfile ?? {},
 			error: {
 				'': typeof formError === 'string' ? [formError] : [],
 			},
@@ -167,6 +177,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function SignupRoute() {
 	const data = useLoaderData<typeof loader>()
 	const actionData = useActionData<typeof action>()
+	const navigation = useNavigation()
 
 	const [form, fields] = useForm({
 		id: 'signup-form',
@@ -176,7 +187,7 @@ export default function SignupRoute() {
 			return parseWithZod(formData, { schema: SignupFormSchema })
 		},
 		shouldRevalidate: 'onBlur',
-		defaultValue: data.submission.payload,
+		defaultValue: navigation.state == 'idle' ? data.submission.payload : null,
 	})
 
 	return (

@@ -1,12 +1,10 @@
-import { getFormProps, useForm } from '@conform-to/react'
+import { getFormProps, useForm, type Submission } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod'
-import { verifyTOTP } from '@epic-web/totp'
 import {
 	ActionFunctionArgs,
 	LoaderFunctionArgs,
 	MetaFunction,
 	json,
-	redirect,
 } from '@remix-run/node'
 import { Form, useActionData, useSearchParams } from '@remix-run/react'
 import { AuthenticityTokenInput } from 'remix-utils/csrf/react'
@@ -25,101 +23,28 @@ import {
 } from '~/components/ui/card'
 import { Label } from '~/components/ui/label'
 import { validateCSRF } from '~/utils/csrf.server'
-import { prisma } from '~/utils/db.server'
-import { verifySessionStorage } from '~/utils/verification.server'
-import { onBoardingEmailSessionKey } from './onboarding'
+import { validateRequest } from '~/utils/verification.server'
 
 export const codeQueryParam = 'code'
 export const targetQueryParam = 'target'
 export const typeQueryParam = 'type'
 export const redirectToQueryParam = 'redirectTo'
 
-const types = ['onboarding'] as const
+const types = ['onboarding', 'reset-password'] as const
 const VerificationTypeSchema = z.enum(types)
+export type VerificationTypes = z.infer<typeof VerificationTypeSchema>
 
-const VerifySchema = z.object({
+export const VerifySchema = z.object({
 	[codeQueryParam]: z.string().min(6).max(6),
 	[typeQueryParam]: VerificationTypeSchema,
 	[targetQueryParam]: z.string(),
 	[redirectToQueryParam]: z.string().optional(),
 })
 
-async function validateRequest(
-	request: Request,
-	body: URLSearchParams | FormData,
-) {
-	const submission = await parseWithZod(body, {
-		schema: () =>
-			VerifySchema.superRefine(async (data, ctx) => {
-				console.log('verify this', data)
-				const verification = await prisma.verification.findUnique({
-					where: {
-						target_type: {
-							target: data[targetQueryParam],
-							type: data[typeQueryParam],
-						},
-						OR: [{ expiresAt: { gt: new Date() } }, { expiresAt: null }],
-					},
-				})
-
-				if (!verification) {
-					ctx.addIssue({
-						path: [codeQueryParam],
-						code: z.ZodIssueCode.custom,
-						message: `Invalid code`,
-					})
-					return z.NEVER
-				}
-
-				const codeIsValid = verifyTOTP({
-					otp: data[codeQueryParam],
-					...verification,
-				})
-
-				if (!codeIsValid) {
-					ctx.addIssue({
-						path: [codeQueryParam],
-						code: z.ZodIssueCode.custom,
-						message: `Invalid code`,
-					})
-					return z.NEVER
-				}
-			}),
-
-		async: true,
-	})
-
-	if (submission.status !== 'success') {
-		return json(
-			{ result: submission.reply() },
-			{ status: submission.status === 'error' ? 400 : 200 },
-		)
-	}
-
-	const { value: submissionValue } = submission
-	// Delete the verification record from the database
-	await prisma.verification.delete({
-		where: {
-			target_type: {
-				target: submissionValue[targetQueryParam],
-				type: submissionValue[typeQueryParam],
-			},
-		},
-	})
-
-	const verifySession = await verifySessionStorage.getSession(
-		request.headers.get('cookie'),
-	)
-	verifySession.set(
-		onBoardingEmailSessionKey,
-		submissionValue[targetQueryParam],
-	)
-
-	return redirect('/onboarding', {
-		headers: {
-			'set-cookie': await verifySessionStorage.commitSession(verifySession),
-		},
-	})
+export type VerifyFunctionArgs = {
+	request: Request
+	submission: Submission<z.infer<typeof VerifySchema>>
+	body: FormData | URLSearchParams
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {

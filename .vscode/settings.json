@@ -1,0 +1,4 @@
+{
+  "appService.defaultWebAppToDeploy": "/subscriptions/6d7ead29-53fc-4029-9f90-ffcda44b57fa/resourceGroups/staffwise/providers/Microsoft.Web/sites/staffwise",
+  "appService.deploySubpath": "."
+}

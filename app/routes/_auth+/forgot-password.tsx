@@ -2,7 +2,6 @@ import { getFormProps, useForm } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod'
 import {
 	ActionFunctionArgs,
-	LoaderFunctionArgs,
 	MetaFunction,
 	json,
 	redirect,
@@ -28,36 +27,35 @@ import { validateCSRF } from '~/utils/csrf.server'
 import { prisma } from '~/utils/db.server'
 import { sendEmail } from '~/utils/email.server'
 import { checkHoneypot } from '~/utils/honeypot.server'
-import { EmailSchema } from '~/utils/validation'
+import { EmailSchema, UsernameSchema } from '~/utils/validation'
 import { prepareVerification } from '~/utils/verification.server'
 
-const SignupSchema = z.object({
-	email: EmailSchema,
-	redirect: z.string().optional(),
+const ForgotPasswordSchema = z.object({
+	usernameOrEmail: z.union([EmailSchema, UsernameSchema]),
 })
-
-export async function loader({ request }: LoaderFunctionArgs) {
-	await requireAnonymous(request)
-	return json({})
-}
 
 export async function action({ request }: ActionFunctionArgs) {
 	await requireAnonymous(request)
 	const formData = await request.formData()
 	await validateCSRF(formData, request.headers)
 	checkHoneypot(formData)
+
 	const submission = await parseWithZod(formData, {
-		schema: SignupSchema.superRefine(async (data, ctx) => {
-			const existingUser = await prisma.user.findUnique({
-				where: { email: data.email },
-				select: { id: true },
+		schema: ForgotPasswordSchema.superRefine(async (data, ctx) => {
+			const user = await prisma.user.findFirst({
+				where: {
+					OR: [
+						{ email: data.usernameOrEmail },
+						{ username: data.usernameOrEmail },
+					],
+				},
 			})
 
-			if (existingUser) {
+			if (!user) {
 				ctx.addIssue({
-					path: ['email'],
+					path: ['usernameOrEmail'],
 					code: z.ZodIssueCode.custom,
-					message: 'A user already exists with this username',
+					message: 'No user found with that email or username',
 				})
 				return
 			}
@@ -72,19 +70,22 @@ export async function action({ request }: ActionFunctionArgs) {
 		)
 	}
 
-	const { email, redirect: postVerificationRedirectTo } = submission.value
+	const { usernameOrEmail } = submission.value
+	const user = await prisma.user.findFirstOrThrow({
+		where: { OR: [{ email: usernameOrEmail }, { username: usernameOrEmail }] },
+		select: { email: true, username: true },
+	})
 
 	const { verifyUrl, redirectTo, otp } = await prepareVerification({
 		period: 10 * 60,
 		request,
-		type: 'onboarding',
-		target: email,
-		redirectTo: postVerificationRedirectTo,
+		type: 'reset-password',
+		target: usernameOrEmail,
 	})
 
 	sendEmail({
-		to: email,
-		subject: 'Welcome to Staffwise',
+		to: user.email,
+		subject: 'Staffwise Password Reset',
 		plainText: `Here's your code: ${otp}. Or open this: ${verifyUrl.toString()}`,
 		html: `Here's your code: <strong>${otp}</strong>. Or open this: <a href="${verifyUrl.toString()}">${verifyUrl.toString()}</a>`,
 	})
@@ -93,18 +94,18 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export const meta: MetaFunction = () => {
-	return [{ title: 'Setup Staffwise Account' }]
+	return [{ title: 'Password Recovery for Staffwise' }]
 }
 
 export default function SignupRoute() {
 	const actionData = useActionData<typeof action>()
 
 	const [form, fields] = useForm({
-		id: 'signup-form',
-		constraint: getZodConstraint(SignupSchema),
+		id: 'forgot-password-form',
+		constraint: getZodConstraint(ForgotPasswordSchema),
 		lastResult: actionData?.result,
 		onValidate({ formData }) {
-			return parseWithZod(formData, { schema: SignupSchema })
+			return parseWithZod(formData, { schema: ForgotPasswordSchema })
 		},
 		shouldRevalidate: 'onBlur',
 	})
@@ -112,9 +113,9 @@ export default function SignupRoute() {
 	return (
 		<Card className="mx-auto max-w-sm">
 			<CardHeader>
-				<CardTitle className="text-xl">Sign Up</CardTitle>
+				<CardTitle className="text-xl">Forgot Password</CardTitle>
 				<CardDescription>
-					Enter your information to create an account
+					No worries, we will send you reset instructions.
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
@@ -123,26 +124,25 @@ export default function SignupRoute() {
 					<HoneypotInputs />
 					<div className="grid gap-4">
 						<Field>
-							<Label htmlFor={fields.email.id}>Email</Label>
-							<InputField meta={fields.email} type="text" />
-							{fields.email.errors && (
-								<FieldError>{fields.email.errors}</FieldError>
+							<Label htmlFor={fields.usernameOrEmail.id}>
+								Username or Email
+							</Label>
+							<InputField meta={fields.usernameOrEmail} type="text" />
+							{fields.usernameOrEmail.errors && (
+								<FieldError>{fields.usernameOrEmail.errors}</FieldError>
 							)}
 						</Field>
-
-						<InputField meta={fields.redirect} type="hidden" />
 
 						<ErrorList errors={form.errors} id={form.errorId} />
 
 						<Button type="submit" className="w-full">
-							Create an account
+							Recover Password
 						</Button>
 					</div>
 				</Form>
 				<div className="mt-4 text-center text-sm">
-					Already have an account?
 					<Link to="/login" className="underline">
-						Sign in
+						Back to login
 					</Link>
 				</div>
 			</CardContent>

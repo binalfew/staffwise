@@ -250,3 +250,25 @@ export async function signup({
 
 	return user
 }
+
+export async function resetUserPassword({
+	username,
+	password,
+}: {
+	username: User['username']
+	password: string
+}) {
+	const hashedPassword = await bcrypt.hash(password, 10)
+
+	return prisma.user.update({
+		select: { id: true },
+		where: { username },
+		data: {
+			password: {
+				update: {
+					hash: hashedPassword,
+				},
+			},
+		},
+	})
+}
