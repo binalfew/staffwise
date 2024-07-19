@@ -19,6 +19,7 @@ import {
 } from '~/components/ui/card'
 import { Label } from '~/components/ui/label'
 import { login, requireAnonymous } from '~/utils/auth.server'
+import { ProviderConnectionForm } from '~/utils/connections'
 import { checkHoneypot } from '~/utils/honeypot.server'
 import { handleNewSession } from '~/utils/session.server'
 import { PasswordSchema, UsernameSchema } from '~/utils/validation'
@@ -147,13 +148,13 @@ export default function LoginRoute() {
 					</div>
 				</Form>
 
-				{/* <div className="mt-4">
+				<div className="mt-4">
 					<ProviderConnectionForm type="Login" providerName="microsoft" />
 				</div>
 
-				<div className="mt-4">
+				{/* <div className="mt-4">
 					<ProviderConnectionForm type="Login" providerName="github" />
-				</div> */}
+				</div>  */}
 
 				<div className="mt-4 text-center text-sm space-x-1">
 					<span>Don&apos;t have an account?</span>

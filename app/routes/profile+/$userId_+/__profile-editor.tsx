@@ -635,7 +635,12 @@ export function ProfileEditor({
 				</CardContent>
 
 				<CardFooter className="text-center space-x-4">
-					<Button className="w-full" type="submit">
+					<Button
+						className="w-full"
+						type="submit"
+						name="intent"
+						value="update-profile"
+					>
 						Update
 					</Button>
 					<Button asChild variant="outline" className="w-full">

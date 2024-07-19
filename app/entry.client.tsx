@@ -14,7 +14,9 @@ async function enableApiMocking() {
 	}
 
 	const { worker } = await import('./mocks/browser')
-	await worker.start()
+	await worker.start({
+		onUnhandledRequest: 'bypass',
+	})
 }
 
 enableApiMocking().then(() => {

@@ -1,13 +1,18 @@
 import { LoaderFunctionArgs, json } from '@remix-run/node'
-import { useLoaderData } from '@remix-run/react'
+import { useLoaderData, useSearchParams } from '@remix-run/react'
 import { requireUser } from '~/utils/auth.server'
 import { prisma } from '~/utils/db.server'
 import { invariantResponse } from '~/utils/misc'
+import { AddressEditor } from './__address-editor'
+import { DutyStationEditor } from './__duty-station-editor'
+import { PersonalInfoEditor } from './__personal-info-editor'
 import { ProfileEditor } from './__profile-editor'
+
 export { action } from './__profile-editor.server'
 
 export async function loader({ request }: LoaderFunctionArgs) {
 	const user = await requireUser(request)
+
 	const countries = await prisma.country.findMany({
 		select: { id: true, name: true },
 	})
@@ -83,8 +88,19 @@ export default function ProfileUpdateRoute() {
 	const { profile, countries, organs, departments, locations, floors } =
 		useLoaderData<typeof loader>()
 
+	const [searchParams] = useSearchParams()
+	const section = searchParams.get('section') || 'profile'
+	const sections: { [key: string]: React.ComponentType<any> } = {
+		personal: PersonalInfoEditor,
+		profile: ProfileEditor,
+		station: DutyStationEditor,
+		address: AddressEditor,
+	}
+
+	const Editor = sections[section] || ProfileEditor
+
 	return (
-		<ProfileEditor
+		<Editor
 			profile={profile}
 			countries={countries}
 			organs={organs}
