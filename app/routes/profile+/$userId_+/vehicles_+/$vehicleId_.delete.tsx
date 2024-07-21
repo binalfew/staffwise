@@ -20,6 +20,11 @@ export async function loader({ params }: LoaderFunctionArgs) {
 export default function DeleteVehicleRoute() {
 	const { vehicle } = useLoaderData<typeof loader>()
 	return (
-		<VehicleEditor vehicle={vehicle} title="Delete Vehicle" intent="delete" />
+		<VehicleEditor
+			vehicle={vehicle}
+			title="Delete Vehicle"
+			description="Delete a vehicle. This action is irreversible."
+			intent="delete"
+		/>
 	)
 }

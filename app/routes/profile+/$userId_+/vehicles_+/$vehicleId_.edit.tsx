@@ -19,5 +19,12 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
 export default function EditVehicleRoute() {
 	const { vehicle } = useLoaderData<typeof loader>()
-	return <VehicleEditor vehicle={vehicle} title="Edit Vehicle" />
+	return (
+		<VehicleEditor
+			vehicle={vehicle}
+			title="Edit Vehicle"
+			description="Edit a vehicle."
+			intent="edit"
+		/>
+	)
 }

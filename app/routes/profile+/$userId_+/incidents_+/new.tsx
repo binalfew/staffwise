@@ -17,5 +17,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function AddIncidentRoute() {
 	const { incidentTypes } = useLoaderData<typeof loader>()
-	return <IncidentEditor incidentTypes={incidentTypes} title="Add Incident" />
+	return (
+		<IncidentEditor
+			incidentTypes={incidentTypes}
+			title="Add Incident"
+			description="Add a new incident"
+			intent="add"
+		/>
+	)
 }

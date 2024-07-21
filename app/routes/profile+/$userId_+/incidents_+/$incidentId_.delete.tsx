@@ -28,6 +28,7 @@ export default function DeleteIncidentRoute() {
 			incident={incident}
 			incidentTypes={incidentTypes}
 			title="Delete Incident"
+			description="Are you sure you want to delete this incident? This action is irreversible."
 			intent="delete"
 		/>
 	)

@@ -28,6 +28,8 @@ export default function EditIncidentRoute() {
 			incident={incident}
 			incidentTypes={incidentTypes}
 			title="Edit Incident"
+			description="Edit the incident"
+			intent="edit"
 		/>
 	)
 }

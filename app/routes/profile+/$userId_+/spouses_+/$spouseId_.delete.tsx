@@ -19,5 +19,12 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
 export default function DeleteSpouseRoute() {
 	const { spouse } = useLoaderData<typeof loader>()
-	return <SpouseEditor spouse={spouse} title="Delete Spouse" intent="delete" />
+	return (
+		<SpouseEditor
+			spouse={spouse}
+			title="Delete Spouse"
+			description="Are you sure you want to delete this spouse? This action is irreversible."
+			intent="delete"
+		/>
+	)
 }

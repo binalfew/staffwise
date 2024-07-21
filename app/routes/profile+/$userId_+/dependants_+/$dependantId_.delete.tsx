@@ -28,6 +28,7 @@ export default function DeleteSpouseRoute() {
 			dependant={dependant}
 			relationships={relationships}
 			title="Delete Dependant"
+			description="Are you sure you want to delete this dependant? This action is irreversible."
 			intent="delete"
 		/>
 	)

@@ -19,5 +19,12 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
 export default function EditSpouseRoute() {
 	const { spouse } = useLoaderData<typeof loader>()
-	return <SpouseEditor spouse={spouse} title="Edit Spouse" />
+	return (
+		<SpouseEditor
+			spouse={spouse}
+			title="Edit Spouse"
+			description="Edit the spouse details."
+			intent="edit"
+		/>
+	)
 }

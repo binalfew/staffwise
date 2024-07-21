@@ -28,6 +28,8 @@ export default function EditDependantRoute() {
 			dependant={dependant}
 			relationships={relationships}
 			title="Edit Dependant"
+			description="Edit the details of this dependant."
+			intent="edit"
 		/>
 	)
 }

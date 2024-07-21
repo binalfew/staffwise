@@ -79,7 +79,7 @@ export default function SpousesRoute() {
 				<CardHeader className="flex flex-row items-center">
 					<div className="grid gap-2">
 						<CardTitle className="text-base font-semibold leading-6 text-gray-900">
-							Incidents
+							Spouses
 						</CardTitle>
 					</div>
 					<div className="flex items-center gap-2 ml-auto">

@@ -6,7 +6,7 @@ import { prisma } from '~/utils/db.server'
 import { checkHoneypot } from '~/utils/honeypot.server'
 import { invariantResponse } from '~/utils/misc'
 import { redirectWithToast } from '~/utils/toast.server'
-import { IncidentEditorSchema } from './__incident-editor'
+import { IncidentDeleteSchema, IncidentEditorSchema } from './__incident-editor'
 
 const uniqueIncidentNumber = () => {
 	const timestamp = Date.now()
@@ -19,12 +19,11 @@ export async function action({ params, request }: ActionFunctionArgs) {
 	const formData = await request.formData()
 	checkHoneypot(formData)
 	await validateCSRF(formData, request.headers)
-
 	const intent = formData.get('intent')
 
 	if (intent === 'delete') {
 		const submission = await parseWithZod(formData, {
-			schema: IncidentEditorSchema,
+			schema: IncidentDeleteSchema,
 			async: true,
 		})
 		if (submission.status !== 'success') {

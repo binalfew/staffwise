@@ -1,25 +1,12 @@
-import { getFormProps, useForm } from '@conform-to/react'
+import { useForm } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod'
 import { Incident, IncidentType } from '@prisma/client'
 import { SerializeFrom } from '@remix-run/node'
-import { Form, Link, useActionData, useParams } from '@remix-run/react'
-import { AuthenticityTokenInput } from 'remix-utils/csrf/react'
-import { HoneypotInputs } from 'remix-utils/honeypot/react'
+import { Link, useActionData, useParams } from '@remix-run/react'
 import { z } from 'zod'
-import { Field, FieldError } from '~/components/Field'
-import { DatePickerField } from '~/components/conform/DatePickerField'
-import { InputField } from '~/components/conform/InputField'
-import { SelectField } from '~/components/conform/SelectField'
+import FormCard from '~/components/FormCard'
+import FormField from '~/components/FormField'
 import { Button } from '~/components/ui/button'
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardFooter,
-	CardHeader,
-	CardTitle,
-} from '~/components/ui/card'
-import { Label } from '~/components/ui/label'
 import { type action } from './__incident-editor.server'
 
 export const IncidentEditorSchema = z.object({
@@ -40,6 +27,7 @@ export function IncidentEditor({
 	incident,
 	incidentTypes,
 	title,
+	description,
 	intent,
 }: {
 	incident?: SerializeFrom<
@@ -58,7 +46,8 @@ export function IncidentEditor({
 	>
 	incidentTypes: SerializeFrom<Pick<IncidentType, 'id' | 'name'>>[]
 	title: string
-	intent?: 'add' | 'edit' | 'delete'
+	description: string
+	intent: 'add' | 'edit' | 'delete'
 }) {
 	const params = useParams()
 	const actionData = useActionData<typeof action>()
@@ -78,145 +67,89 @@ export function IncidentEditor({
 			...incident,
 		},
 	})
+	const formItems = [
+		{
+			type: 'hidden' as const,
+			field: fields.id,
+		},
+		{
+			label: 'Incident Type',
+			field: fields.incidentTypeId,
+			disabled,
+			errors: fields.incidentTypeId.errors,
+			type: 'select' as const,
+			data: incidentTypes.map(incidentType => ({
+				name: incidentType.name,
+				value: incidentType.id,
+			})),
+		},
+		{
+			label: 'Location',
+			field: fields.location,
+			disabled,
+			errors: fields.location.errors,
+			type: 'text' as const,
+		},
+		{
+			label: 'Description',
+			field: fields.description,
+			disabled,
+			errors: fields.description.errors,
+			type: 'text' as const,
+		},
+		{
+			label: 'Eye Witnesses',
+			field: fields.eyeWitnesses,
+			disabled,
+			errors: fields.eyeWitnesses.errors,
+			type: 'text' as const,
+		},
+		{
+			label: 'Occured While',
+			field: fields.occuredWhile,
+			disabled,
+			errors: fields.occuredWhile.errors,
+			type: 'text' as const,
+		},
+		{
+			label: 'Occured At',
+			field: fields.occuredAt,
+			disabled,
+			errors: fields.occuredAt.errors,
+			type: 'date' as const,
+		},
+	]
 
 	return (
-		<div className="flex flex-col gap-8">
-			<Card className="mx-auto w-full max-w-5xl space-y-6 p-6">
-				<CardHeader>
-					<CardTitle>{title}</CardTitle>
-					{intent === 'delete' && (
-						<CardDescription className="text-red-500 py-2">
-							Are you sure you want to delete this incident? This action cannot
-							be undone.
-						</CardDescription>
-					)}
-				</CardHeader>
-				<CardContent>
-					<Form className="grid gap-4" method="POST" {...getFormProps(form)}>
-						<AuthenticityTokenInput />
-						<HoneypotInputs />
-						<InputField meta={fields.id} type="hidden" />
-						<Field>
-							<Label
-								htmlFor={fields.incidentTypeId.id}
-								className={disabled ? 'text-muted-foreground' : ''}
-							>
-								Incident Type
-							</Label>
-							<SelectField
-								meta={fields.incidentTypeId}
-								disabled={disabled}
-								items={incidentTypes.map(incidentType => ({
-									name: incidentType.name,
-									value: incidentType.id,
-								}))}
-								placeholder="Select Incident Type"
-							/>
-							{fields.incidentTypeId.errors && (
-								<FieldError>{fields.incidentTypeId.errors}</FieldError>
-							)}
-						</Field>
-
-						<Field>
-							<Label
-								htmlFor={fields.location.id}
-								className={disabled ? 'text-muted-foreground' : ''}
-							>
-								Location
-							</Label>
-							<InputField
-								meta={fields.location}
-								type="text"
-								disabled={disabled}
-							/>
-							{fields.location.errors && (
-								<FieldError>{fields.location.errors}</FieldError>
-							)}
-						</Field>
-
-						<Field>
-							<Label
-								htmlFor={fields.description.id}
-								className={disabled ? 'text-muted-foreground' : ''}
-							>
-								Description
-							</Label>
-							<InputField
-								meta={fields.description}
-								type="text"
-								disabled={disabled}
-							/>
-							{fields.description.errors && (
-								<FieldError>{fields.description.errors}</FieldError>
-							)}
-						</Field>
-
-						<Field>
-							<Label
-								htmlFor={fields.eyeWitnesses.id}
-								className={disabled ? 'text-muted-foreground' : ''}
-							>
-								Eye Witnesses
-							</Label>
-							<InputField
-								meta={fields.eyeWitnesses}
-								type="text"
-								disabled={disabled}
-							/>
-							{fields.eyeWitnesses.errors && (
-								<FieldError>{fields.eyeWitnesses.errors}</FieldError>
-							)}
-						</Field>
-
-						<Field>
-							<Label
-								htmlFor={fields.occuredWhile.id}
-								className={disabled ? 'text-muted-foreground' : ''}
-							>
-								Occured While
-							</Label>
-							<InputField
-								meta={fields.occuredWhile}
-								type="text"
-								disabled={disabled}
-							/>
-							{fields.occuredWhile.errors && (
-								<FieldError>{fields.occuredWhile.errors}</FieldError>
-							)}
-						</Field>
-
-						<Field>
-							<Label
-								htmlFor={fields.occuredAt.id}
-								className={disabled ? 'text-muted-foreground' : ''}
-							>
-								Occured At
-							</Label>
-							<DatePickerField meta={fields.occuredAt} />
-
-							{fields.occuredAt.errors && (
-								<FieldError>{fields.occuredAt.errors}</FieldError>
-							)}
-						</Field>
-					</Form>
-				</CardContent>
-				<CardFooter className="border-t px-6 py-4">
-					<div className="flex items-center justify-end space-x-2">
-						<Button
-							type="submit"
-							form={form.id}
-							name="intent"
-							value={intent}
-							variant={intent === 'delete' ? 'destructive' : 'default'}
-						>
-							{intent === 'delete' ? 'Delete' : 'Save'}
-						</Button>
-						<Button asChild variant="outline">
-							<Link to={`/profile/${params.userId}/incidents`}>Cancel</Link>
-						</Button>
-					</div>
-				</CardFooter>
-			</Card>
-		</div>
+		<FormCard
+			form={form}
+			title={title}
+			description={description}
+			intent={intent}
+			fields={
+				<>
+					{formItems.map((item, index) => (
+						<FormField key={index} item={item} />
+					))}
+				</>
+			}
+			buttons={
+				<>
+					<Button
+						type="submit"
+						form={form.id}
+						name="intent"
+						value={intent}
+						variant={intent === 'delete' ? 'destructive' : 'default'}
+						className="w-full"
+					>
+						{intent === 'delete' ? 'Delete' : 'Save'}
+					</Button>
+					<Button asChild variant="outline" className="w-full">
+						<Link to={`/profile/${params.userId}/incidents`}>Cancel</Link>
+					</Button>
+				</>
+			}
+		/>
 	)
 }

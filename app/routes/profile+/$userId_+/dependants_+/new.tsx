@@ -14,5 +14,12 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
 export default function DeleteDependantRoute() {
 	const { relationships } = useLoaderData<typeof loader>()
-	return <DependantEditor relationships={relationships} title="Add Dependant" />
+	return (
+		<DependantEditor
+			relationships={relationships}
+			title="Add Dependant"
+			description="Add a new dependant."
+			intent="add"
+		/>
+	)
 }
