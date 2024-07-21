@@ -269,6 +269,11 @@ model AccessRequest {
   visitors      Visitor[]
 }
 
+model AccessRequestCounter {
+  id          String @id @default(cuid())
+  lastCounter Int    @default(0)
+}
+
 model Visitor {
   id              String        @id @default(cuid())
   accessRequestId String

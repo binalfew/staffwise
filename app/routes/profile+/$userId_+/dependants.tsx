@@ -83,9 +83,13 @@ export default function DependantsRoute() {
 	return (
 		<div className="flex flex-col gap-8">
 			<Card className="w-full">
-				<CardHeader className="flex flex-row items-center justify-between">
-					<CardTitle>Dependants</CardTitle>
-					<div className="flex items-center gap-2">
+				<CardHeader className="flex flex-row items-center">
+					<div className="grid gap-2">
+						<CardTitle className="text-base font-semibold leading-6 text-gray-900">
+							Dependants
+						</CardTitle>
+					</div>
+					<div className="flex items-center gap-2 ml-auto">
 						<SearchBar
 							status={status}
 							action={`/profile/${user.id}/dependants`}

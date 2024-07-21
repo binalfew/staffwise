@@ -169,14 +169,14 @@ export default function ProfileRoute() {
 					color: 'bg-red-100 text-red-800',
 				},
 				{
-					title: 'Guests',
+					title: 'Access Requests',
 					icon: CreditCardIcon,
-					count: employee.vehicles.length,
-					link: 'guests',
+					count: employee.accessRequests.length,
+					link: 'access-requests',
 					color: 'bg-purple-100 text-purple-800',
 				},
 				{
-					title: 'Parking',
+					title: 'Parking Permits',
 					icon: CarIcon,
 					count: employee.vehicles.length,
 					link: 'parking',

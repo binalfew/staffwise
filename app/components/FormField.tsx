@@ -14,6 +14,7 @@ interface FormFieldProps {
 		disabled?: boolean
 		errors?: string[] | undefined
 		data?: Array<{ name: string; value: string }>
+		addon?: React.ReactNode
 	}
 }
 
@@ -50,7 +51,21 @@ export default function FormField({ item }: FormFieldProps) {
 	return (
 		<Field key={item.field.id}>
 			<Label htmlFor={item.field.id}>{item.label}</Label>
-			<InputField meta={item.field} type={item.type} disabled={item.disabled} />
+			<div
+				style={{
+					display: 'flex',
+					justifyContent: 'space-between',
+					alignItems: 'center',
+				}}
+			>
+				<InputField
+					meta={item.field}
+					type={item.type}
+					disabled={item.disabled}
+					style={{ marginRight: '8px' }}
+				/>
+				{item.addon}
+			</div>
 			{item.errors && <FieldError>{item.errors}</FieldError>}
 		</Field>
 	)

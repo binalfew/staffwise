@@ -26,6 +26,8 @@ async function seed() {
 	await prisma.verification.deleteMany()
 	await prisma.role.deleteMany()
 	await prisma.permission.deleteMany()
+	await prisma.accessRequestCounter.deleteMany()
+	await prisma.accessRequest.deleteMany()
 	console.timeEnd('🧹 Cleaned up the database...')
 
 	const entities = [
@@ -41,6 +43,8 @@ async function seed() {
 		'user',
 		'role',
 		'permission',
+		'accessRequest',
+		'accessRequestCounter',
 	]
 	const actions = ['create', 'read', 'update', 'delete']
 	const accesses = ['own', 'any']
@@ -321,11 +325,11 @@ async function seed() {
 
 	console.timeEnd(`🐨 Created lookup data"`)
 
-	console.time(`🐨 Created admin user "binalfew"`)
+	console.time(`🐨 Created admin user "binalfewk"`)
 	await prisma.user.create({
 		data: {
 			email: 'binalfewk@africa-union.org',
-			username: 'binalfew',
+			username: 'binalfewk',
 			name: 'Binalfew',
 			password: {
 				create: createPassword('password'),
@@ -335,10 +339,18 @@ async function seed() {
 			},
 		},
 	})
-	console.timeEnd(`🐨 Created admin user "binalfew"`)
+
+	// Reset access request counter
+	await prisma.accessRequestCounter.create({
+		data: {
+			lastCounter: 0,
+		},
+	})
+
+	console.timeEnd(`🐨 Created admin user "binalfewk"`)
 
 	// Create user with 'user' role
-	const users = ['makida', 'kebron', 'maidot', 'lemlem']
+	const users = ['binalfew', 'makida', 'kebron', 'maidot', 'lemlem']
 	for (const user of users) {
 		console.time(`🐨 Created user "${user}"`)
 		await prisma.user.create({

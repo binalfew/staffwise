@@ -1,4 +1,5 @@
 import { LoaderFunctionArgs, json } from '@remix-run/node'
+import { Outlet } from '@remix-run/react'
 import { requireUserId } from '~/utils/auth.server'
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -7,6 +8,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 	return json({})
 }
 
-export default function IncidentsRoute() {
-	return <div>My Incidents</div>
+export default function GuestsRoute() {
+	return <Outlet />
 }

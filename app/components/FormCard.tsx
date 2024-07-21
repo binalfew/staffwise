@@ -29,7 +29,7 @@ export default function FormCard({
 	buttons: JSX.Element
 }) {
 	return (
-		<Card className="mx-auto w-full max-w-5xl space-y-6 p-6">
+		<Card className="mx-auto w-full max-w-7xl space-y-6 p-6">
 			<Form className="grid gap-4" method="POST" {...getFormProps(form)}>
 				<div className="space-y-2 text-center">
 					<CardHeader>

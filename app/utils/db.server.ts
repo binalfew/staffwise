@@ -165,4 +165,25 @@ export function createPassword(password: string = faker.internet.password()) {
 	}
 }
 
+export async function generateAccessRequestNumber() {
+	// Use a transaction to safely increment the counter
+	const result = await prisma.$transaction(async prisma => {
+		const counterRecord = await prisma.accessRequestCounter.findFirst({
+			select: { lastCounter: true },
+		})
+
+		const newCounter = (counterRecord?.lastCounter ?? 0) + 1
+
+		await prisma.accessRequestCounter.updateMany({
+			data: { lastCounter: newCounter },
+		})
+
+		return newCounter
+	})
+
+	// Pad the counter with leading zeros to ensure it is 10 digits long
+	const uniqueNumber = result.toString().padStart(10, '0')
+	return uniqueNumber
+}
+
 export { prisma }

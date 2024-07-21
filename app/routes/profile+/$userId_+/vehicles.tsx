@@ -68,8 +68,12 @@ export default function VehiclesRoute() {
 	return (
 		<div className="flex flex-col gap-8">
 			<Card className="w-full">
-				<CardHeader className="flex flex-row items-center justify-between">
-					<CardTitle>Vehicles</CardTitle>
+				<CardHeader className="flex flex-row items-center">
+					<div className="grid gap-2">
+						<CardTitle className="text-base font-semibold leading-6 text-gray-900">
+							Vehicles
+						</CardTitle>
+					</div>
 					<div className="flex items-center gap-2 ml-auto">
 						<SearchBar
 							status={status}
