@@ -15,7 +15,7 @@ export const ProviderNameSchema = z.enum(providerNames)
 export type ProviderName = z.infer<typeof ProviderNameSchema>
 
 export const providerLabels: Record<ProviderName, string> = {
-	[MICROSOFT_PROVIDER_NAME]: 'Microsoft',
+	[MICROSOFT_PROVIDER_NAME]: 'Outlook',
 	[GITHUB_PROVIDER_NAME]: 'GitHub',
 } as const
 

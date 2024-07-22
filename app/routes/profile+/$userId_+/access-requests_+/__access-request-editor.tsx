@@ -3,7 +3,7 @@ import { getZodConstraint, parseWithZod } from '@conform-to/zod'
 import { AccessRequest, Visitor } from '@prisma/client'
 import { SerializeFrom } from '@remix-run/node'
 import { Link, useActionData, useParams } from '@remix-run/react'
-import { TrashIcon } from 'lucide-react'
+import { PlusCircle, TrashIcon } from 'lucide-react'
 import { z } from 'zod'
 import FormCard from '~/components/FormCard'
 import FormField from '~/components/FormField'
@@ -31,11 +31,19 @@ export function visitorHasId(
 	return visitor.id != null
 }
 
-export const AccessRequestEditorSchema = z.object({
-	id: z.string().optional(),
-	requestNumber: z.string().optional(),
-	visitors: z.array(VisitorFieldsetSchema).optional(),
-})
+export const AccessRequestEditorSchema = z
+	.object({
+		id: z.string().optional(),
+		requestNumber: z.string().optional(),
+		startDate: z.date({ required_error: 'Start date is required' }),
+		endDate: z.date({ required_error: 'End date is required' }),
+		requestor: z.string().optional(),
+		visitors: z.array(VisitorFieldsetSchema).optional(),
+	})
+	.refine(data => data.endDate >= data.startDate, {
+		message: 'End date cannot be earlier than start date',
+		path: ['endDate'],
+	})
 
 export const AccessRequestDeleteSchema = z.object({
 	id: z.string(),
@@ -43,12 +51,13 @@ export const AccessRequestDeleteSchema = z.object({
 
 export function AccessRequestEditor({
 	accessRequest,
+	requestor,
 	title,
 	intent,
 	description,
 }: {
 	accessRequest?: SerializeFrom<
-		Pick<AccessRequest, 'id' | 'requestNumber'> & {
+		Pick<AccessRequest, 'id' | 'requestNumber' | 'startDate' | 'endDate'> & {
 			visitors?: Array<
 				Pick<
 					Visitor,
@@ -66,6 +75,7 @@ export function AccessRequestEditor({
 			>
 		}
 	>
+	requestor: string
 	title: string
 	description: string
 	intent: 'add' | 'edit' | 'delete'
@@ -86,7 +96,8 @@ export function AccessRequestEditor({
 		shouldRevalidate: 'onInput',
 		defaultValue: {
 			...accessRequest,
-			requestNumber: 'Request Number: New',
+			requestNumber: accessRequest?.requestNumber ?? 'New',
+			requestor: requestor,
 			visitors: accessRequest?.visitors ?? [
 				{
 					firstName: '',
@@ -109,19 +120,30 @@ export function AccessRequestEditor({
 			field: fields.id,
 		},
 		{
+			label: 'Requestor',
+			field: fields.requestor,
+			disabled: true,
+			type: 'text' as const,
+		},
+		{
+			label: 'Request Number',
 			field: fields.requestNumber,
 			disabled: true,
-			errors: fields.requestNumber.errors,
 			type: 'text' as const,
-			addon: (
-				<Button
-					{...form.insert.getButtonProps({
-						name: fields.visitors.name,
-					})}
-				>
-					Add
-				</Button>
-			),
+		},
+		{
+			label: 'Start Date',
+			field: fields.startDate,
+			disabled: disabled,
+			errors: fields.startDate.errors,
+			type: 'date' as const,
+		},
+		{
+			label: 'End Date',
+			field: fields.endDate,
+			disabled: disabled,
+			errors: fields.endDate.errors,
+			type: 'date' as const,
 		},
 	]
 
@@ -133,123 +155,167 @@ export function AccessRequestEditor({
 			form={form}
 			fields={
 				<>
-					{formItems.map((item, index) => (
-						<FormField key={index} item={item} />
-					))}
+					<fieldset className="border p-4 rounded-md">
+						<legend className="text-md px-2 font-semibold text-gray-500">
+							Request
+						</legend>
+						<div className="mb-4">
+							<FormField item={formItems[0]} />
+							<FormField item={formItems[1]} />
+						</div>
 
-					<div className="flex space-x-4">
-						<div className="flex-1">First Name</div>
-						<div className="flex-1">Family Name</div>
-						<div className="flex-1">Telephone</div>
-						<div className="flex-1">Organization</div>
-						<div className="flex-1">Whom to visit</div>
-						<div className="flex-1">Destination</div>
-						<div className="flex-1">Plate Number</div>
-					</div>
+						<div className="mb-4">
+							<FormField item={formItems[2]} />
+						</div>
 
-					{visitors.map((visitor, index) => {
-						const visitorFields = visitor.getFieldset()
-						return (
-							<div key={index} className="flex space-x-4">
-								<div className="flex-1">
-									<FormField
-										item={{
-											field: visitorFields.firstName,
-											type: 'text' as const,
-											label: '',
-											disabled: disabled,
-											errors: visitorFields.firstName.errors,
-										}}
-									/>
+						<div className="flex space-x-4">
+							{formItems.slice(3).map((item, index) => (
+								<div key={index} className="flex-1">
+									<FormField item={item} />
 								</div>
+							))}
+						</div>
+					</fieldset>
 
-								<div className="flex-1">
-									<FormField
-										item={{
-											field: visitorFields.familyName,
-											type: 'text' as const,
-											label: '',
-											disabled: disabled,
-											errors: visitorFields.familyName.errors,
-										}}
-									/>
-								</div>
-
-								<div className="flex-1">
-									<FormField
-										item={{
-											field: visitorFields.telephone,
-											type: 'text' as const,
-											label: '',
-											disabled: disabled,
-											errors: visitorFields.telephone.errors,
-										}}
-									/>
-								</div>
-
-								<div className="flex-1">
-									<FormField
-										item={{
-											field: visitorFields.organization,
-											type: 'text' as const,
-											label: '',
-											disabled: disabled,
-											errors: visitorFields.organization.errors,
-										}}
-									/>
-								</div>
-
-								<div className="flex-1">
-									<FormField
-										item={{
-											field: visitorFields.whomToVisit,
-											type: 'text' as const,
-											label: '',
-											disabled: disabled,
-											errors: visitorFields.whomToVisit.errors,
-										}}
-									/>
-								</div>
-
-								<div className="flex-1">
-									<FormField
-										item={{
-											field: visitorFields.destination,
-											type: 'text' as const,
-											label: '',
-											disabled: disabled,
-											errors: visitorFields.destination.errors,
-										}}
-									/>
-								</div>
-
-								<div className="flex-1">
-									<FormField
-										item={{
-											field: visitorFields.carPlateNumber,
-											type: 'text' as const,
-											label: '',
-											disabled: disabled,
-											errors: visitorFields.carPlateNumber.errors,
-											addon:
-												index === 0 ? null : (
-													<Button
-														{...form.remove.getButtonProps({
-															name: fields.visitors.name,
-															index,
-														})}
-														variant="destructive"
-														size={'xs'}
-													>
-														<TrashIcon className="h-4 w-4" />
-													</Button>
-												),
-										}}
-									/>
+					<fieldset className="border p-4 rounded-md">
+						<legend className="text-md px-2 font-semibold text-gray-500">
+							Visitors
+						</legend>
+						<div className="flex space-x-4 border-b pb-2 mb-4">
+							<div className="flex-1">First Name</div>
+							<div className="flex-1">Family Name</div>
+							<div className="flex-1">Telephone</div>
+							<div className="flex-1">Organization</div>
+							<div className="flex-1">Whom to visit</div>
+							<div className="flex-1">Destination</div>
+							<div className="flex-1">
+								<div
+									className={
+										['add', 'edit'].includes(intent)
+											? 'flex items-center justify-end'
+											: ''
+									}
+								>
+									Plate Number
+									{['add', 'edit'].includes(intent) && (
+										<Button
+											{...form.insert.getButtonProps({
+												name: fields.visitors.name,
+											})}
+											size="sm"
+											className="ml-2"
+										>
+											<PlusCircle className="h-4 w-4" />
+										</Button>
+									)}
 								</div>
 							</div>
-						)
-					})}
+						</div>
+
+						{visitors.map((visitor, index) => {
+							const visitorFields = visitor.getFieldset()
+							return (
+								<div key={index} className="flex space-x-4">
+									<div className="flex-1">
+										<FormField
+											item={{
+												field: visitorFields.firstName,
+												type: 'text' as const,
+												label: '',
+												disabled: disabled,
+												errors: visitorFields.firstName.errors,
+											}}
+										/>
+									</div>
+
+									<div className="flex-1">
+										<FormField
+											item={{
+												field: visitorFields.familyName,
+												type: 'text' as const,
+												label: '',
+												disabled: disabled,
+												errors: visitorFields.familyName.errors,
+											}}
+										/>
+									</div>
+
+									<div className="flex-1">
+										<FormField
+											item={{
+												field: visitorFields.telephone,
+												type: 'text' as const,
+												label: '',
+												disabled: disabled,
+												errors: visitorFields.telephone.errors,
+											}}
+										/>
+									</div>
+
+									<div className="flex-1">
+										<FormField
+											item={{
+												field: visitorFields.organization,
+												type: 'text' as const,
+												label: '',
+												disabled: disabled,
+												errors: visitorFields.organization.errors,
+											}}
+										/>
+									</div>
+
+									<div className="flex-1">
+										<FormField
+											item={{
+												field: visitorFields.whomToVisit,
+												type: 'text' as const,
+												label: '',
+												disabled: disabled,
+												errors: visitorFields.whomToVisit.errors,
+											}}
+										/>
+									</div>
+
+									<div className="flex-1">
+										<FormField
+											item={{
+												field: visitorFields.destination,
+												type: 'text' as const,
+												label: '',
+												disabled: disabled,
+												errors: visitorFields.destination.errors,
+											}}
+										/>
+									</div>
+
+									<div className="flex-1">
+										<FormField
+											item={{
+												field: visitorFields.carPlateNumber,
+												type: 'text' as const,
+												label: '',
+												disabled: disabled,
+												errors: visitorFields.carPlateNumber.errors,
+												addon:
+													intent === 'delete' ? null : (
+														<Button
+															{...form.remove.getButtonProps({
+																name: fields.visitors.name,
+																index,
+															})}
+															variant="destructive"
+															size="sm"
+														>
+															<TrashIcon className="h-4 w-4" />
+														</Button>
+													),
+											}}
+										/>
+									</div>
+								</div>
+							)
+						})}
+					</fieldset>
 				</>
 			}
 			buttons={

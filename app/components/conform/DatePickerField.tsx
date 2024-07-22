@@ -18,6 +18,7 @@ import { cn } from '~/utils/misc'
 export function DatePickerField({ meta }: { meta: FieldMetadata<Date> }) {
 	const triggerRef = React.useRef<HTMLButtonElement>(null)
 	const control = useControl(meta)
+	const [isOpen, setIsOpen] = React.useState(false)
 
 	return (
 		<div>
@@ -34,7 +35,7 @@ export function DatePickerField({ meta }: { meta: FieldMetadata<Date> }) {
 					triggerRef.current?.focus()
 				}}
 			/>
-			<Popover>
+			<Popover open={isOpen} onOpenChange={setIsOpen}>
 				<PopoverTrigger asChild>
 					<Button
 						ref={triggerRef}
@@ -43,6 +44,7 @@ export function DatePickerField({ meta }: { meta: FieldMetadata<Date> }) {
 							'w-full justify-start text-left font-normal focus:ring-2 focus:ring-stone-950 focus:ring-offset-2',
 							!control.value && 'text-muted-foreground',
 						)}
+						onClick={() => setIsOpen(true)}
 					>
 						<CalendarIcon className="mr-2 h-4 w-4" />
 						{control.value ? (
@@ -56,7 +58,10 @@ export function DatePickerField({ meta }: { meta: FieldMetadata<Date> }) {
 					<Calendar
 						mode="single"
 						selected={new Date(control.value ?? '')}
-						onSelect={value => control.change(value?.toISOString() ?? '')}
+						onSelect={value => {
+							control.change(value?.toISOString() ?? '')
+							setIsOpen(false)
+						}}
 						initialFocus
 					/>
 				</PopoverContent>

@@ -40,7 +40,7 @@ export async function action({ params, request }: ActionFunctionArgs) {
 
 	const submission = await parseWithZod(formData, {
 		schema: SpouseEditorSchema,
-		async: true, // Make sure this is async if your validation logic requires it
+		async: true,
 	})
 
 	if (submission.status !== 'success') {

@@ -22,7 +22,7 @@ import {
 } from '~/components/ui/table'
 import { requireUser } from '~/utils/auth.server'
 import { filterAndPaginate, prisma } from '~/utils/db.server'
-import { invariantResponse } from '~/utils/misc'
+import { formatDate, invariantResponse } from '~/utils/misc'
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
 	const user = await requireUser(request)
@@ -52,6 +52,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 		select: {
 			id: true,
 			requestNumber: true,
+			startDate: true,
+			endDate: true,
 			createdAt: true,
 		},
 	})
@@ -106,6 +108,8 @@ export default function AccessRequestsRoute() {
 								<TableRow>
 									<TableHead>Request Number</TableHead>
 									<TableHead>Date Requested</TableHead>
+									<TableHead>Start Date</TableHead>
+									<TableHead>End Date</TableHead>
 									<TableHead className="w-1/6 text-right pr-6">
 										Actions
 									</TableHead>
@@ -120,7 +124,13 @@ export default function AccessRequestsRoute() {
 													{accessRequest.requestNumber}
 												</TableCell>
 												<TableCell className="py-1">
-													{accessRequest.createdAt}
+													{formatDate(accessRequest.createdAt)}
+												</TableCell>
+												<TableCell className="py-1">
+													{formatDate(accessRequest.startDate)}
+												</TableCell>
+												<TableCell className="py-1">
+													{formatDate(accessRequest.endDate)}
 												</TableCell>
 												<TableCell className="py-1 text-right space-x-1">
 													<Button asChild size="xs">

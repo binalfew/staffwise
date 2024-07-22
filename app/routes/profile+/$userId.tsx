@@ -16,7 +16,7 @@ import { Label } from '~/components/ui/label'
 import { Separator } from '~/components/ui/separator'
 import { requireUser } from '~/utils/auth.server'
 import { prisma } from '~/utils/db.server'
-import { invariantResponse } from '~/utils/misc'
+import { formatDate, invariantResponse } from '~/utils/misc'
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
 	const user = await requireUser(request)
@@ -40,16 +40,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 	})
 
 	return json({ user, employee })
-}
-
-const formatDate = (dateString: string | undefined): string => {
-	if (!dateString) return ''
-	const date = new Date(dateString)
-	return new Intl.DateTimeFormat('en-US', {
-		year: 'numeric',
-		month: 'long',
-		day: 'numeric',
-	}).format(date)
 }
 
 export default function ProfileRoute() {
@@ -138,7 +128,7 @@ export default function ProfileRoute() {
 	)
 
 	const renderCards = () => (
-		<div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-6">
+		<div className="grid gap-4 md:grid-cols-2 md:gap-4 lg:grid-cols-4">
 			{[
 				{
 					title: 'Spouses',
@@ -176,7 +166,21 @@ export default function ProfileRoute() {
 					color: 'bg-purple-100 text-purple-800',
 				},
 				{
-					title: 'Parking Permits',
+					title: 'Parking Reservations',
+					icon: CarIcon,
+					count: employee.vehicles.length,
+					link: 'parking',
+					color: 'bg-indigo-100 text-indigo-800',
+				},
+				{
+					title: 'Car Pass',
+					icon: CarIcon,
+					count: employee.vehicles.length,
+					link: 'parking',
+					color: 'bg-indigo-100 text-indigo-800',
+				},
+				{
+					title: 'ID Requests',
 					icon: CarIcon,
 					count: employee.vehicles.length,
 					link: 'parking',

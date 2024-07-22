@@ -13,7 +13,7 @@ import {
 	visitorHasId,
 } from './__access-request-editor'
 
-export async function action({ params, request }: ActionFunctionArgs) {
+export async function action({ request }: ActionFunctionArgs) {
 	const user = await requireUser(request)
 	const formData = await request.formData()
 	checkHoneypot(formData)

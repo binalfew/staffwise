@@ -274,3 +274,13 @@ export function getDomainUrl(request: Request) {
 	const protocol = request.headers.get('X-Forwarded-Proto') ?? 'http'
 	return `${protocol}://${host}`
 }
+
+export const formatDate = (dateString: string | undefined): string => {
+	if (!dateString) return ''
+	const date = new Date(dateString)
+	return new Intl.DateTimeFormat('en-US', {
+		year: 'numeric',
+		month: 'long',
+		day: 'numeric',
+	}).format(date)
+}
