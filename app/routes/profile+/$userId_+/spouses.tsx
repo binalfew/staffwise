@@ -52,11 +52,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 			firstName: true,
 			familyName: true,
 			middleName: true,
-			auIdNumber: true,
-			dateIssued: true,
-			validUntil: true,
 			telephoneNumber: true,
-			dateOfBirth: true,
 		},
 	})
 
@@ -111,9 +107,7 @@ export default function SpousesRoute() {
 									<TableHead>First Name</TableHead>
 									<TableHead>Family Name</TableHead>
 									<TableHead>Middle Name</TableHead>
-									<TableHead>AU ID Number</TableHead>
-									<TableHead>Date of Birth</TableHead>
-									<TableHead>Telephone Number</TableHead>
+									<TableHead>Telephone</TableHead>
 									<TableHead className="text-right pr-6">Actions</TableHead>
 								</TableRow>
 							</TableHeader>
@@ -124,9 +118,7 @@ export default function SpousesRoute() {
 											<TableCell>{spouse.firstName}</TableCell>
 											<TableCell>{spouse.familyName}</TableCell>
 											<TableCell>{spouse.middleName}</TableCell>
-											<TableCell>{spouse.auIdNumber}</TableCell>
-											<TableCell>{spouse.dateOfBirth}</TableCell>
-											<TableCell>{spouse.telephoneNumber}</TableCell>
+											<TableCell>{spouse.telephoneNumber ?? '-'}</TableCell>
 											<TableCell className="py-1 text-right space-x-1">
 												<Button asChild size="xs">
 													<Link to={`${spouse.id}/edit`}>

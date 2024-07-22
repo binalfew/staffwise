@@ -53,14 +53,8 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 			firstName: true,
 			familyName: true,
 			middleName: true,
-			auIdNumber: true,
-			dateIssued: true,
-			validUntil: true,
-			dateOfBirth: true,
-			nameOfSchool: true,
 			relationship: {
 				select: {
-					id: true,
 					name: true,
 				},
 			},
@@ -117,9 +111,6 @@ export default function DependantsRoute() {
 									<TableHead>First Name</TableHead>
 									<TableHead>Family Name</TableHead>
 									<TableHead>Middle Name</TableHead>
-									<TableHead>AU ID Number</TableHead>
-									<TableHead>Date of Birth</TableHead>
-									<TableHead>School Name</TableHead>
 									<TableHead>Relationship</TableHead>
 									<TableHead className="text-right">Actions</TableHead>
 								</TableRow>
@@ -131,9 +122,6 @@ export default function DependantsRoute() {
 											<TableCell>{dependant.firstName}</TableCell>
 											<TableCell>{dependant.familyName}</TableCell>
 											<TableCell>{dependant.middleName}</TableCell>
-											<TableCell>{dependant.auIdNumber}</TableCell>
-											<TableCell>{dependant.dateOfBirth}</TableCell>
-											<TableCell>{dependant.nameOfSchool}</TableCell>
 											<TableCell>{dependant.relationship.name}</TableCell>
 											<TableCell className="text-right space-x-1">
 												<Button asChild size="xs">

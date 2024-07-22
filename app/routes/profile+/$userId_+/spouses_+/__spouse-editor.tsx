@@ -13,12 +13,12 @@ export const SpouseEditorSchema = z.object({
 	id: z.string().optional(),
 	firstName: z.string({ required_error: 'First Name is required' }),
 	familyName: z.string({ required_error: 'Family Name is required' }),
-	middleName: z.string().optional(),
-	auIdNumber: z.string({ required_error: 'AU ID Number is required' }),
-	dateIssued: z.date({ required_error: 'Date Issued is required' }),
-	validUntil: z.date({ required_error: 'Valid Until is required' }),
-	telephoneNumber: z.string({ required_error: 'Telephone Number is required' }),
-	dateOfBirth: z.date({ required_error: 'Date of Birth is required' }),
+	middleName: z.string({ required_error: 'Middle Name is required' }),
+	auIdNumber: z.string().optional(),
+	dateIssued: z.date().optional(),
+	validUntil: z.date().optional(),
+	telephoneNumber: z.string().optional(),
+	dateOfBirth: z.date().optional(),
 })
 
 export const SpouseDeleteSchema = z.object({

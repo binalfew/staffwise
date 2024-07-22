@@ -59,16 +59,11 @@ export async function action({ params, request }: ActionFunctionArgs) {
 		status: 404,
 	})
 
-	const { id: spouseId, ...spouseDetails } = submission.value
-
-	const data = {
-		employeeId: employee.id,
-		...spouseDetails,
-	}
+	const { id: spouseId, ...data } = submission.value
 
 	await prisma.spouse.upsert({
 		where: { id: spouseId ?? '__new_spouse__' },
-		create: data,
+		create: { employeeId: employee.id, ...data },
 		update: data,
 	})
 
