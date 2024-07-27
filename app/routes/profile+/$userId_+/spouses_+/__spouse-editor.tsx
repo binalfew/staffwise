@@ -9,17 +9,40 @@ import FormField from '~/components/FormField'
 import { Button } from '~/components/ui/button'
 import { type action } from './__spouse-editor.server'
 
-export const SpouseEditorSchema = z.object({
-	id: z.string().optional(),
-	firstName: z.string({ required_error: 'First Name is required' }),
-	familyName: z.string({ required_error: 'Family Name is required' }),
-	middleName: z.string({ required_error: 'Middle Name is required' }),
-	auIdNumber: z.string().optional(),
-	dateIssued: z.date().optional(),
-	validUntil: z.date().optional(),
-	telephoneNumber: z.string().optional(),
-	dateOfBirth: z.date().optional(),
-})
+export const SpouseEditorSchema = z
+	.object({
+		id: z.string().optional(),
+		firstName: z.string({ required_error: 'First Name is required' }),
+		familyName: z.string({ required_error: 'Family Name is required' }),
+		middleName: z.string({ required_error: 'Middle Name is required' }),
+		auIdNumber: z.string().optional(),
+		dateIssued: z.date().optional(),
+		validUntil: z.date().optional(),
+		telephoneNumber: z.string().optional(),
+		dateOfBirth: z.date().optional(),
+	})
+	.refine(data => !data.auIdNumber || data.dateIssued, {
+		message: 'Date Issued is required',
+		path: ['dateIssued'],
+	})
+	.refine(data => !data.auIdNumber || data.validUntil, {
+		message: 'Valid Until is required',
+		path: ['validUntil'],
+	})
+	.refine(
+		data =>
+			!data.dateIssued ||
+			!data.validUntil ||
+			data.validUntil >= data.dateIssued,
+		{
+			message: 'Valid Until cannot be earlier than Date Issued',
+			path: ['validUntil'],
+		},
+	)
+	.refine(data => !(data.dateIssued && data.validUntil) || data.auIdNumber, {
+		message: 'AU ID Number is required',
+		path: ['auIdNumber'],
+	})
 
 export const SpouseDeleteSchema = z.object({
 	id: z.string(),

@@ -20,6 +20,7 @@ export default function FormCard({
 	title,
 	intent,
 	description,
+	encType,
 }: {
 	form: any
 	title: string
@@ -27,10 +28,16 @@ export default function FormCard({
 	intent: 'add' | 'edit' | 'delete'
 	fields: JSX.Element
 	buttons: JSX.Element
+	encType?: 'multipart/form-data' | 'application/x-www-form-urlencoded'
 }) {
 	return (
 		<Card className="mx-auto w-full max-w-7xl space-y-6 p-6">
-			<Form className="grid gap-4" method="POST" {...getFormProps(form)}>
+			<Form
+				className="grid gap-4"
+				method="POST"
+				{...getFormProps(form)}
+				encType={encType}
+			>
 				<div className="space-y-2 text-center">
 					<CardHeader>
 						<CardTitle className="text-3xl font-bold">{title}</CardTitle>

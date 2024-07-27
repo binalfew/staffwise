@@ -120,18 +120,10 @@ export default function IncidentsRoute() {
 									data.incidents.length > 0 ? (
 										data.incidents.map((incident: any) => (
 											<TableRow key={incident.id}>
-												<TableCell className="py-1">
-													{incident.incidentNumber}
-												</TableCell>
-												<TableCell className="py-1">
-													{incident.incidentType.name}
-												</TableCell>
-												<TableCell className="py-1">
-													{incident.occuredAt}
-												</TableCell>
-												<TableCell className="py-1">
-													{incident.occuredWhile}
-												</TableCell>
+												<TableCell>{incident.incidentNumber}</TableCell>
+												<TableCell>{incident.incidentType.name}</TableCell>
+												<TableCell>{incident.occuredAt}</TableCell>
+												<TableCell>{incident.occuredWhile}</TableCell>
 												<TableCell className="py-1 text-right space-x-1">
 													<Button asChild size="xs">
 														<Link to={`${incident.id}/edit`}>

@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@azure/communication-email": "^1.0.0",
+    "@azure/storage-blob": "^12.24.0",
     "@conform-to/react": "^1.0.5",
     "@conform-to/zod": "^1.0.5",
     "@epic-web/totp": "^1.1.2",

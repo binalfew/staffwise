@@ -10,6 +10,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
 	const incident = await prisma.incident.findUnique({
 		where: { id: incidentId },
+		include: { attachments: true },
 	})
 
 	invariantResponse(incident, 'Not Found', { status: 404 })

@@ -108,7 +108,9 @@ export default function SpousesRoute() {
 									<TableHead>Family Name</TableHead>
 									<TableHead>Middle Name</TableHead>
 									<TableHead>Telephone</TableHead>
-									<TableHead className="text-right pr-6">Actions</TableHead>
+									<TableHead className="w-1/6 text-right pr-6">
+										Actions
+									</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>

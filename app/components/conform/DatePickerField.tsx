@@ -22,7 +22,13 @@ import {
 	SelectValue,
 } from '../ui/select'
 
-export function DatePickerField({ meta }: { meta: FieldMetadata<Date> }) {
+export function DatePickerField({
+	meta,
+	disabled,
+}: {
+	meta: FieldMetadata<Date>
+	disabled?: boolean
+}) {
 	const triggerRef = React.useRef<HTMLButtonElement>(null)
 	const control = useControl(meta)
 	const [isOpen, setIsOpen] = React.useState(false)
@@ -88,6 +94,7 @@ export function DatePickerField({ meta }: { meta: FieldMetadata<Date> }) {
 							!control.value && 'text-muted-foreground',
 						)}
 						onClick={() => setIsOpen(true)}
+						disabled={disabled}
 					>
 						<CalendarIcon className="mr-2 h-4 w-4" />
 						{control.value ? (
@@ -104,6 +111,7 @@ export function DatePickerField({ meta }: { meta: FieldMetadata<Date> }) {
 								setSelectedYear(parseInt(value, 10))
 							}}
 							value={selectedYear !== null ? `${selectedYear}` : undefined}
+							disabled={disabled}
 						>
 							<SelectTrigger>
 								<SelectValue placeholder="Year">
@@ -123,6 +131,7 @@ export function DatePickerField({ meta }: { meta: FieldMetadata<Date> }) {
 								setSelectedMonth(parseInt(value, 10))
 							}}
 							value={selectedMonth !== null ? `${selectedMonth}` : undefined}
+							disabled={disabled}
 						>
 							<SelectTrigger>
 								<SelectValue placeholder="Month">
@@ -148,6 +157,7 @@ export function DatePickerField({ meta }: { meta: FieldMetadata<Date> }) {
 						initialFocus
 						month={month}
 						onMonthChange={setMonth}
+						disabled={disabled}
 					/>
 
 					<div className="flex space-x-2 mt-2 w-full">
@@ -158,6 +168,7 @@ export function DatePickerField({ meta }: { meta: FieldMetadata<Date> }) {
 								control.change('')
 								setIsOpen(false)
 							}}
+							disabled={disabled}
 						>
 							Clear
 						</Button>
@@ -168,6 +179,7 @@ export function DatePickerField({ meta }: { meta: FieldMetadata<Date> }) {
 								control.change(new Date().toISOString())
 								setIsOpen(false)
 							}}
+							disabled={disabled}
 						>
 							Today
 						</Button>

@@ -76,6 +76,7 @@ export async function action({ request }: ActionFunctionArgs) {
 		id: accessRequestId,
 		updatedVisitors,
 		newVisitors,
+		requestor,
 		...accessRequestDetails
 	} = submission.value
 

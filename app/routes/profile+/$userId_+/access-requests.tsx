@@ -120,16 +120,14 @@ export default function AccessRequestsRoute() {
 									data.accessRequests.length > 0 ? (
 										data.accessRequests.map((accessRequest: any) => (
 											<TableRow key={accessRequest.id}>
-												<TableCell className="py-1">
-													{accessRequest.requestNumber}
-												</TableCell>
-												<TableCell className="py-1">
+												<TableCell>{accessRequest.requestNumber}</TableCell>
+												<TableCell>
 													{formatDate(accessRequest.createdAt)}
 												</TableCell>
-												<TableCell className="py-1">
+												<TableCell>
 													{formatDate(accessRequest.startDate)}
 												</TableCell>
-												<TableCell className="py-1">
+												<TableCell>
 													{formatDate(accessRequest.endDate)}
 												</TableCell>
 												<TableCell className="py-1 text-right space-x-1">

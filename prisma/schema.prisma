@@ -239,6 +239,19 @@ model Incident {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   assessment     Assessment?
+  attachments    Attachment[]
+}
+
+model Attachment {
+  id          String   @id @default(cuid())
+  altText     String?
+  contentType String
+  fileName    String
+  extension   String
+  incidentId  String
+  incident    Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Assessment {

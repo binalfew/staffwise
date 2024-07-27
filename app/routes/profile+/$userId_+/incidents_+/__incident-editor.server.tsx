@@ -1,12 +1,23 @@
 import { parseWithZod } from '@conform-to/zod'
+import { createId as cuid } from '@paralleldrive/cuid2'
 import { ActionFunctionArgs, json } from '@remix-run/node'
 import { requireUser } from '~/utils/auth.server'
 import { validateCSRF } from '~/utils/csrf.server'
 import { prisma } from '~/utils/db.server'
 import { checkHoneypot } from '~/utils/honeypot.server'
 import { invariantResponse } from '~/utils/misc'
+import {
+	deleteDirectory,
+	deleteFileIfExists,
+	uploadFile,
+} from '~/utils/storage.server'
 import { redirectWithToast } from '~/utils/toast.server'
-import { IncidentDeleteSchema, IncidentEditorSchema } from './__incident-editor'
+import {
+	attachmentHasFile,
+	attachmentHasId,
+	IncidentDeleteSchema,
+	IncidentEditorSchema,
+} from './__incident-editor'
 
 const uniqueIncidentNumber = () => {
 	const timestamp = Date.now()
@@ -32,8 +43,14 @@ export async function action({ params, request }: ActionFunctionArgs) {
 				{ status: submission.status === 'error' ? 400 : 200 },
 			)
 		}
-		await prisma.incident.delete({
+		const incident = await prisma.incident.delete({
 			where: { id: submission.value.id },
+			select: { incidentNumber: true },
+		})
+
+		await deleteDirectory({
+			containerName: 'incidents',
+			directoryName: incident.incidentNumber,
 		})
 
 		return redirectWithToast(`/profile/${user.id}/incidents`, {
@@ -43,8 +60,50 @@ export async function action({ params, request }: ActionFunctionArgs) {
 		})
 	}
 
-	const submission = parseWithZod(formData, {
-		schema: IncidentEditorSchema,
+	const submission = await parseWithZod(formData, {
+		schema: IncidentEditorSchema.transform(
+			async ({ attachments = [], ...data }) => {
+				return {
+					...data,
+					updatedAttachments: await Promise.all(
+						attachments.filter(attachmentHasId).map(async i => {
+							const attachment = await prisma.attachment.findUnique({
+								where: { id: i.id },
+							})
+
+							if (attachmentHasFile(i)) {
+								return {
+									id: i.id,
+									altText: i.altText,
+									contentType: i.file.type,
+									blob: Buffer.from(await i.file.arrayBuffer()),
+									fileName: attachment?.fileName ?? cuid(),
+									extension: i.file.name.split('.').pop() ?? '',
+								}
+							} else {
+								return { id: i.id }
+							}
+						}),
+					),
+					newAttachments: await Promise.all(
+						attachments
+							.filter(attachmentHasFile)
+							.filter(image => !image.id)
+							.map(async image => {
+								const extension = image.file.name.split('.').pop() ?? ''
+								return {
+									altText: `${image.file.name}.${extension}`,
+									contentType: image.file.type,
+									blob: Buffer.from(await image.file.arrayBuffer()),
+									fileName: cuid(),
+									extension,
+								}
+							}),
+					),
+				}
+			},
+		),
+		async: true,
 	})
 
 	if (submission.status !== 'success') {
@@ -56,7 +115,7 @@ export async function action({ params, request }: ActionFunctionArgs) {
 
 	const employee = await prisma.employee.findFirst({
 		where: { email: user.email },
-		select: { id: true },
+		select: { id: true, auIdNumber: true },
 	})
 
 	invariantResponse(employee, 'Employee not found', {
@@ -65,33 +124,80 @@ export async function action({ params, request }: ActionFunctionArgs) {
 
 	const {
 		id: incidentId,
-		incidentTypeId,
-		location,
-		description,
-		eyeWitnesses,
-		occuredWhile,
-		occuredAt,
+		updatedAttachments,
+		newAttachments,
+		...incidentDetails
 	} = submission.value
 
-	console.log({ employee })
-
 	const data = {
+		...incidentDetails,
 		employeeId: employee.id,
-		incidentNumber: uniqueIncidentNumber(),
-		incidentTypeId,
-		location,
-		description,
-		eyeWitnesses,
-		occuredWhile,
-		occuredAt,
 	}
 
-	await prisma.incident.upsert({
-		select: { id: true },
-		where: { id: incidentId ?? '__new_incident__' },
-		create: data,
-		update: data,
+	const deletedAttachments = await prisma.attachment.findMany({
+		select: { fileName: true, extension: true },
+		where: { id: { notIn: updatedAttachments.map(i => i.id) } },
 	})
+
+	const incident = await prisma.incident.upsert({
+		select: { id: true, incidentNumber: true },
+		where: { id: incidentId ?? '__new_incident__' },
+		create: {
+			...data,
+			incidentNumber: uniqueIncidentNumber(),
+			attachments: {
+				create: newAttachments.map(({ blob, ...attachment }) => attachment),
+			},
+		},
+		update: {
+			...data,
+			attachments: {
+				deleteMany: { id: { notIn: updatedAttachments.map(i => i.id) } },
+				updateMany: updatedAttachments.map(({ blob, ...updates }) => ({
+					where: { id: updates.id },
+					data: { ...updates, id: blob ? cuid() : updates.id },
+				})),
+				create: newAttachments.map(({ blob, ...attachment }) => attachment),
+			},
+		},
+	})
+
+	const deletePromises = deletedAttachments.map(attachment =>
+		deleteFileIfExists({
+			containerName: 'incidents',
+			prefix: incident.incidentNumber,
+			fileName: attachment.fileName,
+		}),
+	)
+
+	const updatePromises = updatedAttachments.map(attachment => {
+		if (attachment.blob) {
+			return uploadFile({
+				containerName: 'incidents',
+				directory: incident.incidentNumber,
+				fileName: attachment.fileName,
+				extension: attachment.extension,
+				blob: attachment.blob,
+			})
+		}
+		return Promise.resolve()
+	})
+
+	const newAttachmentsPromises = newAttachments.map(attachment =>
+		uploadFile({
+			containerName: 'incidents',
+			directory: incident.incidentNumber,
+			fileName: attachment.fileName,
+			extension: attachment.extension,
+			blob: attachment.blob,
+		}),
+	)
+
+	await Promise.all([
+		...deletePromises,
+		...updatePromises,
+		...newAttachmentsPromises,
+	])
 
 	return redirectWithToast(`/profile/${user.id}/incidents`, {
 		type: 'success',

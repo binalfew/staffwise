@@ -284,3 +284,7 @@ export const formatDate = (dateString: string | undefined): string => {
 		day: 'numeric',
 	}).format(date)
 }
+
+export function getAttachmentFileSrc(attachmentId: string) {
+	return `/profile/resources/attachments/${attachmentId}`
+}
