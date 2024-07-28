@@ -166,30 +166,25 @@ export function DependantEditor({
 			title={title}
 			description={description}
 			intent={intent}
-			fields={
-				<>
-					{formItems.map((item, index) => (
-						<FormField key={index} item={item} />
-					))}
-				</>
-			}
-			buttons={
-				<>
-					<Button
-						type="submit"
-						form={form.id}
-						name="intent"
-						value={intent}
-						variant={intent === 'delete' ? 'destructive' : 'default'}
-						className="w-full"
-					>
-						{intent === 'delete' ? 'Delete' : 'Save'}
-					</Button>
-					<Button asChild variant="outline" className="w-full">
-						<Link to={`/profile/${params.userId}/dependants`}>Cancel</Link>
-					</Button>
-				</>
-			}
+			fields={[
+				formItems.map((item, index) => <FormField key={index} item={item} />),
+			]}
+			buttons={[
+				<Button
+					key="submit"
+					type="submit"
+					form={form.id}
+					name="intent"
+					value={intent}
+					variant={intent === 'delete' ? 'destructive' : 'default'}
+					className="w-full"
+				>
+					{intent === 'delete' ? 'Delete' : 'Save'}
+				</Button>,
+				<Button key="cancel" asChild variant="outline" className="w-full">
+					<Link to={`/profile/${params.userId}/dependants`}>Cancel</Link>
+				</Button>,
+			]}
 		/>
 	)
 }

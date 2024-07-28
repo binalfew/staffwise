@@ -1,4 +1,4 @@
-import { useForm } from '@conform-to/react'
+import { FieldMetadata, useForm } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod'
 import { Attachment, Incident, IncidentType } from '@prisma/client'
 import { SerializeFrom } from '@remix-run/node'
@@ -176,133 +176,151 @@ export function IncidentEditor({
 			description={description}
 			intent={intent}
 			encType="multipart/form-data"
-			fields={
-				<>
-					<fieldset className="border p-4 rounded-md">
-						<legend className="text-md px-2 font-semibold text-gray-500">
-							Incident
-						</legend>
+			fields={[
+				<fieldset className="border p-4 rounded-md" key="incident">
+					<legend className="text-md px-2 font-semibold text-gray-500">
+						Incident
+					</legend>
 
-						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-							{formItems.map((item, index) => (
-								<div
-									key={index}
-									className={
-										[
-											'Description',
-											'Incident Type',
-											'Incident Number',
-										].includes(item.label ?? '')
-											? 'col-span-1 md:col-span-2'
-											: ''
-									}
-								>
-									<FormField item={item} />
-								</div>
-							))}
-						</div>
-					</fieldset>
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						{formItems.map((item, index) => (
+							<div
+								key={index}
+								className={
+									['Description', 'Incident Type', 'Incident Number'].includes(
+										item.label ?? '',
+									)
+										? 'col-span-1 md:col-span-2'
+										: ''
+								}
+							>
+								<FormField item={item} />
+							</div>
+						))}
+					</div>
+				</fieldset>,
 
-					<fieldset className="border p-4 rounded-md">
-						<div className="flex space-x-4 border-b pb-2 mb-4">
-							<div className="flex-1">Attachments</div>
-							<div className="flex-1">
-								<div
-									className={
-										['add', 'edit'].includes(intent)
-											? 'flex items-center justify-end'
-											: ''
-									}
-								>
-									{['add', 'edit'].includes(intent) && (
-										<Button
-											{...form.insert.getButtonProps({
-												name: fields.attachments.name,
-											})}
-											size="sm"
-											className="ml-2"
-										>
-											<PlusCircle className="h-4 w-4" />
-										</Button>
-									)}
-								</div>
+				<fieldset className="border p-4 rounded-md" key="attachments">
+					<div className="flex space-x-4 border-b pb-2 mb-4">
+						<div className="flex-1">Attachments</div>
+						<div className="flex-1">
+							<div
+								className={
+									['add', 'edit'].includes(intent)
+										? 'flex items-center justify-end'
+										: ''
+								}
+							>
+								{['add', 'edit'].includes(intent) && (
+									<Button
+										{...form.insert.getButtonProps({
+											name: fields.attachments.name,
+										})}
+										size="sm"
+										className="ml-2"
+									>
+										<PlusCircle className="h-4 w-4" />
+									</Button>
+								)}
 							</div>
 						</div>
+					</div>
 
-						{attachments.map((attachment, index) => {
-							const attachmentFields = attachment.getFieldset()
-							const existingFile = Boolean(attachmentFields.id.initialValue)
-							const link = getAttachmentFileSrc(
-								attachmentFields.id.initialValue ?? '',
-							)
-
-							return (
-								<div className="flex space-x-4 items-center mb-4" key={index}>
-									{existingFile ? (
-										<>
-											<FormField
-												item={{
-													field: attachmentFields.id,
-													type: 'hidden' as const,
-												}}
-											/>
-											<div className="flex-1">
-												<a
-													href={link}
-													className="flex items-center space-x-2 gap-2 font-medium text-green-600 hover:text-green-500"
-												>
-													<PaperclipIcon className="h-4 w-4" />
-													{attachmentFields.altText.initialValue}
-												</a>
-											</div>
-										</>
-									) : (
-										<div className="flex-1">
-											<FormField
-												item={{
-													field: attachmentFields.file,
-													type: 'file' as const,
-													disabled,
-													errors: attachmentFields.file.errors,
-												}}
-											/>
-										</div>
-									)}
-									{intent === 'delete' ? null : (
-										<Button
-											{...form.remove.getButtonProps({
-												name: fields.attachments.name,
-												index,
-											})}
-											variant="destructive"
-											size="sm"
-										>
-											<TrashIcon className="h-4 w-4" />
-										</Button>
-									)}
-								</div>
-							)
-						})}
-					</fieldset>
-				</>
-			}
-			buttons={
-				<>
-					<Button
-						type="submit"
-						form={form.id}
-						name="intent"
-						value={intent}
-						variant={intent === 'delete' ? 'destructive' : 'default'}
-						className="w-full"
-					>
-						{intent === 'delete' ? 'Delete' : 'Save'}
-					</Button>
-					<Button asChild variant="outline" className="w-full">
-						<Link to={`/profile/${params.userId}/incidents`}>Cancel</Link>
-					</Button>
-				</>
-			}
+					{attachments.map((attachment, index) => {
+						return (
+							<AttachmentField
+								key={index}
+								attachment={attachment}
+								intent={intent}
+								disabled={disabled}
+								actions={{
+									onRemove: event => {
+										event.preventDefault()
+										form.remove({
+											name: fields.attachments.name,
+											index,
+										})
+									},
+								}}
+							/>
+						)
+					})}
+				</fieldset>,
+			]}
+			buttons={[
+				<Button
+					key="submit"
+					type="submit"
+					form={form.id}
+					name="intent"
+					value={intent}
+					variant={intent === 'delete' ? 'destructive' : 'default'}
+					className="w-full"
+				>
+					{intent === 'delete' ? 'Delete' : 'Save'}
+				</Button>,
+				<Button key="cancel" asChild variant="outline" className="w-full">
+					<Link to={`/profile/${params.userId}/incidents`}>Cancel</Link>
+				</Button>,
+			]}
 		/>
+	)
+}
+
+export function AttachmentField({
+	attachment,
+	intent,
+	disabled,
+	actions,
+}: {
+	attachment: FieldMetadata<AttachmentFieldSet>
+	intent: 'add' | 'edit' | 'delete'
+	disabled: boolean
+	actions: {
+		onRemove: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void
+	}
+}) {
+	const attachmentFields = attachment.getFieldset()
+	const existingFile = Boolean(attachmentFields.id.initialValue)
+	const link = getAttachmentFileSrc(attachmentFields.id.initialValue ?? '')
+
+	return (
+		<div className="flex space-x-4 items-center mb-4">
+			{existingFile ? (
+				<>
+					<FormField
+						item={{
+							field: attachmentFields.id,
+							type: 'hidden' as const,
+						}}
+					/>
+					<div className="flex-1">
+						<a
+							href={link}
+							className="flex items-center space-x-2 gap-2 font-medium text-green-600 hover:text-green-500"
+						>
+							<PaperclipIcon className="h-4 w-4" />
+							{attachmentFields.altText.initialValue}
+						</a>
+					</div>
+				</>
+			) : (
+				<div className="flex-1">
+					<FormField
+						item={{
+							field: attachmentFields.file,
+							type: 'file' as const,
+							disabled,
+							errors: attachmentFields.file.errors,
+						}}
+					/>
+				</div>
+			)}
+			{intent === 'delete' ? null : (
+				<Button onClick={actions.onRemove} variant="destructive" size="sm">
+					<TrashIcon className="h-4 w-4" />
+				</Button>
+			)}
+		</div>
 	)
 }

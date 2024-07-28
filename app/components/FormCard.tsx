@@ -26,8 +26,8 @@ export default function FormCard({
 	title: string
 	description: string
 	intent: 'add' | 'edit' | 'delete'
-	fields: JSX.Element
-	buttons: JSX.Element
+	fields: React.ReactNode[]
+	buttons: React.ReactNode[]
 	encType?: 'multipart/form-data' | 'application/x-www-form-urlencoded'
 }) {
 	return (

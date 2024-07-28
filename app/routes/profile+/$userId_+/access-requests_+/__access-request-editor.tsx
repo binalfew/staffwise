@@ -153,187 +153,184 @@ export function AccessRequestEditor({
 			description={description}
 			intent={intent}
 			form={form}
-			fields={
-				<>
-					<fieldset className="border p-4 rounded-md">
-						<legend className="text-md px-2 font-semibold text-gray-500">
-							Request
-						</legend>
-						<div className="mb-4">
-							<FormField item={formItems[0]} />
-							<FormField item={formItems[1]} />
-						</div>
+			fields={[
+				<fieldset className="border p-4 rounded-md" key="request">
+					<legend className="text-md px-2 font-semibold text-gray-500">
+						Request
+					</legend>
+					<div className="mb-4">
+						<FormField item={formItems[0]} />
+						<FormField item={formItems[1]} />
+					</div>
 
-						<div className="mb-4">
-							<FormField item={formItems[2]} />
-						</div>
+					<div className="mb-4">
+						<FormField item={formItems[2]} />
+					</div>
 
-						<div className="flex space-x-4">
-							{formItems.slice(3).map((item, index) => (
-								<div key={index} className="flex-1">
-									<FormField item={item} />
-								</div>
-							))}
-						</div>
-					</fieldset>
+					<div className="flex space-x-4">
+						{formItems.slice(3).map((item, index) => (
+							<div key={index} className="flex-1">
+								<FormField item={item} />
+							</div>
+						))}
+					</div>
+				</fieldset>,
 
-					<fieldset className="border p-4 rounded-md">
-						<legend className="text-md px-2 font-semibold text-gray-500">
-							Visitors
-						</legend>
-						<div className="flex space-x-4 border-b pb-2 mb-4">
-							<div className="flex-1">First Name</div>
-							<div className="flex-1">Family Name</div>
-							<div className="flex-1">Telephone</div>
-							<div className="flex-1">Organization</div>
-							<div className="flex-1">Whom to visit</div>
-							<div className="flex-1">Destination</div>
-							<div className="flex-1">
-								<div
-									className={
-										['add', 'edit'].includes(intent)
-											? 'flex items-center justify-end'
-											: ''
-									}
-								>
-									Plate Number
-									{['add', 'edit'].includes(intent) && (
-										<Button
-											{...form.insert.getButtonProps({
-												name: fields.visitors.name,
-											})}
-											size="sm"
-											className="ml-2"
-										>
-											<PlusCircle className="h-4 w-4" />
-										</Button>
-									)}
-								</div>
+				<fieldset className="border p-4 rounded-md" key="visitors">
+					<legend className="text-md px-2 font-semibold text-gray-500">
+						Visitors
+					</legend>
+					<div className="flex space-x-4 border-b pb-2 mb-4">
+						<div className="flex-1">First Name</div>
+						<div className="flex-1">Family Name</div>
+						<div className="flex-1">Telephone</div>
+						<div className="flex-1">Organization</div>
+						<div className="flex-1">Whom to visit</div>
+						<div className="flex-1">Destination</div>
+						<div className="flex-1">
+							<div
+								className={
+									['add', 'edit'].includes(intent)
+										? 'flex items-center justify-end'
+										: ''
+								}
+							>
+								Plate Number
+								{['add', 'edit'].includes(intent) && (
+									<Button
+										{...form.insert.getButtonProps({
+											name: fields.visitors.name,
+										})}
+										size="sm"
+										className="ml-2"
+									>
+										<PlusCircle className="h-4 w-4" />
+									</Button>
+								)}
 							</div>
 						</div>
+					</div>
 
-						{visitors.map((visitor, index) => {
-							const visitorFields = visitor.getFieldset()
-							return (
-								<div key={index} className="flex space-x-4">
-									<div className="flex-1">
-										<FormField
-											item={{
-												field: visitorFields.firstName,
-												type: 'text' as const,
-												label: '',
-												disabled: disabled,
-												errors: visitorFields.firstName.errors,
-											}}
-										/>
-									</div>
-
-									<div className="flex-1">
-										<FormField
-											item={{
-												field: visitorFields.familyName,
-												type: 'text' as const,
-												label: '',
-												disabled: disabled,
-												errors: visitorFields.familyName.errors,
-											}}
-										/>
-									</div>
-
-									<div className="flex-1">
-										<FormField
-											item={{
-												field: visitorFields.telephone,
-												type: 'text' as const,
-												label: '',
-												disabled: disabled,
-												errors: visitorFields.telephone.errors,
-											}}
-										/>
-									</div>
-
-									<div className="flex-1">
-										<FormField
-											item={{
-												field: visitorFields.organization,
-												type: 'text' as const,
-												label: '',
-												disabled: disabled,
-												errors: visitorFields.organization.errors,
-											}}
-										/>
-									</div>
-
-									<div className="flex-1">
-										<FormField
-											item={{
-												field: visitorFields.whomToVisit,
-												type: 'text' as const,
-												label: '',
-												disabled: disabled,
-												errors: visitorFields.whomToVisit.errors,
-											}}
-										/>
-									</div>
-
-									<div className="flex-1">
-										<FormField
-											item={{
-												field: visitorFields.destination,
-												type: 'text' as const,
-												label: '',
-												disabled: disabled,
-												errors: visitorFields.destination.errors,
-											}}
-										/>
-									</div>
-
-									<div className="flex-1">
-										<FormField
-											item={{
-												field: visitorFields.carPlateNumber,
-												type: 'text' as const,
-												label: '',
-												disabled: disabled,
-												errors: visitorFields.carPlateNumber.errors,
-												addon:
-													intent === 'delete' ? null : (
-														<Button
-															{...form.remove.getButtonProps({
-																name: fields.visitors.name,
-																index,
-															})}
-															variant="destructive"
-															size="sm"
-														>
-															<TrashIcon className="h-4 w-4" />
-														</Button>
-													),
-											}}
-										/>
-									</div>
+					{visitors.map((visitor, index) => {
+						const visitorFields = visitor.getFieldset()
+						return (
+							<div key={index} className="flex space-x-4">
+								<div className="flex-1">
+									<FormField
+										item={{
+											field: visitorFields.firstName,
+											type: 'text' as const,
+											label: '',
+											disabled: disabled,
+											errors: visitorFields.firstName.errors,
+										}}
+									/>
 								</div>
-							)
-						})}
-					</fieldset>
-				</>
-			}
-			buttons={
-				<>
-					<Button
-						className="w-full"
-						type="submit"
-						name="intent"
-						value={intent}
-						variant={intent === 'delete' ? 'destructive' : 'default'}
-					>
-						{intent === 'delete' ? 'Delete' : 'Save'}
-					</Button>
-					<Button asChild variant="outline" className="w-full">
-						<Link to={`/profile/${params.userId}/access-requests`}>Cancel</Link>
-					</Button>
-				</>
-			}
+
+								<div className="flex-1">
+									<FormField
+										item={{
+											field: visitorFields.familyName,
+											type: 'text' as const,
+											label: '',
+											disabled: disabled,
+											errors: visitorFields.familyName.errors,
+										}}
+									/>
+								</div>
+
+								<div className="flex-1">
+									<FormField
+										item={{
+											field: visitorFields.telephone,
+											type: 'text' as const,
+											label: '',
+											disabled: disabled,
+											errors: visitorFields.telephone.errors,
+										}}
+									/>
+								</div>
+
+								<div className="flex-1">
+									<FormField
+										item={{
+											field: visitorFields.organization,
+											type: 'text' as const,
+											label: '',
+											disabled: disabled,
+											errors: visitorFields.organization.errors,
+										}}
+									/>
+								</div>
+
+								<div className="flex-1">
+									<FormField
+										item={{
+											field: visitorFields.whomToVisit,
+											type: 'text' as const,
+											label: '',
+											disabled: disabled,
+											errors: visitorFields.whomToVisit.errors,
+										}}
+									/>
+								</div>
+
+								<div className="flex-1">
+									<FormField
+										item={{
+											field: visitorFields.destination,
+											type: 'text' as const,
+											label: '',
+											disabled: disabled,
+											errors: visitorFields.destination.errors,
+										}}
+									/>
+								</div>
+
+								<div className="flex-1">
+									<FormField
+										item={{
+											field: visitorFields.carPlateNumber,
+											type: 'text' as const,
+											label: '',
+											disabled: disabled,
+											errors: visitorFields.carPlateNumber.errors,
+											addon:
+												intent === 'delete' ? null : (
+													<Button
+														{...form.remove.getButtonProps({
+															name: fields.visitors.name,
+															index,
+														})}
+														variant="destructive"
+														size="sm"
+													>
+														<TrashIcon className="h-4 w-4" />
+													</Button>
+												),
+										}}
+									/>
+								</div>
+							</div>
+						)
+					})}
+				</fieldset>,
+			]}
+			buttons={[
+				<Button
+					key="submit"
+					className="w-full"
+					type="submit"
+					name="intent"
+					value={intent}
+					variant={intent === 'delete' ? 'destructive' : 'default'}
+				>
+					{intent === 'delete' ? 'Delete' : 'Save'}
+				</Button>,
+				<Button key="cancel" asChild variant="outline" className="w-full">
+					<Link to={`/profile/${params.userId}/access-requests`}>Cancel</Link>
+				</Button>,
+			]}
 		/>
 	)
 }

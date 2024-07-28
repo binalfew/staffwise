@@ -110,29 +110,24 @@ export function VehicleEditor({
 			description={description}
 			intent={intent}
 			form={form}
-			fields={
-				<>
-					{formItems.map((item, index) => (
-						<FormField key={index} item={item} />
-					))}
-				</>
-			}
-			buttons={
-				<>
-					<Button
-						className="w-full"
-						type="submit"
-						name="intent"
-						value={intent}
-						variant={intent === 'delete' ? 'destructive' : 'default'}
-					>
-						{intent === 'delete' ? 'Delete' : 'Save'}
-					</Button>
-					<Button asChild variant="outline" className="w-full">
-						<Link to={`/profile/${params.userId}/vehicles`}>Cancel</Link>
-					</Button>
-				</>
-			}
+			fields={[
+				formItems.map((item, index) => <FormField key={index} item={item} />),
+			]}
+			buttons={[
+				<Button
+					key="submit"
+					className="w-full"
+					type="submit"
+					name="intent"
+					value={intent}
+					variant={intent === 'delete' ? 'destructive' : 'default'}
+				>
+					{intent === 'delete' ? 'Delete' : 'Save'}
+				</Button>,
+				<Button key="cancel" asChild variant="outline" className="w-full">
+					<Link to={`/profile/${params.userId}/vehicles`}>Cancel</Link>
+				</Button>,
+			]}
 		/>
 	)
 }
