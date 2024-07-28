@@ -20,6 +20,8 @@ import { Label } from '~/components/ui/label'
 
 import { Employee } from '@prisma/client'
 import { Separator } from '~/components/ui/separator'
+import { StatusButton } from '~/components/ui/status-button'
+import { useIsPending } from '~/utils/misc'
 import { type action } from './__profile-editor.server'
 
 export const AddressEditorSchema = z.object({
@@ -62,6 +64,7 @@ export function AddressEditor({
 }) {
 	const params = useParams()
 	const actionData = useActionData<typeof action>()
+	const isPending = useIsPending()
 	const [form, fields] = useForm({
 		id: 'update-address',
 		constraint: getZodConstraint(AddressEditorSchema),
@@ -256,14 +259,17 @@ export function AddressEditor({
 				</CardContent>
 
 				<CardFooter className="text-center space-x-4">
-					<Button
+					<StatusButton
+						disabled={isPending}
+						status={isPending ? 'pending' : actionData?.result.status ?? 'idle'}
 						className="w-full"
 						type="submit"
 						name="intent"
 						value="update-address"
 					>
-						Update
-					</Button>
+						Save
+					</StatusButton>
+
 					<Button asChild variant="outline" className="w-full">
 						<Link to={`/profile/${params.userId}`}>Cancel</Link>
 					</Button>

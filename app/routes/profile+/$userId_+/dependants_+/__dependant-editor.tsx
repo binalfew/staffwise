@@ -7,6 +7,8 @@ import { z } from 'zod'
 import FormCard from '~/components/FormCard'
 import FormField from '~/components/FormField'
 import { Button } from '~/components/ui/button'
+import { StatusButton } from '~/components/ui/status-button'
+import { useIsPending } from '~/utils/misc'
 import { type action } from './__dependant-editor.server'
 
 export const DependantEditorSchema = z
@@ -74,6 +76,7 @@ export function DependantEditor({
 }) {
 	const params = useParams()
 	const actionData = useActionData<typeof action>()
+	const isPending = useIsPending()
 	const disabled = intent === 'delete'
 	const schema =
 		intent === 'delete' ? DependantDeleteSchema : DependantEditorSchema
@@ -170,17 +173,18 @@ export function DependantEditor({
 				formItems.map((item, index) => <FormField key={index} item={item} />),
 			]}
 			buttons={[
-				<Button
+				<StatusButton
 					key="submit"
 					type="submit"
-					form={form.id}
+					disabled={isPending}
+					status={isPending ? 'pending' : actionData?.result.status ?? 'idle'}
+					className="w-full"
 					name="intent"
 					value={intent}
 					variant={intent === 'delete' ? 'destructive' : 'default'}
-					className="w-full"
 				>
 					{intent === 'delete' ? 'Delete' : 'Save'}
-				</Button>,
+				</StatusButton>,
 				<Button key="cancel" asChild variant="outline" className="w-full">
 					<Link to={`/profile/${params.userId}/dependants`}>Cancel</Link>
 				</Button>,

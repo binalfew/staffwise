@@ -8,6 +8,8 @@ import { z } from 'zod'
 import FormCard from '~/components/FormCard'
 import FormField from '~/components/FormField'
 import { Button } from '~/components/ui/button'
+import { StatusButton } from '~/components/ui/status-button'
+import { useIsPending } from '~/utils/misc'
 import { type action } from './__access-request-editor.server'
 
 const VisitorFieldsetSchema = z.object({
@@ -82,6 +84,7 @@ export function AccessRequestEditor({
 }) {
 	const params = useParams()
 	const actionData = useActionData<typeof action>()
+	const isPending = useIsPending()
 	const disabled = intent === 'delete'
 	const schema =
 		intent === 'delete' ? AccessRequestDeleteSchema : AccessRequestEditorSchema
@@ -317,16 +320,18 @@ export function AccessRequestEditor({
 				</fieldset>,
 			]}
 			buttons={[
-				<Button
+				<StatusButton
 					key="submit"
-					className="w-full"
 					type="submit"
+					disabled={isPending}
+					status={isPending ? 'pending' : actionData?.result.status ?? 'idle'}
+					className="w-full"
 					name="intent"
 					value={intent}
 					variant={intent === 'delete' ? 'destructive' : 'default'}
 				>
 					{intent === 'delete' ? 'Delete' : 'Save'}
-				</Button>,
+				</StatusButton>,
 				<Button key="cancel" asChild variant="outline" className="w-full">
 					<Link to={`/profile/${params.userId}/access-requests`}>Cancel</Link>
 				</Button>,

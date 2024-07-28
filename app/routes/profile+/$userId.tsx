@@ -1,9 +1,9 @@
+import { IdCardIcon, LockClosedIcon } from '@radix-ui/react-icons'
 import { LoaderFunctionArgs } from '@remix-run/node'
 import { Link, json, useLoaderData } from '@remix-run/react'
 import {
 	CarIcon,
 	CreditCardIcon,
-	DollarSignIcon,
 	EditIcon,
 	UserIcon,
 	UsersIcon,
@@ -132,7 +132,7 @@ export default function ProfileRoute() {
 			{[
 				{
 					title: 'Spouses',
-					icon: DollarSignIcon,
+					icon: UsersIcon,
 					count: employee.spouses.length,
 					link: 'spouses',
 					color: 'bg-blue-100 text-blue-800',
@@ -146,7 +146,7 @@ export default function ProfileRoute() {
 				},
 				{
 					title: 'Vehicles',
-					icon: CreditCardIcon,
+					icon: CarIcon,
 					count: employee.vehicles.length,
 					link: 'vehicles',
 					color: 'bg-yellow-100 text-yellow-800',
@@ -160,7 +160,7 @@ export default function ProfileRoute() {
 				},
 				{
 					title: 'Access Requests',
-					icon: CreditCardIcon,
+					icon: LockClosedIcon,
 					count: employee.accessRequests.length,
 					link: 'access-requests',
 					color: 'bg-purple-100 text-purple-800',
@@ -181,7 +181,7 @@ export default function ProfileRoute() {
 				},
 				{
 					title: 'ID Requests',
-					icon: CarIcon,
+					icon: IdCardIcon,
 					count: employee.vehicles.length,
 					link: 'parking',
 					color: 'bg-indigo-100 text-indigo-800',

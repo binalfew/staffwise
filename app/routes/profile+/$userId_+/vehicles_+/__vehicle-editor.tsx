@@ -7,6 +7,8 @@ import { z } from 'zod'
 import FormCard from '~/components/FormCard'
 import FormField from '~/components/FormField'
 import { Button } from '~/components/ui/button'
+import { StatusButton } from '~/components/ui/status-button'
+import { useIsPending } from '~/utils/misc'
 import { type action } from './__vehicle-editor.server'
 
 export const VehicleEditorSchema = z.object({
@@ -41,6 +43,7 @@ export function VehicleEditor({
 }) {
 	const params = useParams()
 	const actionData = useActionData<typeof action>()
+	const isPending = useIsPending()
 	const disabled = intent === 'delete'
 	const schema = intent === 'delete' ? VehicleDeleteSchema : VehicleEditorSchema
 	const [form, fields] = useForm({
@@ -114,16 +117,18 @@ export function VehicleEditor({
 				formItems.map((item, index) => <FormField key={index} item={item} />),
 			]}
 			buttons={[
-				<Button
+				<StatusButton
 					key="submit"
-					className="w-full"
 					type="submit"
+					disabled={isPending}
+					status={isPending ? 'pending' : actionData?.result.status ?? 'idle'}
+					className="w-full"
 					name="intent"
 					value={intent}
 					variant={intent === 'delete' ? 'destructive' : 'default'}
 				>
 					{intent === 'delete' ? 'Delete' : 'Save'}
-				</Button>,
+				</StatusButton>,
 				<Button key="cancel" asChild variant="outline" className="w-full">
 					<Link to={`/profile/${params.userId}/vehicles`}>Cancel</Link>
 				</Button>,

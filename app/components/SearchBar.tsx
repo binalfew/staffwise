@@ -1,7 +1,7 @@
 import { Form, useSearchParams, useSubmit } from '@remix-run/react'
-import { SearchIcon } from 'lucide-react'
 import { useId } from 'react'
 import { useDebounce, useIsPending } from '~/utils/misc.tsx'
+import { Icon } from './ui/icon'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
 import { StatusButton } from './ui/status-button'
@@ -54,7 +54,7 @@ export function SearchBar({
 					className="flex w-full items-center justify-center"
 					size="sm"
 				>
-					<SearchIcon className="h-4 w-4" />
+					<Icon name="magnifying-glass" size="sm" />
 					<span className="sr-only">Search</span>
 				</StatusButton>
 			</div>

@@ -1,6 +1,6 @@
 import { LoaderFunctionArgs, json } from '@remix-run/node'
 import { Link, useLoaderData } from '@remix-run/react'
-import { ArrowLeftIcon, EditIcon, PlusCircle, TrashIcon } from 'lucide-react'
+import { EditIcon, TrashIcon } from 'lucide-react'
 import { Paginator } from '~/components/Paginator'
 import { SearchBar } from '~/components/SearchBar'
 import { Button } from '~/components/ui/button'
@@ -11,6 +11,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from '~/components/ui/card'
+import { Icon } from '~/components/ui/icon'
 import {
 	Table,
 	TableBody,
@@ -87,13 +88,13 @@ export default function SpousesRoute() {
 
 						<Button asChild size="sm" className="ml-auto gap-1">
 							<Link to="new">
-								<PlusCircle className="h-4 w-4" />
+								<Icon name="plus" />
 								Add
 							</Link>
 						</Button>
 						<Button asChild size="sm" className="ml-auto gap-1">
 							<Link to={`/profile/${user.id}`}>
-								<ArrowLeftIcon className="h-4 w-4" />
+								<Icon name="arrow-left" />
 								Back
 							</Link>
 						</Button>

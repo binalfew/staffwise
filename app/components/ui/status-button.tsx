@@ -1,8 +1,8 @@
-import { CheckIcon, SaveIcon } from 'lucide-react'
 import * as React from 'react'
 import { useSpinDelay } from 'spin-delay'
 import { cn } from '~/utils/misc.tsx'
 import { Button, type ButtonProps } from './button.tsx'
+import { Icon } from './icon.tsx'
 import {
 	Tooltip,
 	TooltipContent,
@@ -26,17 +26,17 @@ export const StatusButton = React.forwardRef<
 	const companion = {
 		pending: delayedPending ? (
 			<div className="inline-flex h-6 w-6 items-center justify-center">
-				<SaveIcon className="animate-spin" />
+				<Icon name="update" className="animate-spin" />
 			</div>
 		) : null,
 		success: (
 			<div className="inline-flex h-6 w-6 items-center justify-center">
-				<CheckIcon />
+				<Icon name="check" />
 			</div>
 		),
 		error: (
 			<div className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-destructive">
-				<SaveIcon className="text-destructive-foreground" />
+				<Icon name="cross-1" className="text-destructive-foreground" />
 			</div>
 		),
 		idle: null,

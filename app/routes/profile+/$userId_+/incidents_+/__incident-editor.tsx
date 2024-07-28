@@ -8,7 +8,8 @@ import { z } from 'zod'
 import FormCard from '~/components/FormCard'
 import FormField from '~/components/FormField'
 import { Button } from '~/components/ui/button'
-import { getAttachmentFileSrc } from '~/utils/misc'
+import { StatusButton } from '~/components/ui/status-button'
+import { getAttachmentFileSrc, useIsPending } from '~/utils/misc'
 import { type action } from './__incident-editor.server'
 
 const MAX_UPLOAD_SIZE = 1024 * 1024 * 3 // 3MB
@@ -88,6 +89,7 @@ export function IncidentEditor({
 }) {
 	const params = useParams()
 	const actionData = useActionData<typeof action>()
+	const isPending = useIsPending()
 	const disabled = intent === 'delete'
 	const schema =
 		intent === 'delete' ? IncidentDeleteSchema : IncidentEditorSchema
@@ -248,17 +250,19 @@ export function IncidentEditor({
 				</fieldset>,
 			]}
 			buttons={[
-				<Button
+				<StatusButton
 					key="submit"
 					type="submit"
 					form={form.id}
+					disabled={isPending}
+					status={isPending ? 'pending' : actionData?.result.status ?? 'idle'}
+					className="w-full"
 					name="intent"
 					value={intent}
 					variant={intent === 'delete' ? 'destructive' : 'default'}
-					className="w-full"
 				>
 					{intent === 'delete' ? 'Delete' : 'Save'}
-				</Button>,
+				</StatusButton>,
 				<Button key="cancel" asChild variant="outline" className="w-full">
 					<Link to={`/profile/${params.userId}/incidents`}>Cancel</Link>
 				</Button>,
