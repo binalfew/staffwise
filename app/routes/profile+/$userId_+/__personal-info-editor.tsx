@@ -29,7 +29,7 @@ export const PersonalInfoEditorSchema = z.object({
 	firstName: z.string({ required_error: 'First Name is required' }),
 	familyName: z.string({ required_error: 'Family Name is required' }),
 	middleName: z.string({ required_error: 'Middle Name is required' }),
-	email: z.string({ required_error: 'Email is required' }),
+	email: z.string().optional(),
 	countryId: z.string({ required_error: 'Country ID is required' }),
 	nationalPassportNumber: z.string({
 		required_error: 'National Passport Number is required',
@@ -46,9 +46,7 @@ export const PersonalInfoEditorSchema = z.object({
 			invalid_type_error: 'Invalid date',
 		})
 		.max(new Date(), { message: 'Date of birth cannot be in the future' }),
-	specialConditions: z.string({
-		required_error: 'Special Conditions is required',
-	}),
+	specialConditions: z.string().optional(),
 })
 
 export function PersonalInfoEditor({
@@ -111,6 +109,20 @@ export function PersonalInfoEditor({
 					<HoneypotInputs />
 					<InputField meta={fields.id} type="hidden" />
 
+					<div className="space-y-2">
+						<Field>
+							<Label htmlFor={fields.email.id}>Email</Label>
+							<InputField
+								meta={fields.email}
+								type="text"
+								autoComplete="off"
+								disabled
+							/>
+							{fields.email.errors && (
+								<FieldError>{fields.email.errors}</FieldError>
+							)}
+						</Field>
+					</div>
 					<div className="grid grid-cols-3 gap-4">
 						<div className="space-y-2">
 							<Field>
@@ -151,15 +163,6 @@ export function PersonalInfoEditor({
 								)}
 							</Field>
 						</div>
-					</div>
-					<div className="space-y-2">
-						<Field>
-							<Label htmlFor={fields.email.id}>Email</Label>
-							<InputField meta={fields.email} type="text" autoComplete="off" />
-							{fields.email.errors && (
-								<FieldError>{fields.email.errors}</FieldError>
-							)}
-						</Field>
 					</div>
 					<div className="grid grid-cols-2 gap-4">
 						<div className="space-y-2">

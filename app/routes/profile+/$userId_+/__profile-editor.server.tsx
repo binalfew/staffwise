@@ -1,10 +1,13 @@
 import { parseWithZod } from '@conform-to/zod'
-import { ActionFunctionArgs, json } from '@remix-run/node'
+import { User } from '@prisma/client'
+import { ActionFunctionArgs, json, SerializeFrom } from '@remix-run/node'
 import { z } from 'zod'
+import { insertAuditLog } from '~/utils/audit.server'
 import { requireUserId } from '~/utils/auth.server'
 import { validateCSRF } from '~/utils/csrf.server'
 import { prisma } from '~/utils/db.server'
 import { checkHoneypot } from '~/utils/honeypot.server'
+import { invariantResponse } from '~/utils/misc'
 import { redirectWithToast } from '~/utils/toast.server'
 import { AddressEditorSchema } from './__address-editor'
 import { DutyStationEditorSchema } from './__duty-station-editor'
@@ -18,15 +21,24 @@ export async function action({ request }: ActionFunctionArgs) {
 	checkHoneypot(formData)
 	await validateCSRF(formData, request.headers)
 
+	const user = await prisma.user.findUnique({
+		where: { id: userId },
+		select: { id: true, email: true },
+	})
+
+	invariantResponse(user !== null, 'User not found', {
+		status: 404,
+	})
+
 	switch (intent) {
 		case 'update-profile':
-			return updateProfile({ userId, formData })
+			return updateProfile({ user, formData })
 		case 'update-personal-info':
-			return updatePersonalInfo({ userId, formData })
+			return updatePersonalInfo({ user, formData })
 		case 'update-duty-station':
-			return updateDutyStation({ userId, formData })
+			return updateDutyStation({ user, formData })
 		case 'update-address':
-			return updateAddress({ userId, formData })
+			return updateAddress({ user, formData })
 		default:
 			return redirectWithToast(`/profile/${userId}`, {
 				type: 'error',
@@ -37,24 +49,24 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 async function updateProfile({
-	userId,
+	user,
 	formData,
 }: {
-	userId: string
+	user: SerializeFrom<Pick<User, 'id' | 'email'>>
 	formData: FormData
 }) {
 	const submission = await parseWithZod(formData, {
 		schema: ProfileEditorSchema.superRefine(async (data, ctx) => {
 			const employee = await prisma.employee.findFirst({
-				where: { email: data.email },
+				where: { email: user.email },
 				select: { id: true },
 			})
 
 			if (employee && employee.id !== data.id) {
 				ctx.addIssue({
-					path: ['name'],
+					path: ['email'],
 					code: z.ZodIssueCode.custom,
-					message: 'Profile with this name already exists.',
+					message: 'Profile with this email already exists.',
 				})
 				return
 			}
@@ -74,11 +86,28 @@ async function updateProfile({
 	await prisma.employee.upsert({
 		select: { id: true },
 		where: { id: employeeId ?? '__new_employee__' },
-		create: data,
-		update: data,
+		create: {
+			...data,
+			email: user.email,
+		},
+		update: {
+			...data,
+			email: user.email,
+		},
 	})
 
-	return redirectWithToast(`/profile/${userId}`, {
+	await insertAuditLog({
+		user: { id: user.id },
+		action: 'UPDATE',
+		entity: 'Employee',
+		details: {
+			...data,
+			id: employeeId,
+			email: user.email,
+		},
+	})
+
+	return redirectWithToast(`/profile/${user.id}`, {
 		type: 'success',
 		title: 'Profile Updated',
 		description: 'Profile updated successfully.',
@@ -86,28 +115,14 @@ async function updateProfile({
 }
 
 async function updatePersonalInfo({
-	userId,
+	user,
 	formData,
 }: {
-	userId: string
+	user: SerializeFrom<Pick<User, 'id' | 'email'>>
 	formData: FormData
 }) {
 	const submission = await parseWithZod(formData, {
-		schema: PersonalInfoEditorSchema.superRefine(async (data, ctx) => {
-			const employee = await prisma.employee.findFirst({
-				where: { email: data.email },
-				select: { id: true },
-			})
-
-			if (employee && employee.id !== data.id) {
-				ctx.addIssue({
-					path: ['name'],
-					code: z.ZodIssueCode.custom,
-					message: 'Profile with this name already exists.',
-				})
-				return
-			}
-		}),
+		schema: PersonalInfoEditorSchema,
 		async: true,
 	})
 
@@ -125,7 +140,17 @@ async function updatePersonalInfo({
 		data,
 	})
 
-	return redirectWithToast(`/profile/${userId}`, {
+	await insertAuditLog({
+		user: { id: user.id },
+		action: 'UPDATE',
+		entity: 'Employee',
+		details: {
+			...data,
+			id: employeeId,
+		},
+	})
+
+	return redirectWithToast(`/profile/${user.id}`, {
 		type: 'success',
 		title: 'Personal Info Updated',
 		description: 'Personal info updated successfully.',
@@ -133,10 +158,10 @@ async function updatePersonalInfo({
 }
 
 async function updateDutyStation({
-	userId,
+	user,
 	formData,
 }: {
-	userId: string
+	user: SerializeFrom<Pick<User, 'id' | 'email'>>
 	formData: FormData
 }) {
 	const submission = await parseWithZod(formData, {
@@ -158,7 +183,17 @@ async function updateDutyStation({
 		data,
 	})
 
-	return redirectWithToast(`/profile/${userId}`, {
+	await insertAuditLog({
+		user: { id: user.id },
+		action: 'UPDATE',
+		entity: 'Employee',
+		details: {
+			...data,
+			id: employeeId,
+		},
+	})
+
+	return redirectWithToast(`/profile/${user.id}`, {
 		type: 'success',
 		title: 'Duty Station Updated',
 		description: 'Duty station updated successfully.',
@@ -166,10 +201,10 @@ async function updateDutyStation({
 }
 
 async function updateAddress({
-	userId,
+	user,
 	formData,
 }: {
-	userId: string
+	user: SerializeFrom<Pick<User, 'id' | 'email'>>
 	formData: FormData
 }) {
 	const submission = await parseWithZod(formData, {
@@ -191,7 +226,17 @@ async function updateAddress({
 		data,
 	})
 
-	return redirectWithToast(`/profile/${userId}`, {
+	await insertAuditLog({
+		user: { id: user.id },
+		action: 'UPDATE',
+		entity: 'Employee',
+		details: {
+			...data,
+			id: employeeId,
+		},
+	})
+
+	return redirectWithToast(`/profile/${user.id}`, {
 		type: 'success',
 		title: 'Address Updated',
 		description: 'Address updated successfully.',

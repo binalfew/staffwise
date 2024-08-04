@@ -32,11 +32,9 @@ export const DutyStationEditorSchema = z.object({
 	locationId: z.string({ required_error: 'Location ID is required' }),
 	floorId: z.string({ required_error: 'Floor ID is required' }),
 	officeNumber: z.string({ required_error: 'Office Number is required' }),
-	medicallyTrained: z.boolean({
-		required_error: 'Medically Trained is required',
-	}),
-	zone: z.string({ required_error: 'Zone is required' }),
-	team: z.string({ required_error: 'Team is required' }),
+	medicallyTrained: z.boolean().optional(),
+	zone: z.string().optional(),
+	team: z.string().optional(),
 })
 
 export function DutyStationEditor({

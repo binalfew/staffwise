@@ -59,7 +59,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export default function ProfileRoute() {
 	const { user, employee, idRequests } = useLoaderData<typeof loader>()
-	console.log(employee)
 
 	if (!employee) {
 		return (

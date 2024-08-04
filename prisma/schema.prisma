@@ -42,6 +42,19 @@ enum CounterType {
   INCIDENT
 }
 
+enum AuditLogAction {
+  CREATE
+  READ
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  REGISTER
+  RESET_PASSWORD
+  CHANGE_PASSWORD
+  VERIFY_EMAIL
+}
+
 model User {
   id          String       @id @default(cuid())
   email       String       @unique
@@ -52,6 +65,20 @@ model User {
   password    Password?
   roles       Role[]
   connections Connection[]
+  auditLogs   AuditLog[]
+}
+
+model AuditLog {
+  id        String         @id @default(cuid())
+  userId    String
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  action    AuditLogAction
+  entity    String
+  details   Json?
+  createdAt DateTime       @default(now())
+
+  @@index([userId])
+  @@index([entity])
 }
 
 model Permission {
@@ -163,15 +190,15 @@ model IncidentType {
 
 model Employee {
   id                     String     @id @default(cuid())
-  firstName              String     @default("")
-  familyName             String     @default("")
-  middleName             String     @default("")
-  email                  String     @default("")
+  firstName              String
+  familyName             String
+  middleName             String
+  email                  String
   countryId              String
   country                Country    @relation(fields: [countryId], references: [id])
-  nationalPassportNumber String     @unique @default("")
-  auPassportNumber       String     @unique @default("")
-  auIdNumber             String     @unique @default("")
+  nationalPassportNumber String     @unique
+  auPassportNumber       String     @unique
+  auIdNumber             String     @unique
   dateIssued             DateTime   @default(now())
   validUntil             DateTime   @default(now())
   dateOfBirth            DateTime   @default(now())
@@ -183,24 +210,24 @@ model Employee {
   location               Location   @relation(fields: [locationId], references: [id])
   floorId                String
   floor                  Floor      @relation(fields: [floorId], references: [id])
-  officeNumber           String     @default("")
-  specialConditions      String     @default("")
-  medicallyTrained       Boolean    @default(false)
-  zone                   String     @default("")
-  team                   String     @default("")
+  officeNumber           String
+  specialConditions      String?
+  medicallyTrained       Boolean?
+  zone                   String?
+  team                   String?
 
-  city                  String @default("")
-  subcity               String @default("")
-  woreda                String @default("")
-  street                String @default("")
-  kebele                String @default("")
-  houseNumber           String @default("")
-  houseTelephoneNumber  String @default("")
-  mobileTelephoneNumber String @default("")
-  officeTelephoneNumber String @default("")
-  specificLocation      String @default("")
-  gpsLocation           String @default("")
-  homeCountryAddress    String @default("")
+  city                  String?
+  subcity               String?
+  woreda                String?
+  street                String?
+  kebele                String?
+  houseNumber           String?
+  houseTelephoneNumber  String?
+  mobileTelephoneNumber String?
+  officeTelephoneNumber String?
+  specificLocation      String?
+  gpsLocation           String?
+  homeCountryAddress    String?
 
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt

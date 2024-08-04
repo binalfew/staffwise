@@ -6,14 +6,16 @@ import { ProfileEditor } from './__profile-editor'
 export { action } from './__profile-editor.server'
 
 export async function loader({ request }: LoaderFunctionArgs) {
-	await requireUser(request)
+	const user = await requireUser(request)
 
 	const countries = await prisma.country.findMany({
 		select: { id: true, name: true },
 	})
+
 	const departments = await prisma.department.findMany({
 		select: { id: true, name: true, organId: true },
 	})
+
 	const organs = await prisma.organ.findMany({
 		select: {
 			id: true,
@@ -22,9 +24,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 			locations: { select: { id: true } },
 		},
 	})
+
 	const locations = await prisma.location.findMany({
 		select: { id: true, name: true, organId: true },
 	})
+
 	const floors = await prisma.floor.findMany({
 		select: { id: true, name: true, locationId: true },
 	})
@@ -35,11 +39,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		organs,
 		locations,
 		floors,
+		user,
 	} as const)
 }
 
 export default function ProfileUpdateRoute() {
-	const { countries, organs, departments, locations, floors } =
+	const { countries, organs, departments, locations, floors, user } =
 		useLoaderData<typeof loader>()
 
 	return (
@@ -49,6 +54,8 @@ export default function ProfileUpdateRoute() {
 			departments={departments}
 			locations={locations}
 			floors={floors}
+			mode="new"
+			user={user}
 		/>
 	)
 }

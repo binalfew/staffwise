@@ -1,5 +1,6 @@
 import { parseWithZod } from '@conform-to/zod'
 import { ActionFunctionArgs, json } from '@remix-run/node'
+import { insertAuditLog } from '~/utils/audit.server'
 import { requireUser } from '~/utils/auth.server'
 import { validateCSRF } from '~/utils/csrf.server'
 import { prisma } from '~/utils/db.server'
@@ -73,6 +74,16 @@ export async function action({ request }: ActionFunctionArgs) {
 		where: { id: dependantId ?? '__new_dependant__' },
 		create: data,
 		update: data,
+	})
+
+	await insertAuditLog({
+		user: { id: user.id },
+		action: dependantId ? 'UPDATE' : 'CREATE',
+		entity: 'Dependant',
+		details: {
+			...data,
+			id: dependantId,
+		},
 	})
 
 	return redirectWithToast(`/profile/${user.id}/dependants`, {

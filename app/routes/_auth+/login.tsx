@@ -18,6 +18,7 @@ import {
 	CardTitle,
 } from '~/components/ui/card'
 import { Label } from '~/components/ui/label'
+import { insertAuditLog } from '~/utils/audit.server'
 import { login, requireAnonymous } from '~/utils/auth.server'
 import { ProviderConnectionForm } from '~/utils/connections'
 import { checkHoneypot } from '~/utils/honeypot.server'
@@ -68,6 +69,13 @@ export async function action({ request }: ActionFunctionArgs) {
 	}
 
 	const { user, remember, redirectTo } = submission.value
+
+	await insertAuditLog({
+		user,
+		action: 'LOGIN',
+		entity: 'User',
+		request,
+	})
 
 	return handleNewSession({
 		request,

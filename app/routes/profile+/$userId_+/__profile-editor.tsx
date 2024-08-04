@@ -28,7 +28,9 @@ import {
 	Floor,
 	Location,
 	Organ,
+	User,
 } from '@prisma/client'
+import { ErrorList } from '~/components/ErrorList'
 import { Separator } from '~/components/ui/separator'
 import { type action } from './__profile-editor.server'
 
@@ -37,7 +39,7 @@ export const ProfileEditorSchema = z.object({
 	firstName: z.string({ required_error: 'First Name is required' }),
 	familyName: z.string({ required_error: 'Family Name is required' }),
 	middleName: z.string({ required_error: 'Middle Name is required' }),
-	email: z.string({ required_error: 'Email is required' }),
+	email: z.string().optional(),
 	countryId: z.string({ required_error: 'Country ID is required' }),
 	nationalPassportNumber: z.string({
 		required_error: 'National Passport Number is required',
@@ -59,14 +61,10 @@ export const ProfileEditorSchema = z.object({
 	locationId: z.string({ required_error: 'Location ID is required' }),
 	floorId: z.string({ required_error: 'Floor ID is required' }),
 	officeNumber: z.string({ required_error: 'Office Number is required' }),
-	specialConditions: z.string({
-		required_error: 'Special Conditions is required',
-	}),
-	medicallyTrained: z.boolean({
-		required_error: 'Medically Trained is required',
-	}),
-	zone: z.string({ required_error: 'Zone is required' }),
-	team: z.string({ required_error: 'Team is required' }),
+	specialConditions: z.string().optional(),
+	medicallyTrained: z.boolean().optional(),
+	zone: z.string().optional(),
+	team: z.string().optional(),
 	city: z.string().optional(),
 	subcity: z.string().optional(),
 	woreda: z.string().optional(),
@@ -88,7 +86,7 @@ export function ProfileEditor({
 	departments,
 	locations,
 	floors,
-	mode,
+	user,
 }: {
 	profile?: SerializeFrom<
 		Pick<
@@ -133,6 +131,7 @@ export function ProfileEditor({
 	departments: Array<Pick<Department, 'id' | 'name'>>
 	locations: Array<Pick<Location, 'id' | 'name'>>
 	floors: Array<Pick<Floor, 'id' | 'name'>>
+	user: SerializeFrom<Pick<User, 'id' | 'email' | 'username' | 'name'>>
 	mode: 'new' | 'edit'
 }) {
 	const params = useParams()
@@ -148,6 +147,7 @@ export function ProfileEditor({
 		shouldRevalidate: 'onInput',
 		defaultValue: {
 			...profile,
+			email: user.email,
 		},
 	})
 
@@ -171,6 +171,20 @@ export function ProfileEditor({
 					<HoneypotInputs />
 					<InputField meta={fields.id} type="hidden" />
 
+					<div className="space-y-2">
+						<Field>
+							<Label htmlFor={fields.email.id}>Email</Label>
+							<InputField
+								meta={fields.email}
+								type="text"
+								autoComplete="off"
+								disabled
+							/>
+							{fields.email.errors && (
+								<FieldError>{fields.email.errors}</FieldError>
+							)}
+						</Field>
+					</div>
 					<div className="grid grid-cols-3 gap-4">
 						<div className="space-y-2">
 							<Field>
@@ -211,15 +225,6 @@ export function ProfileEditor({
 								)}
 							</Field>
 						</div>
-					</div>
-					<div className="space-y-2">
-						<Field>
-							<Label htmlFor={fields.email.id}>Email</Label>
-							<InputField meta={fields.email} type="text" autoComplete="off" />
-							{fields.email.errors && (
-								<FieldError>{fields.email.errors}</FieldError>
-							)}
-						</Field>
 					</div>
 					<div className="grid grid-cols-2 gap-4">
 						<div className="space-y-2">
@@ -632,6 +637,8 @@ export function ProfileEditor({
 							)}
 						</Field>
 					</div>
+
+					<ErrorList id={form.id} errors={form.errors} />
 				</CardContent>
 
 				<CardFooter className="text-center space-x-4">

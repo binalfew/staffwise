@@ -1,6 +1,7 @@
 import { parseWithZod } from '@conform-to/zod'
 import { createId as cuid } from '@paralleldrive/cuid2'
 import { ActionFunctionArgs, json } from '@remix-run/node'
+import { insertAuditLog } from '~/utils/audit.server'
 import { requireUser } from '~/utils/auth.server'
 import { validateCSRF } from '~/utils/csrf.server'
 import { generateSerialNumber, prisma } from '~/utils/db.server'
@@ -111,6 +112,16 @@ export async function action({ request }: ActionFunctionArgs) {
 				})),
 				create: newVisitors,
 			},
+		},
+	})
+
+	await insertAuditLog({
+		user: { id: user.id },
+		action: accessRequestId ? 'UPDATE' : 'CREATE',
+		entity: 'AccessRequest',
+		details: {
+			...data,
+			id: accessRequestId,
 		},
 	})
 

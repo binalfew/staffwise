@@ -2,6 +2,7 @@ import { parseWithZod } from '@conform-to/zod'
 import { createId as cuid } from '@paralleldrive/cuid2'
 import { IdRequestReason, IdRequestType } from '@prisma/client'
 import { ActionFunctionArgs, json } from '@remix-run/node'
+import { insertAuditLog } from '~/utils/audit.server'
 import { requireUser } from '~/utils/auth.server'
 import { validateCSRF } from '~/utils/csrf.server'
 import { generateSerialNumber, prisma } from '~/utils/db.server'
@@ -267,6 +268,16 @@ export async function action({ request }: ActionFunctionArgs) {
 		...updatePromises,
 		...newAttachmentsPromises,
 	])
+
+	await insertAuditLog({
+		user: { id: user.id },
+		action: idRequestId ? 'UPDATE' : 'CREATE',
+		entity: 'Id Request',
+		details: {
+			...idRequestDetails,
+			id: idRequestId,
+		},
+	})
 
 	return redirectWithToast(`/profile/${user.id}/id-requests`, {
 		type: 'success',
