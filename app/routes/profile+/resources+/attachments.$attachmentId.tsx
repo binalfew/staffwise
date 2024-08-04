@@ -21,7 +21,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
 	const blob = await getFile({
 		containerName: 'incidents',
-		fileName: `${attachment.incident.incidentNumber}/${attachment.fileName}.${attachment.extension}`,
+		fileName: `${attachment.incident?.incidentNumber}/${attachment.fileName}.${attachment.extension}`,
 	})
 
 	return new Response(blob, {

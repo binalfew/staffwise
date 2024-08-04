@@ -27,6 +27,7 @@ export default function FormField({ item }: FormFieldProps) {
 	if (item.type === 'file') {
 		return (
 			<Field key={item.field.id}>
+				<Label htmlFor={item.field.id}>{item.label}</Label>
 				<div
 					style={{
 						display: 'flex',

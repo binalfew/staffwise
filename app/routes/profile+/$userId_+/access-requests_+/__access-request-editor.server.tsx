@@ -3,7 +3,7 @@ import { createId as cuid } from '@paralleldrive/cuid2'
 import { ActionFunctionArgs, json } from '@remix-run/node'
 import { requireUser } from '~/utils/auth.server'
 import { validateCSRF } from '~/utils/csrf.server'
-import { generateAccessRequestNumber, prisma } from '~/utils/db.server'
+import { generateSerialNumber, prisma } from '~/utils/db.server'
 import { checkHoneypot } from '~/utils/honeypot.server'
 import { invariantResponse } from '~/utils/misc'
 import { redirectWithToast } from '~/utils/toast.server'
@@ -80,7 +80,7 @@ export async function action({ request }: ActionFunctionArgs) {
 		...accessRequestDetails
 	} = submission.value
 
-	const requestNumber = await generateAccessRequestNumber()
+	const requestNumber = await generateSerialNumber('ACCESSREQUEST')
 	const data = {
 		...accessRequestDetails,
 		requestorId: employee.id,

@@ -26,8 +26,26 @@ async function seed() {
 	await prisma.verification.deleteMany()
 	await prisma.role.deleteMany()
 	await prisma.permission.deleteMany()
-	await prisma.accessRequestCounter.deleteMany()
+	await prisma.counter.deleteMany()
 	await prisma.accessRequest.deleteMany()
+	await prisma.visitor.deleteMany()
+	await prisma.vehicle.deleteMany()
+	await prisma.assessment.deleteMany()
+	await prisma.incident.deleteMany()
+	await prisma.employeeIdRequest.deleteMany()
+	await prisma.dependantIdRequest.deleteMany()
+	await prisma.spouseIdRequest.deleteMany()
+	await prisma.privateDriverIdRequest.deleteMany()
+	await prisma.libraryUserIdRequest.deleteMany()
+	await prisma.retireeIdRequest.deleteMany()
+
+	await prisma.dependant.deleteMany()
+	await prisma.spouse.deleteMany()
+	await prisma.idRequest.deleteMany()
+	await prisma.employee.deleteMany()
+	await prisma.password.deleteMany()
+	await prisma.user.deleteMany()
+
 	console.timeEnd('🧹 Cleaned up the database...')
 
 	const entities = [
@@ -44,7 +62,17 @@ async function seed() {
 		'role',
 		'permission',
 		'accessRequest',
-		'accessRequestCounter',
+		'counter',
+		'employee',
+		'dependant',
+		'spouse',
+		'idRequest',
+		'employeeIdRequest',
+		'dependantIdRequest',
+		'spouseIdRequest',
+		'privateDriverIdRequest',
+		'libraryUserIdRequest',
+		'retireeIdRequest',
 	]
 	const actions = ['create', 'read', 'update', 'delete']
 	const accesses = ['own', 'any']
@@ -341,33 +369,44 @@ async function seed() {
 	})
 
 	// Reset access request counter
-	await prisma.accessRequestCounter.create({
-		data: {
-			lastCounter: 0,
-		},
+	await prisma.counter.createMany({
+		data: [
+			{
+				lastCounter: 0,
+				type: 'ACCESSREQUEST',
+			},
+			{
+				lastCounter: 0,
+				type: 'INCIDENT',
+			},
+			{
+				lastCounter: 0,
+				type: 'IDREQUEST',
+			},
+		],
 	})
 
 	console.timeEnd(`🐨 Created admin user "binalfewk"`)
 
 	// Create user with 'user' role
-	const users = ['binalfew', 'makida', 'kebron', 'maidot', 'lemlem']
-	for (const user of users) {
-		console.time(`🐨 Created user "${user}"`)
-		await prisma.user.create({
-			data: {
-				email: `${user}@staffwise.com`,
-				username: user,
-				name: user.charAt(0).toUpperCase() + user.slice(1),
-				password: {
-					create: createPassword('password'),
-				},
-				roles: {
-					connect: [{ name: 'user' }],
-				},
-			},
-		})
-		console.timeEnd(`🐨 Created user "${user}"`)
-	}
+	// const users = ['binalfew', 'makida', 'kebron', 'maidot', 'lemlem']
+	// for (const user of users) {
+	// 	console.time(`🐨 Created user "${user}"`)
+	// 	await prisma.user.create({
+	// 		data: {
+	// 			email: `${user}@staffwise.com`,
+	// 			username: user,
+	// 			name: user.charAt(0).toUpperCase() + user.slice(1),
+	// 			password: {
+	// 				create: createPassword('password'),
+	// 			},
+	// 			roles: {
+	// 				connect: [{ name: 'user' }],
+	// 			},
+	// 		},
+	// 	})
+	// 	console.timeEnd(`🐨 Created user "${user}"`)
+	// }
 
 	console.timeEnd(`🌱 Database has been seeded`)
 }

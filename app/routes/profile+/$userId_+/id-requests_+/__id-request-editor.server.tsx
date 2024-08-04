@@ -1,5 +1,6 @@
 import { parseWithZod } from '@conform-to/zod'
 import { createId as cuid } from '@paralleldrive/cuid2'
+import { IdRequestReason, IdRequestType } from '@prisma/client'
 import { ActionFunctionArgs, json } from '@remix-run/node'
 import { requireUser } from '~/utils/auth.server'
 import { validateCSRF } from '~/utils/csrf.server'
@@ -15,47 +16,53 @@ import { redirectWithToast } from '~/utils/toast.server'
 import {
 	attachmentHasFile,
 	attachmentHasId,
-	IncidentDeleteSchema,
-	IncidentEditorSchema,
-} from './__incident-editor'
+	IdRequestDeleteSchema,
+	IdRequestEditorSchema,
+} from './__id-request-editor'
 
-export async function action({ params, request }: ActionFunctionArgs) {
+export async function action({ request }: ActionFunctionArgs) {
 	const user = await requireUser(request)
 	const formData = await request.formData()
 	checkHoneypot(formData)
 	await validateCSRF(formData, request.headers)
+
 	const intent = formData.get('intent')
 
 	if (intent === 'delete') {
 		const submission = await parseWithZod(formData, {
-			schema: IncidentDeleteSchema,
+			schema: IdRequestDeleteSchema,
 			async: true,
 		})
+
 		if (submission.status !== 'success') {
 			return json(
 				{ result: submission.reply() },
 				{ status: submission.status === 'error' ? 400 : 200 },
 			)
 		}
-		const incident = await prisma.incident.delete({
+
+		const idRequest = await prisma.idRequest.findFirst({
 			where: { id: submission.value.id },
-			select: { incidentNumber: true },
+		})
+
+		await prisma.idRequest.delete({
+			where: { id: submission.value.id },
 		})
 
 		await deleteDirectory({
-			containerName: 'incidents',
-			directoryName: incident.incidentNumber,
+			containerName: 'id-requests',
+			directoryName: idRequest?.requestNumber ?? '',
 		})
 
-		return redirectWithToast(`/profile/${user.id}/incidents`, {
+		return redirectWithToast(`/profile/${user.id}/id-requests`, {
 			type: 'success',
-			title: `Incident Deleted`,
-			description: `Incident deleted successfully.`,
+			title: 'ID Request Deleted',
+			description: 'ID Request entry deleted successfully.',
 		})
 	}
 
 	const submission = await parseWithZod(formData, {
-		schema: IncidentEditorSchema.transform(
+		schema: IdRequestEditorSchema.transform(
 			async ({ attachments = [], ...data }) => {
 				return {
 					...data,
@@ -112,40 +119,65 @@ export async function action({ params, request }: ActionFunctionArgs) {
 		select: { id: true, auIdNumber: true },
 	})
 
-	invariantResponse(employee, 'Employee not found', {
-		status: 404,
-	})
+	invariantResponse(employee, 'Employee not found', { status: 404 })
 
 	const {
-		id: incidentId,
+		id: idRequestId,
 		updatedAttachments,
 		newAttachments,
-		...incidentDetails
+		...idRequestDetails
 	} = submission.value
-
-	const data = {
-		...incidentDetails,
-		employeeId: employee.id,
-	}
 
 	const deletedAttachments = await prisma.attachment.findMany({
 		select: { fileName: true, extension: true },
 		where: { id: { notIn: updatedAttachments.map(i => i.id) } },
 	})
 
-	const incidentNumber = await generateSerialNumber('INCIDENT')
-	const incident = await prisma.incident.upsert({
-		select: { id: true, incidentNumber: true },
-		where: { id: incidentId ?? '__new_incident__' },
+	const requestNumber = await generateSerialNumber('IDREQUEST')
+	const idRequest = await prisma.idRequest.upsert({
+		select: { id: true, requestNumber: true },
+		where: { id: idRequestId ?? '__new_id_request__' },
 		create: {
-			...data,
-			incidentNumber,
+			...idRequestDetails,
+			requestNumber,
+			requestorEmail: user.email,
+			type: idRequestDetails.type as IdRequestType,
+			reason: idRequestDetails.reason as IdRequestReason,
+			employeeIdRequest: idRequestDetails.employeeIdRequest
+				? {
+						create: {
+							...idRequestDetails.employeeIdRequest,
+							employee: {
+								connect: { id: employee.id },
+							},
+						},
+				  }
+				: undefined,
+			spouseIdRequest: idRequestDetails.spouseIdRequest
+				? {
+						create: idRequestDetails.spouseIdRequest,
+				  }
+				: undefined,
+			dependantIdRequest: idRequestDetails.dependantIdRequest
+				? {
+						create: idRequestDetails.dependantIdRequest,
+				  }
+				: undefined,
+			privateDriverIdRequest: idRequestDetails.privateDriverIdRequest
+				? {
+						create: {
+							...idRequestDetails.privateDriverIdRequest,
+							staffAuIdNumber: employee.auIdNumber,
+						},
+				  }
+				: undefined,
 			attachments: {
 				create: newAttachments.map(({ blob, ...attachment }) => attachment),
 			},
 		},
 		update: {
-			...data,
+			type: idRequestDetails.type as IdRequestType,
+			reason: idRequestDetails.reason as IdRequestReason,
 			attachments: {
 				deleteMany: { id: { notIn: updatedAttachments.map(i => i.id) } },
 				updateMany: updatedAttachments.map(({ blob, ...updates }) => ({
@@ -154,13 +186,55 @@ export async function action({ params, request }: ActionFunctionArgs) {
 				})),
 				create: newAttachments.map(({ blob, ...attachment }) => attachment),
 			},
+			employeeIdRequest: idRequestDetails.employeeIdRequest
+				? {
+						upsert: {
+							create: {
+								...idRequestDetails.employeeIdRequest,
+								employee: {
+									connect: { id: employee.id },
+								},
+							},
+							update: {
+								...idRequestDetails.employeeIdRequest,
+							},
+						},
+				  }
+				: undefined,
+			spouseIdRequest: idRequestDetails.spouseIdRequest
+				? {
+						upsert: {
+							create: idRequestDetails.spouseIdRequest,
+							update: idRequestDetails.spouseIdRequest,
+						},
+				  }
+				: undefined,
+			dependantIdRequest: idRequestDetails.dependantIdRequest
+				? {
+						upsert: {
+							create: idRequestDetails.dependantIdRequest,
+							update: idRequestDetails.dependantIdRequest,
+						},
+				  }
+				: undefined,
+			privateDriverIdRequest: idRequestDetails.privateDriverIdRequest
+				? {
+						upsert: {
+							create: {
+								...idRequestDetails.privateDriverIdRequest,
+								staffAuIdNumber: employee.auIdNumber,
+							},
+							update: idRequestDetails.privateDriverIdRequest,
+						},
+				  }
+				: undefined,
 		},
 	})
 
 	const deletePromises = deletedAttachments.map(attachment =>
 		deleteFileIfExists({
-			containerName: 'incidents',
-			prefix: incident.incidentNumber,
+			containerName: 'id-requests',
+			prefix: idRequest.requestNumber,
 			fileName: attachment.fileName,
 		}),
 	)
@@ -168,8 +242,8 @@ export async function action({ params, request }: ActionFunctionArgs) {
 	const updatePromises = updatedAttachments.map(attachment => {
 		if (attachment.blob) {
 			return uploadFile({
-				containerName: 'incidents',
-				directory: incident.incidentNumber,
+				containerName: 'id-requests',
+				directory: idRequest.requestNumber,
 				fileName: attachment.fileName,
 				extension: attachment.extension,
 				blob: attachment.blob,
@@ -180,8 +254,8 @@ export async function action({ params, request }: ActionFunctionArgs) {
 
 	const newAttachmentsPromises = newAttachments.map(attachment =>
 		uploadFile({
-			containerName: 'incidents',
-			directory: incident.incidentNumber,
+			containerName: 'id-requests',
+			directory: idRequest.requestNumber,
 			fileName: attachment.fileName,
 			extension: attachment.extension,
 			blob: attachment.blob,
@@ -194,9 +268,11 @@ export async function action({ params, request }: ActionFunctionArgs) {
 		...newAttachmentsPromises,
 	])
 
-	return redirectWithToast(`/profile/${user.id}/incidents`, {
+	return redirectWithToast(`/profile/${user.id}/id-requests`, {
 		type: 'success',
-		title: `Incident ${incidentId ? 'Updated' : 'Created'}`,
-		description: `Incident ${incidentId ? 'updated' : 'created'} successfully.`,
+		title: `ID Request ${idRequestId ? 'Updated' : 'Created'}`,
+		description: `ID Request ${
+			idRequestId ? 'updated' : 'created'
+		} successfully.`,
 	})
 }

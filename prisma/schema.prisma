@@ -7,6 +7,41 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum IdRequestStatus {
+  PENDING
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  COMPLETED
+  CANCELLED
+}
+
+enum IdRequestType {
+  EMPLOYEE
+  DEPENDANT
+  SPOUSE
+  PRIVATEDRIVER
+  EMBASSYSTAFF
+  PARTNER
+  SERVICEPROVIDER
+  LIBRARYUSER
+  GYMUSER
+  RETIREE
+}
+
+enum IdRequestReason {
+  LOST
+  DAMAGED
+  EXPIRED
+  NEW
+}
+
+enum CounterType {
+  ACCESSREQUEST
+  IDREQUEST
+  INCIDENT
+}
+
 model User {
   id          String       @id @default(cuid())
   email       String       @unique
@@ -167,19 +202,20 @@ model Employee {
   gpsLocation           String @default("")
   homeCountryAddress    String @default("")
 
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
   dependants     Dependant[]
   spouses        Spouse[]
   vehicles       Vehicle[]
   incidents      Incident[]
   accessRequests AccessRequest[]
+  idRequests     EmployeeIdRequest[]
 }
 
 model Dependant {
-  id             String       @id @default(cuid())
+  id             String               @id @default(cuid())
   employeeId     String
-  employee       Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  employee       Employee             @relation(fields: [employeeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   firstName      String
   familyName     String
   middleName     String
@@ -188,26 +224,28 @@ model Dependant {
   validUntil     DateTime?
   dateOfBirth    DateTime?
   relationshipId String
-  relationship   Relationship @relation(fields: [relationshipId], references: [id])
+  relationship   Relationship         @relation(fields: [relationshipId], references: [id])
   nameOfSchool   String?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  idRequests     DependantIdRequest[]
 }
 
 model Spouse {
-  id              String    @id @default(cuid())
-  employeeId      String
-  employee        Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  firstName       String
-  familyName      String
-  middleName      String
-  auIdNumber      String?
-  dateIssued      DateTime?
-  validUntil      DateTime?
-  telephoneNumber String?
-  dateOfBirth     DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id               String            @id @default(cuid())
+  employeeId       String
+  employee         Employee          @relation(fields: [employeeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  firstName        String
+  familyName       String
+  middleName       String
+  auIdNumber       String?
+  dateIssued       DateTime?
+  validUntil       DateTime?
+  telephoneNumber  String?
+  dateOfBirth      DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  spouseIdRequests SpouseIdRequest[]
 }
 
 model Vehicle {
@@ -243,15 +281,20 @@ model Incident {
 }
 
 model Attachment {
-  id          String   @id @default(cuid())
+  id          String     @id @default(cuid())
   altText     String?
   contentType String
   fileName    String
   extension   String
-  incidentId  String
-  incident    Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  incidentId  String?
+  incident    Incident?  @relation(fields: [incidentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  idRequestId String?
+  idRequest   IdRequest? @relation(fields: [idRequestId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([incidentId])
+  @@index([idRequestId])
 }
 
 model Assessment {
@@ -284,9 +327,10 @@ model AccessRequest {
   visitors      Visitor[]
 }
 
-model AccessRequestCounter {
-  id          String @id @default(cuid())
-  lastCounter Int    @default(0)
+model Counter {
+  id          String      @id @default(cuid())
+  type        CounterType @unique
+  lastCounter Int         @default(0)
 }
 
 model Visitor {
@@ -304,6 +348,18 @@ model Visitor {
   timeOut         DateTime      @default(now())
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+  logs            VisitorLog[]
+}
+
+model VisitorLog {
+  id          String    @id @default(cuid())
+  visitorId   String
+  visitor     Visitor   @relation(fields: [visitorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  checkIn     DateTime
+  checkOut    DateTime?
+  badgeNumber String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model Connection {
@@ -334,4 +390,143 @@ model Verification {
   createdAt DateTime  @default(now())
 
   @@unique([target, type])
+}
+
+model IdRequest {
+  id                       String                    @id @default(cuid())
+  requestNumber            String
+  type                     IdRequestType             @default(EMPLOYEE)
+  status                   IdRequestStatus           @default(PENDING)
+  reason                   IdRequestReason           @default(NEW)
+  requestorEmail           String
+  attachments              Attachment[]
+  employeeIdRequest        EmployeeIdRequest?
+  dependantIdRequest       DependantIdRequest?
+  spouseIdRequest          SpouseIdRequest?
+  embassyStaffIdRequest    EmbassyStaffIdRequest?
+  partnerIdRequest         PartnerIdRequest?
+  serviceProviderIdRequest ServiceProviderIdRequest?
+  privateDriverIdRequest   PrivateDriverIdRequest?
+  libraryUserIdRequest     LibraryUserIdRequest?
+  retireeIdRequest         RetireeIdRequest?
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+}
+
+model EmployeeIdRequest {
+  id                 String    @id @default(cuid())
+  employeeId         String
+  employee           Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  idRequestId        String    @unique
+  idRequest          IdRequest @relation(fields: [idRequestId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  contractExpiryDate DateTime
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+model DependantIdRequest {
+  id          String    @id @default(cuid())
+  dependantId String
+  dependant   Dependant @relation(fields: [dependantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  idRequestId String    @unique
+  idRequest   IdRequest @relation(fields: [idRequestId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model SpouseIdRequest {
+  id          String    @id @default(cuid())
+  spouseId    String
+  spouse      Spouse    @relation(fields: [spouseId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  idRequestId String    @unique
+  idRequest   IdRequest @relation(fields: [idRequestId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model EmbassyStaffIdRequest {
+  id          String    @id @default(cuid())
+  idRequestId String    @unique
+  idRequest   IdRequest @relation(fields: [idRequestId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  fullName    String
+  idNumber    String
+  embassy     String
+  title       String
+  gender      String
+  nationality String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model PartnerIdRequest {
+  id                 String    @id @default(cuid())
+  idRequestId        String    @unique
+  idRequest          IdRequest @relation(fields: [idRequestId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  fullName           String
+  idNumber           String
+  contractExpireDate DateTime
+  title              String
+  gender             String
+  nationality        String
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+model ServiceProviderIdRequest {
+  id                  String    @id @default(cuid())
+  idRequestId         String    @unique
+  idRequest           IdRequest @relation(fields: [idRequestId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  fullName            String
+  idNumber            String
+  title               String
+  phoneNumber         String
+  serviceProviderName String
+  gender              String
+  nationality         String
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+}
+
+model PrivateDriverIdRequest {
+  id                String    @id @default(cuid())
+  idRequestId       String    @unique
+  idRequest         IdRequest @relation(fields: [idRequestId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  staffAuIdNumber   String
+  driverFullName    String
+  driverIdNumber    String
+  title             String
+  driverPhoneNumber String
+  gender            String
+  nationality       String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model LibraryUserIdRequest {
+  id          String    @id @default(cuid())
+  idRequestId String    @unique
+  idRequest   IdRequest @relation(fields: [idRequestId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  fullName    String
+  idNumber    String
+  title       String
+  phoneNumber String
+  requestedBy String
+  gender      String
+  nationality String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model RetireeIdRequest {
+  id          String    @id @default(cuid())
+  idRequestId String    @unique
+  idRequest   IdRequest @relation(fields: [idRequestId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  fullName    String
+  idNumber    String
+  title       String
+  phoneNumber String
+  gender      String
+  nationality String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }

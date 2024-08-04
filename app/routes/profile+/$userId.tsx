@@ -17,6 +17,7 @@ import { Separator } from '~/components/ui/separator'
 import { requireUser } from '~/utils/auth.server'
 import { prisma } from '~/utils/db.server'
 import { formatDate, invariantResponse } from '~/utils/misc'
+import { redirectWithToast } from '~/utils/toast.server'
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
 	const user = await requireUser(request)
@@ -39,11 +40,26 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 		},
 	})
 
-	return json({ user, employee })
+	if (!employee) {
+		throw await redirectWithToast(`/profile/${user.id}/new`, {
+			type: 'error',
+			title: 'Profile not found',
+			description: `You have not created your profile yet. Please update your personal information.`,
+		})
+	}
+
+	const idRequests = await prisma.idRequest.findMany({
+		where: {
+			requestorEmail: employee.email,
+		},
+	})
+
+	return json({ user, employee, idRequests })
 }
 
 export default function ProfileRoute() {
-	const { user, employee } = useLoaderData<typeof loader>()
+	const { user, employee, idRequests } = useLoaderData<typeof loader>()
+	console.log(employee)
 
 	if (!employee) {
 		return (
@@ -170,21 +186,21 @@ export default function ProfileRoute() {
 					icon: CarIcon,
 					count: employee.vehicles.length,
 					link: 'parking',
-					color: 'bg-indigo-100 text-indigo-800',
+					color: 'bg-blue-100 text-indigo-800',
 				},
 				{
 					title: 'Car Pass',
 					icon: CarIcon,
 					count: employee.vehicles.length,
 					link: 'parking',
-					color: 'bg-indigo-100 text-indigo-800',
+					color: 'bg-red-100 text-indigo-800',
 				},
 				{
 					title: 'ID Requests',
 					icon: IdCardIcon,
-					count: employee.vehicles.length,
-					link: 'parking',
-					color: 'bg-indigo-100 text-indigo-800',
+					count: idRequests.length,
+					link: 'id-requests',
+					color: 'bg-green-100 text-indigo-800',
 				},
 			].map((item, idx) => (
 				<Link key={idx} to={`/profile/${user.id}/${item.link}`}>

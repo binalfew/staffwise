@@ -288,3 +288,9 @@ export const formatDate = (dateString: string | undefined): string => {
 export function getAttachmentFileSrc(attachmentId: string) {
 	return `/profile/resources/attachments/${attachmentId}`
 }
+
+export function getUniqueSerialNumber() {
+	const timestamp = Date.now()
+	const randomComponent = Math.floor(Math.random() * 1000)
+	return `${timestamp}${randomComponent}`
+}

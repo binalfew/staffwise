@@ -87,8 +87,6 @@ export async function deleteFileIfExists({
 		prefix: prefix ? `${prefix}/${fileName}` : fileName,
 	})
 
-	console.log(blobs)
-
 	blobs.forEach(async blob => {
 		await containerClient.deleteBlob(blob)
 	})
