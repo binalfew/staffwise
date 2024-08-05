@@ -1,5 +1,6 @@
 import { LoaderFunctionArgs, json } from '@remix-run/node'
 import { Link, useLoaderData } from '@remix-run/react'
+import { formatDate } from 'date-fns'
 import { ArrowLeftIcon, EditIcon, PlusCircle, TrashIcon } from 'lucide-react'
 import { Paginator } from '~/components/Paginator'
 import { SearchBar } from '~/components/SearchBar'
@@ -31,39 +32,43 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 
 	const employee = await prisma.employee.findFirst({
 		where: { email: user.email },
+		include: {
+			vehicles: true,
+		},
 	})
 
 	invariantResponse(employee, 'Employee not found', { status: 404 })
 
 	const { data, totalPages, currentPage } = await filterAndPaginate({
 		request,
-		model: prisma.vehicle,
-		searchFields: ['make', 'model', 'plateNumber'],
-		where: { employeeId: employee.id },
-		orderBy: [{ make: 'asc' }, { model: 'asc' }],
+		model: prisma.carPassRequest,
+		searchFields: ['requestNumber', 'requestorEmail'],
+		where: {
+			requestorEmail: employee.email,
+		},
+		orderBy: [{ createdAt: 'asc' }],
 		select: {
 			id: true,
-			make: true,
-			model: true,
-			year: true,
-			color: true,
-			plateNumber: true,
-			capacity: true,
-			ownership: true,
+			requestNumber: true,
+			requestorEmail: true,
+			status: true,
+			type: true,
+			reason: true,
+			createdAt: true,
 		},
 	})
 
 	return json({
 		status: 'idle',
 		user,
-		vehicles: data,
+		carPassRequests: data,
 		totalPages,
 		currentPage,
 	} as const)
 }
 
-export default function VehiclesRoute() {
-	const { vehicles, totalPages, currentPage, status, user } =
+export default function CarPassRequestsRoute() {
+	const { carPassRequests, totalPages, currentPage, status, user } =
 		useLoaderData<typeof loader>()
 
 	return (
@@ -72,13 +77,13 @@ export default function VehiclesRoute() {
 				<CardHeader className="flex flex-row items-center">
 					<div className="grid gap-2">
 						<CardTitle className="text-base font-semibold leading-6 text-gray-900">
-							Vehicles
+							Car Pass Requests
 						</CardTitle>
 					</div>
 					<div className="flex items-center gap-2 ml-auto">
 						<SearchBar
 							status={status}
-							action={`/profile/${user.id}/vehicles`}
+							action={`/profile/${user.id}/car-pass-requests`}
 							autoSubmit
 						/>
 
@@ -101,39 +106,47 @@ export default function VehiclesRoute() {
 						<Table>
 							<TableHeader>
 								<TableRow>
-									<TableHead>Make</TableHead>
-									<TableHead>Model</TableHead>
-									<TableHead>Year</TableHead>
-									<TableHead>Color</TableHead>
-									<TableHead>Plate Number</TableHead>
-									<TableHead>Capacity</TableHead>
-									<TableHead>Ownership</TableHead>
+									<TableHead>Request Number</TableHead>
+									<TableHead>Requestor</TableHead>
+									<TableHead>Type</TableHead>
+									<TableHead>Reason</TableHead>
+									<TableHead>Status</TableHead>
+									<TableHead>Created At</TableHead>
 									<TableHead className="text-right">Actions</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
-								{vehicles.length > 0 ? (
-									vehicles.map((vehicle: any) => (
-										<TableRow key={vehicle.id}>
-											<TableCell className="py-1">{vehicle.make}</TableCell>
-											<TableCell className="py-1">{vehicle.model}</TableCell>
-											<TableCell className="py-1">{vehicle.year}</TableCell>
-											<TableCell className="py-1">{vehicle.color}</TableCell>
+								{carPassRequests.length > 0 ? (
+									carPassRequests.map((carPassRequest: any) => (
+										<TableRow key={carPassRequest.id}>
 											<TableCell className="py-1">
-												{vehicle.plateNumber}
+												{carPassRequest.requestNumber}
 											</TableCell>
-											<TableCell className="py-1">{vehicle.capacity}</TableCell>
 											<TableCell className="py-1">
-												{vehicle.ownership}
+												{carPassRequest.requestorEmail}
+											</TableCell>
+											<TableCell className="py-1">
+												{carPassRequest.type === 'PRIVATEDRIVER'
+													? 'PRIVATE DRIVER'
+													: carPassRequest.type}
+											</TableCell>
+											<TableCell className="py-1">
+												{carPassRequest.reason}
+											</TableCell>
+											<TableCell className="py-1">
+												{carPassRequest.status}
+											</TableCell>
+											<TableCell className="py-1">
+												{formatDate(carPassRequest.createdAt, 'MM/dd/yyyy')}
 											</TableCell>
 											<TableCell className="text-right py-1 space-x-1">
 												<Button asChild size="xs">
-													<Link to={`${vehicle.id}/edit`}>
+													<Link to={`${carPassRequest.id}/edit`}>
 														<EditIcon className="h-4 w-4" />
 													</Link>
 												</Button>
 												<Button asChild size="xs" variant="destructive">
-													<Link to={`${vehicle.id}/delete`}>
+													<Link to={`${carPassRequest.id}/delete`}>
 														<TrashIcon className="h-4 w-4" />
 													</Link>
 												</Button>
@@ -143,7 +156,7 @@ export default function VehiclesRoute() {
 								) : (
 									<TableRow>
 										<TableCell colSpan={7} className="text-center">
-											No vehicles found
+											No car pass requests found
 										</TableCell>
 									</TableRow>
 								)}

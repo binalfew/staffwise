@@ -19,6 +19,7 @@ export const VehicleEditorSchema = z.object({
 	color: z.string({ required_error: 'Color is required' }),
 	plateNumber: z.string({ required_error: 'Plate Number is required' }),
 	capacity: z.string({ required_error: 'Capacity is required' }),
+	ownership: z.enum(['OWNER', 'RENTAL']),
 })
 
 export const VehicleDeleteSchema = z.object({
@@ -34,7 +35,14 @@ export function VehicleEditor({
 	vehicle?: SerializeFrom<
 		Pick<
 			Vehicle,
-			'id' | 'make' | 'model' | 'year' | 'color' | 'plateNumber' | 'capacity'
+			| 'id'
+			| 'make'
+			| 'model'
+			| 'year'
+			| 'color'
+			| 'plateNumber'
+			| 'capacity'
+			| 'ownership'
 		>
 	>
 	title: string
@@ -104,6 +112,17 @@ export function VehicleEditor({
 			disabled,
 			errors: fields.capacity.errors,
 			type: 'text' as const,
+		},
+		{
+			label: 'Ownership',
+			field: fields.ownership,
+			disabled,
+			errors: fields.ownership.errors,
+			type: 'select' as const,
+			data: [
+				{ name: 'OWNER', value: 'OWNER' },
+				{ name: 'RENTAL', value: 'RENTAL' },
+			],
 		},
 	]
 

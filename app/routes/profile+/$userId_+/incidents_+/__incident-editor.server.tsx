@@ -87,6 +87,7 @@ export async function action({ params, request }: ActionFunctionArgs) {
 							.map(async image => {
 								const extension = image.file.name.split('.').pop() ?? ''
 								return {
+									type: 'incidents',
 									altText: `${image.file.name}.${extension}`,
 									contentType: image.file.type,
 									blob: Buffer.from(await image.file.arrayBuffer()),

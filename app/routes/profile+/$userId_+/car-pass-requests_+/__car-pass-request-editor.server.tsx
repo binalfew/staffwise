@@ -1,6 +1,6 @@
 import { parseWithZod } from '@conform-to/zod'
 import { createId as cuid } from '@paralleldrive/cuid2'
-import { IdRequestReason, IdRequestType } from '@prisma/client'
+import { CarPassRequestReason, CarPassRequestType } from '@prisma/client'
 import { ActionFunctionArgs, json } from '@remix-run/node'
 import { insertAuditLog } from '~/utils/audit.server'
 import { requireUser } from '~/utils/auth.server'
@@ -17,9 +17,9 @@ import { redirectWithToast } from '~/utils/toast.server'
 import {
 	attachmentHasFile,
 	attachmentHasId,
-	IdRequestDeleteSchema,
-	IdRequestEditorSchema,
-} from './__id-request-editor'
+	CarPassRequestDeleteSchema,
+	CarPassRequestEditorSchema,
+} from './__car-pass-request-editor'
 
 export async function action({ request }: ActionFunctionArgs) {
 	const user = await requireUser(request)
@@ -31,7 +31,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 	if (intent === 'delete') {
 		const submission = await parseWithZod(formData, {
-			schema: IdRequestDeleteSchema,
+			schema: CarPassRequestDeleteSchema,
 			async: true,
 		})
 
@@ -42,28 +42,28 @@ export async function action({ request }: ActionFunctionArgs) {
 			)
 		}
 
-		const idRequest = await prisma.idRequest.findFirst({
+		const carPassRequest = await prisma.carPassRequest.findFirst({
 			where: { id: submission.value.id },
 		})
 
-		await prisma.idRequest.delete({
+		await prisma.carPassRequest.delete({
 			where: { id: submission.value.id },
 		})
 
 		await deleteDirectory({
-			containerName: 'id-requests',
-			directoryName: idRequest?.requestNumber ?? '',
+			containerName: 'car-pass-requests',
+			directoryName: carPassRequest?.requestNumber ?? '',
 		})
 
-		return redirectWithToast(`/profile/${user.id}/id-requests`, {
+		return redirectWithToast(`/profile/${user.id}/car-pass-requests`, {
 			type: 'success',
-			title: 'ID Request Deleted',
-			description: 'ID Request entry deleted successfully.',
+			title: 'Car Pass Request Deleted',
+			description: 'Car Pass Request entry deleted successfully.',
 		})
 	}
 
 	const submission = await parseWithZod(formData, {
-		schema: IdRequestEditorSchema.transform(
+		schema: CarPassRequestEditorSchema.transform(
 			async ({ attachments = [], ...data }) => {
 				return {
 					...data,
@@ -94,12 +94,12 @@ export async function action({ request }: ActionFunctionArgs) {
 							.map(async image => {
 								const extension = image.file.name.split('.').pop() ?? ''
 								return {
-									altText: `${image.file.name}.${extension}`,
+									altText: `${image.file.name}`,
 									contentType: image.file.type,
 									blob: Buffer.from(await image.file.arrayBuffer()),
 									fileName: cuid(),
 									extension,
-									type: 'id-requests',
+									type: 'car-pass-requests',
 								}
 							}),
 					),
@@ -124,10 +124,10 @@ export async function action({ request }: ActionFunctionArgs) {
 	invariantResponse(employee, 'Employee not found', { status: 404 })
 
 	const {
-		id: idRequestId,
+		id: carPassRequestId,
 		updatedAttachments,
 		newAttachments,
-		...idRequestDetails
+		...carPassRequestDetails
 	} = submission.value
 
 	const deletedAttachments = await prisma.attachment.findMany({
@@ -135,42 +135,19 @@ export async function action({ request }: ActionFunctionArgs) {
 		where: { id: { notIn: updatedAttachments.map(i => i.id) } },
 	})
 
-	const requestNumber = await generateSerialNumber('IDREQUEST')
-	const idRequest = await prisma.idRequest.upsert({
+	const requestNumber = await generateSerialNumber('CARPASSREQUEST')
+	const carPassRequest = await prisma.carPassRequest.upsert({
 		select: { id: true, requestNumber: true },
-		where: { id: idRequestId ?? '__new_id_request__' },
+		where: { id: carPassRequestId ?? '__new_car_pass_request__' },
 		create: {
-			...idRequestDetails,
+			...carPassRequestDetails,
 			requestNumber,
 			requestorEmail: user.email,
-			type: idRequestDetails.type as IdRequestType,
-			reason: idRequestDetails.reason as IdRequestReason,
-			employeeIdRequest: idRequestDetails.employeeIdRequest
+			type: carPassRequestDetails.type as CarPassRequestType,
+			reason: carPassRequestDetails.reason as CarPassRequestReason,
+			employeeCarPassRequest: carPassRequestDetails.employeeCarPassRequest
 				? {
-						create: {
-							...idRequestDetails.employeeIdRequest,
-							employee: {
-								connect: { id: employee.id },
-							},
-						},
-				  }
-				: undefined,
-			spouseIdRequest: idRequestDetails.spouseIdRequest
-				? {
-						create: idRequestDetails.spouseIdRequest,
-				  }
-				: undefined,
-			dependantIdRequest: idRequestDetails.dependantIdRequest
-				? {
-						create: idRequestDetails.dependantIdRequest,
-				  }
-				: undefined,
-			privateDriverIdRequest: idRequestDetails.privateDriverIdRequest
-				? {
-						create: {
-							...idRequestDetails.privateDriverIdRequest,
-							staffAuIdNumber: employee.auIdNumber,
-						},
+						create: carPassRequestDetails.employeeCarPassRequest,
 				  }
 				: undefined,
 			attachments: {
@@ -178,8 +155,8 @@ export async function action({ request }: ActionFunctionArgs) {
 			},
 		},
 		update: {
-			type: idRequestDetails.type as IdRequestType,
-			reason: idRequestDetails.reason as IdRequestReason,
+			type: carPassRequestDetails.type as CarPassRequestType,
+			reason: carPassRequestDetails.reason as CarPassRequestReason,
 			attachments: {
 				deleteMany: { id: { notIn: updatedAttachments.map(i => i.id) } },
 				updateMany: updatedAttachments.map(({ blob, ...updates }) => ({
@@ -188,45 +165,11 @@ export async function action({ request }: ActionFunctionArgs) {
 				})),
 				create: newAttachments.map(({ blob, ...attachment }) => attachment),
 			},
-			employeeIdRequest: idRequestDetails.employeeIdRequest
+			employeeCarPassRequest: carPassRequestDetails.employeeCarPassRequest
 				? {
 						upsert: {
-							create: {
-								...idRequestDetails.employeeIdRequest,
-								employee: {
-									connect: { id: employee.id },
-								},
-							},
-							update: {
-								...idRequestDetails.employeeIdRequest,
-							},
-						},
-				  }
-				: undefined,
-			spouseIdRequest: idRequestDetails.spouseIdRequest
-				? {
-						upsert: {
-							create: idRequestDetails.spouseIdRequest,
-							update: idRequestDetails.spouseIdRequest,
-						},
-				  }
-				: undefined,
-			dependantIdRequest: idRequestDetails.dependantIdRequest
-				? {
-						upsert: {
-							create: idRequestDetails.dependantIdRequest,
-							update: idRequestDetails.dependantIdRequest,
-						},
-				  }
-				: undefined,
-			privateDriverIdRequest: idRequestDetails.privateDriverIdRequest
-				? {
-						upsert: {
-							create: {
-								...idRequestDetails.privateDriverIdRequest,
-								staffAuIdNumber: employee.auIdNumber,
-							},
-							update: idRequestDetails.privateDriverIdRequest,
+							create: carPassRequestDetails.employeeCarPassRequest,
+							update: carPassRequestDetails.employeeCarPassRequest,
 						},
 				  }
 				: undefined,
@@ -235,8 +178,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
 	const deletePromises = deletedAttachments.map(attachment =>
 		deleteFileIfExists({
-			containerName: 'id-requests',
-			prefix: idRequest.requestNumber,
+			containerName: 'car-pass-requests',
+			prefix: carPassRequest.requestNumber,
 			fileName: attachment.fileName,
 		}),
 	)
@@ -244,8 +187,8 @@ export async function action({ request }: ActionFunctionArgs) {
 	const updatePromises = updatedAttachments.map(attachment => {
 		if (attachment.blob) {
 			return uploadFile({
-				containerName: 'id-requests',
-				directory: idRequest.requestNumber,
+				containerName: 'car-pass-requests',
+				directory: carPassRequest.requestNumber,
 				fileName: attachment.fileName,
 				extension: attachment.extension,
 				blob: attachment.blob,
@@ -256,8 +199,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
 	const newAttachmentsPromises = newAttachments.map(attachment =>
 		uploadFile({
-			containerName: 'id-requests',
-			directory: idRequest.requestNumber,
+			containerName: 'car-pass-requests',
+			directory: carPassRequest.requestNumber,
 			fileName: attachment.fileName,
 			extension: attachment.extension,
 			blob: attachment.blob,
@@ -272,19 +215,19 @@ export async function action({ request }: ActionFunctionArgs) {
 
 	await insertAuditLog({
 		user: { id: user.id },
-		action: idRequestId ? 'UPDATE' : 'CREATE',
-		entity: 'Id Request',
+		action: carPassRequestId ? 'UPDATE' : 'CREATE',
+		entity: 'Car Pass Request',
 		details: {
-			...idRequestDetails,
-			id: idRequestId,
+			...carPassRequestDetails,
+			id: carPassRequestId,
 		},
 	})
 
-	return redirectWithToast(`/profile/${user.id}/id-requests`, {
+	return redirectWithToast(`/profile/${user.id}/car-pass-requests`, {
 		type: 'success',
-		title: `ID Request ${idRequestId ? 'Updated' : 'Created'}`,
-		description: `ID Request ${
-			idRequestId ? 'updated' : 'created'
+		title: `Car Pass Request ${carPassRequestId ? 'Updated' : 'Created'}`,
+		description: `Car Pass Request ${
+			carPassRequestId ? 'updated' : 'created'
 		} successfully.`,
 	})
 }

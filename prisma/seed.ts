@@ -383,6 +383,10 @@ async function seed() {
 				lastCounter: 0,
 				type: 'IDREQUEST',
 			},
+			{
+				lastCounter: 0,
+				type: 'CARPASSREQUEST',
+			},
 		],
 	})
 

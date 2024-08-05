@@ -36,10 +36,32 @@ enum IdRequestReason {
   NEW
 }
 
+enum CarPassRequestStatus {
+  PENDING
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  COMPLETED
+  CANCELLED
+}
+
+enum CarPassRequestType {
+  EMPLOYEE
+  SERVICEPROVIDER
+}
+
+enum CarPassRequestReason {
+  LOST
+  DAMAGED
+  EXPIRED
+  NEW
+}
+
 enum CounterType {
   ACCESSREQUEST
   IDREQUEST
   INCIDENT
+  CARPASSREQUEST
 }
 
 enum AuditLogAction {
@@ -276,17 +298,19 @@ model Spouse {
 }
 
 model Vehicle {
-  id          String   @id @default(cuid())
-  employeeId  String
-  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  make        String   @default("")
-  model       String   @default("")
-  year        String   @default("")
-  color       String   @default("")
-  plateNumber String   @default("")
-  capacity    String   @default("")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String                   @id @default(cuid())
+  employeeId      String
+  employee        Employee                 @relation(fields: [employeeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  make            String
+  model           String
+  year            String
+  color           String
+  plateNumber     String
+  capacity        String
+  ownership       String
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+  carPassRequests EmployeeCarPassRequest[]
 }
 
 model Incident {
@@ -308,20 +332,24 @@ model Incident {
 }
 
 model Attachment {
-  id          String     @id @default(cuid())
-  altText     String?
-  contentType String
-  fileName    String
-  extension   String
-  incidentId  String?
-  incident    Incident?  @relation(fields: [incidentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  idRequestId String?
-  idRequest   IdRequest? @relation(fields: [idRequestId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  id               String          @id @default(cuid())
+  altText          String?
+  type             String
+  contentType      String
+  fileName         String
+  extension        String
+  incidentId       String?
+  incident         Incident?       @relation(fields: [incidentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  idRequestId      String?
+  idRequest        IdRequest?      @relation(fields: [idRequestId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  carPassRequestId String?
+  carPassRequest   CarPassRequest? @relation(fields: [carPassRequestId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
 
   @@index([incidentId])
   @@index([idRequestId])
+  @@index([carPassRequestId])
 }
 
 model Assessment {
@@ -556,4 +584,27 @@ model RetireeIdRequest {
   nationality String
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+}
+
+model CarPassRequest {
+  id                     String                  @id @default(cuid())
+  requestNumber          String
+  type                   CarPassRequestType      @default(EMPLOYEE)
+  status                 CarPassRequestStatus    @default(PENDING)
+  reason                 CarPassRequestReason    @default(NEW)
+  requestorEmail         String
+  attachments            Attachment[]
+  employeeCarPassRequest EmployeeCarPassRequest?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+}
+
+model EmployeeCarPassRequest {
+  id               String         @id @default(cuid())
+  vehicleId        String
+  vehicle          Vehicle        @relation(fields: [vehicleId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  carPassRequestId String         @unique
+  carPassRequest   CarPassRequest @relation(fields: [carPassRequestId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 }

@@ -54,11 +54,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 		},
 	})
 
-	return json({ user, employee, idRequests })
+	const carPassRequests = await prisma.carPassRequest.findMany({
+		where: {
+			requestorEmail: employee.email,
+		},
+	})
+
+	return json({ user, employee, idRequests, carPassRequests })
 }
 
 export default function ProfileRoute() {
-	const { user, employee, idRequests } = useLoaderData<typeof loader>()
+	const { user, employee, idRequests, carPassRequests } =
+		useLoaderData<typeof loader>()
 
 	if (!employee) {
 		return (
@@ -188,11 +195,11 @@ export default function ProfileRoute() {
 					color: 'bg-blue-100 text-indigo-800',
 				},
 				{
-					title: 'Car Pass',
+					title: 'Car Passes',
 					icon: CarIcon,
-					count: employee.vehicles.length,
-					link: 'parking',
-					color: 'bg-red-100 text-indigo-800',
+					count: carPassRequests.length,
+					link: 'car-pass-requests',
+					color: 'bg-red-100 text-indigo-8000',
 				},
 				{
 					title: 'ID Requests',
