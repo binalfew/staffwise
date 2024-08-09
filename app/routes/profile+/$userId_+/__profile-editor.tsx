@@ -40,7 +40,7 @@ export const ProfileEditorSchema = z.object({
 	familyName: z.string({ required_error: 'Family Name is required' }),
 	middleName: z.string({ required_error: 'Middle Name is required' }),
 	email: z.string().optional(),
-	countryId: z.string({ required_error: 'Country ID is required' }),
+	countryId: z.string({ required_error: 'Country is required' }),
 	nationalPassportNumber: z.string({
 		required_error: 'National Passport Number is required',
 	}),
@@ -56,10 +56,10 @@ export const ProfileEditorSchema = z.object({
 			invalid_type_error: 'Invalid date',
 		})
 		.max(new Date(), { message: 'Date of birth cannot be in the future' }),
-	organId: z.string({ required_error: 'Organ ID is required' }),
+	organId: z.string({ required_error: 'Organ is required' }),
 	departmentId: z.string({ required_error: 'Department is required' }),
-	locationId: z.string({ required_error: 'Location ID is required' }),
-	floorId: z.string({ required_error: 'Floor ID is required' }),
+	locationId: z.string({ required_error: 'Location is required' }),
+	floorId: z.string({ required_error: 'Floor is required' }),
 	officeNumber: z.string({ required_error: 'Office Number is required' }),
 	specialConditions: z.string().optional(),
 	medicallyTrained: z.boolean().optional(),

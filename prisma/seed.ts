@@ -1,9 +1,19 @@
+import fsExtra from 'fs-extra'
+import * as path from 'node:path'
 import { createPassword, prisma } from '~/utils/db.server'
 
-async function seed() {
-	console.log('🌱 Seeding...')
-	console.time(`🌱 Database has been seeded`)
+import { isValid, parse } from 'date-fns'
 
+const parseDate = (dateString: string | null): Date | undefined => {
+	if (!dateString) return undefined
+	const parsedDate = parse(dateString, 'yyyy-MM-dd HH:mm:ss.SSS', new Date())
+	return isValid(parsedDate) ? parsedDate : undefined
+}
+
+const cwd = process.cwd()
+const inputDir = path.join(cwd, 'prisma', 'data')
+
+export async function truncate() {
 	console.time('🧹 Cleaned up the database...')
 
 	await prisma.dependant.deleteMany()
@@ -27,7 +37,6 @@ async function seed() {
 	await prisma.role.deleteMany()
 	await prisma.permission.deleteMany()
 	await prisma.counter.deleteMany()
-	await prisma.accessRequest.deleteMany()
 	await prisma.visitor.deleteMany()
 	await prisma.vehicle.deleteMany()
 	await prisma.assessment.deleteMany()
@@ -41,13 +50,18 @@ async function seed() {
 
 	await prisma.dependant.deleteMany()
 	await prisma.spouse.deleteMany()
+	await prisma.accessRequest.deleteMany()
 	await prisma.idRequest.deleteMany()
+	await prisma.carPassRequest.deleteMany()
 	await prisma.employee.deleteMany()
 	await prisma.password.deleteMany()
 	await prisma.user.deleteMany()
 
 	console.timeEnd('🧹 Cleaned up the database...')
+}
 
+export async function seedRolesAndPermission() {
+	console.time(`🐨 Created roles and permissions...`)
 	const entities = [
 		'country',
 		'organ',
@@ -62,17 +76,19 @@ async function seed() {
 		'role',
 		'permission',
 		'accessRequest',
+		'idRequest',
+		'carPassRequest',
 		'counter',
 		'employee',
 		'dependant',
 		'spouse',
-		'idRequest',
 		'employeeIdRequest',
 		'dependantIdRequest',
 		'spouseIdRequest',
 		'privateDriverIdRequest',
 		'libraryUserIdRequest',
 		'retireeIdRequest',
+		'employeeCarPassRequest',
 	]
 	const actions = ['create', 'read', 'update', 'delete']
 	const accesses = ['own', 'any']
@@ -114,6 +130,61 @@ async function seed() {
 		},
 	})
 
+	// Create idRequestAdmin role
+	await prisma.role.create({
+		data: {
+			name: 'idRequestAdmin',
+			description: 'idRequestAdmin',
+			permissions: {
+				connect: permissionsAny,
+			},
+		},
+	})
+
+	// Create incidentAdmin role
+	await prisma.role.create({
+		data: {
+			name: 'incidentAdmin',
+			description: 'incidentAdmin',
+			permissions: {
+				connect: permissionsAny,
+			},
+		},
+	})
+
+	// Create accessRequestAdmin role
+	await prisma.role.create({
+		data: {
+			name: 'accessRequestAdmin',
+			description: 'accessRequestAdmin',
+			permissions: {
+				connect: permissionsAny,
+			},
+		},
+	})
+
+	// Create carPassAdmin role
+	await prisma.role.create({
+		data: {
+			name: 'carPassAdmin',
+			description: 'carPassAdmin',
+			permissions: {
+				connect: permissionsAny,
+			},
+		},
+	})
+
+	// Create phpAdmin role
+	await prisma.role.create({
+		data: {
+			name: 'phpAdmin',
+			description: 'phpAdmin',
+			permissions: {
+				connect: permissionsAny,
+			},
+		},
+	})
+
 	// Create 'user' role
 	await prisma.role.create({
 		data: {
@@ -125,144 +196,169 @@ async function seed() {
 		},
 	})
 
-	// Create country
+	console.timeEnd('🐨 Created roles and permissions...')
+}
+
+export async function seedAdminUser() {
+	console.time(`🐨 Created admin user "binalfewk"`)
+	await prisma.user.create({
+		data: {
+			email: 'binalfewk@africa-union.org',
+			username: 'binalfewk',
+			name: 'Binalfew',
+			password: {
+				create: createPassword('password'),
+			},
+			roles: {
+				connect: [
+					{ name: 'admin' },
+					{ name: 'idRequestAdmin' },
+					{ name: 'incidentAdmin' },
+					{ name: 'accessRequestAdmin' },
+					{ name: 'carPassAdmin' },
+					{ name: 'phpAdmin' },
+					{ name: 'user' },
+				],
+			},
+		},
+	})
+
+	console.timeEnd(`🐨 Created admin user "binalfewk"`)
+}
+
+export async function seedLookups() {
 	console.time(`🐨 Created lookup data"`)
+	const [stations, locations, departments, countries, floors, relationships] =
+		await Promise.all([
+			fsExtra.readJSON(path.join(inputDir, 'stations.json')),
+			fsExtra.readJSON(path.join(inputDir, 'locations.json')),
+			fsExtra.readJSON(path.join(inputDir, 'departments.json')),
+			fsExtra.readJSON(path.join(inputDir, 'countries.json')),
+			fsExtra.readJSON(path.join(inputDir, 'floors.json')),
+			fsExtra.readJSON(path.join(inputDir, 'relationships.json')),
+		])
+
+	await prisma.relationship.findFirst({
+		where: { name: 'Unknown' },
+		select: { id: true },
+	})
+	await prisma.relationship.createMany({
+		data: relationships.map((relationship: any) => {
+			return {
+				name: relationship.Name.replace(/\t|\n/g, '').trim(),
+				code: relationship.Name.replace(/\t|\n/g, '').trim(),
+			}
+		}),
+	})
+
+	const unknownCountry = await prisma.country.create({
+		data: {
+			name: 'Unknown',
+			code: 'Unknown',
+			isMemberState: false,
+		},
+	})
 	await prisma.country.createMany({
-		data: [
-			{ name: 'Ethiopia', code: 'ET', isMemberState: true },
-			{ name: 'Kenya', code: 'KE', isMemberState: true },
-			{ name: 'Uganda', code: 'UG', isMemberState: true },
-			{ name: 'Tanzania', code: 'TZ', isMemberState: true },
-			{ name: 'Rwanda', code: 'RW', isMemberState: true },
-			{ name: 'Burundi', code: 'BI', isMemberState: true },
-			{ name: 'South Sudan', code: 'SS', isMemberState: true },
-			{ name: 'Somalia', code: 'SO', isMemberState: true },
-			{ name: 'Djibouti', code: 'DJ', isMemberState: true },
-			{ name: 'Eritrea', code: 'ER', isMemberState: true },
-			{ name: 'Sudan', code: 'SD', isMemberState: true },
-			{ name: 'Egypt', code: 'EG', isMemberState: true },
-			{ name: 'Libya', code: 'LY', isMemberState: true },
-			{ name: 'Tunisia', code: 'TN', isMemberState: true },
-			{ name: 'Algeria', code: 'DZ', isMemberState: true },
-			{ name: 'Morocco', code: 'MA', isMemberState: true },
-			{ name: 'Mauritania', code: 'MR', isMemberState: true },
-			{ name: 'Mali', code: 'ML', isMemberState: true },
-			{ name: 'Niger', code: 'NE', isMemberState: true },
-			{ name: 'Chad', code: 'TD', isMemberState: true },
-			{ name: 'Sudan', code: 'SD', isMemberState: true },
-			{ name: 'Central African Republic', code: 'CF', isMemberState: true },
-			{ name: 'South Africa', code: 'ZA', isMemberState: true },
-		],
+		data: countries
+			.filter((country: any) => country.Name !== '-')
+			.map((country: any) => {
+				return {
+					name: country.Name.replace(/\t|\n/g, '').trim(),
+					code: country.Code.replace(/\t|\n/g, '').trim(),
+					isMemberState: country.IsMemberState === '1' ? true : false,
+				}
+			}),
 	})
 
-	const ethiopia = await prisma.country.findFirst({
-		where: { name: 'Ethiopia' },
-		select: { id: true },
+	const unknownOrgan = await prisma.organ.create({
+		data: {
+			name: 'Unknown',
+			code: 'Unknown',
+			address: 'Unknown',
+			countryId: unknownCountry.id,
+		},
 	})
-	const southAfrica = await prisma.country.findFirst({
-		where: { name: 'South Africa' },
-		select: { id: true },
-	})
-
-	// Create organ
 	await prisma.organ.createMany({
-		data: [
-			{
-				name: 'African Union Commission',
-				code: 'AUC',
-				countryId: ethiopia?.id ?? '',
-				address: 'Addis Ababa, Ethiopia',
-			},
-			{
-				name: 'Pan African Parliament',
-				code: 'PAP',
-				countryId: southAfrica?.id ?? '',
-				address: 'Midrand, South Africa',
-			},
-			{
-				name: "New Partnership for Africa's Development",
-				code: 'NEPAD',
-				countryId: southAfrica?.id ?? '',
-				address: 'Midrand, South Africa',
-			},
-			{
-				name: 'African Peer Review Mechanism',
-				code: 'APRM',
-				countryId: southAfrica?.id ?? '',
-				address: 'Midrand, South Africa',
-			},
-		],
+		data: await Promise.all(
+			stations.map(async (station: any) => {
+				const country = await prisma.country.findFirst({
+					where: { name: station.Country.trim() },
+					select: { id: true },
+				})
+				return {
+					name: station.Name.trim(),
+					code: station.Code.trim(),
+					countryId: country?.id ?? null,
+					address: station.City.trim(),
+				}
+			}),
+		),
 	})
 
 	const auc = await prisma.organ.findFirst({
-		where: { name: 'African Union Commission' },
+		where: { name: 'AU Headquarters' },
 		select: { id: true },
 	})
 
-	// Create department
+	await prisma.department.create({
+		data: {
+			name: 'Unknown',
+			code: 'Unknown',
+			organId: unknownOrgan.id,
+		},
+	})
 	await prisma.department.createMany({
-		data: [
-			{
-				name: 'Administration and Human Resources Directorate',
-				code: 'AHRD',
-				organId: auc?.id ?? '',
-			},
-			{
-				name: 'Program Planning, Budgeting, Finance and Accounting',
-				code: 'PPBFA',
-				organId: auc?.id ?? '',
-			},
-			{
-				name: 'Management of Information System Directorate',
-				code: 'MISD',
-				organId: auc?.id ?? '',
-			},
-			{
-				name: 'Peace and Security Directorate',
-				code: 'PSD',
-				organId: auc?.id ?? '',
-			},
-		],
+		data: departments
+			.filter((department: any) => department.Name !== '-')
+			.map((department: any) => {
+				return {
+					name: department.Name.replace(/\t|\n/g, '').trim(),
+					code: department.Code.replace(/\t|\n/g, '').trim(),
+					organId: auc?.id ?? '',
+				}
+			}),
 	})
 
-	// Location
+	// Create unknown location
+	const unknownLocation = await prisma.location.create({
+		data: {
+			name: 'Unknown',
+			code: 'Unknown',
+			organId: unknownOrgan.id,
+		},
+	})
 	await prisma.location.createMany({
-		data: [
-			{
-				name: 'Building A',
-				code: 'A',
+		data: locations.map((location: any) => {
+			return {
+				name: location.Name.replace(/\t|\n/g, '').trim(),
+				code: location.Code.replace(/\t|\n/g, '').trim(),
 				organId: auc?.id ?? '',
-			},
-			{
-				name: 'Building B',
-				code: 'B',
-				organId: auc?.id ?? '',
-			},
-			{
-				name: 'Building C',
-				code: 'C',
-				organId: auc?.id ?? '',
-			},
-			{
-				name: 'Old Conference Center',
-				code: 'OCC',
-				organId: auc?.id ?? '',
-			},
-			{
-				name: 'New Conference Center',
-				code: 'NCC',
-				organId: auc?.id ?? '',
-			},
-		],
+			}
+		}),
 	})
 
-	// Floor
-	const buildingA = await prisma.location.findFirst({
-		where: { name: 'Building A' },
+	const ncc = await prisma.location.findFirst({
+		where: { name: 'NCC' },
 		select: { id: true },
 	})
 
-	// Incident Type
+	await prisma.floor.create({
+		data: {
+			name: 'Unknown',
+			code: 'Unknown',
+			locationId: unknownLocation.id,
+		},
+	})
+	await prisma.floor.createMany({
+		data: floors.map((floor: any) => {
+			return {
+				name: floor.Name.replace(/\t|\n/g, '').trim(),
+				code: floor.Name.replace(/\t|\n/g, '').trim(),
+				locationId: ncc?.id ?? '',
+			}
+		}),
+	})
+
 	await prisma.incidentType.createMany({
 		data: [
 			{ name: 'Accident', code: 'Accident' },
@@ -274,101 +370,6 @@ async function seed() {
 		],
 	})
 
-	await prisma.floor.createMany({
-		data: [
-			{ name: 'Ground Floor', code: 'GF', locationId: buildingA?.id ?? '' },
-			{ name: 'First Floor', code: '1F', locationId: buildingA?.id ?? '' },
-			{ name: 'Second Floor', code: '2F', locationId: buildingA?.id ?? '' },
-			{ name: 'Third Floor', code: '3F', locationId: buildingA?.id ?? '' },
-		],
-	})
-
-	const buildingB = await prisma.location.findFirst({
-		where: { name: 'Building B' },
-		select: { id: true },
-	})
-
-	await prisma.floor.createMany({
-		data: [
-			{ name: 'Ground Floor', code: 'GF', locationId: buildingB?.id ?? '' },
-			{ name: 'First Floor', code: '1F', locationId: buildingB?.id ?? '' },
-			{ name: 'Second Floor', code: '2F', locationId: buildingB?.id ?? '' },
-			{ name: 'Third Floor', code: '3F', locationId: buildingB?.id ?? '' },
-		],
-	})
-
-	const buildingC = await prisma.location.findFirst({
-		where: { name: 'Building C' },
-		select: { id: true },
-	})
-
-	await prisma.floor.createMany({
-		data: [
-			{ name: 'Ground Floor', code: 'GF', locationId: buildingC?.id ?? '' },
-			{ name: 'First Floor', code: '1F', locationId: buildingC?.id ?? '' },
-			{ name: 'Second Floor', code: '2F', locationId: buildingC?.id ?? '' },
-			{ name: 'Third Floor', code: '3F', locationId: buildingC?.id ?? '' },
-		],
-	})
-
-	const occ = await prisma.location.findFirst({
-		where: { name: 'Old Conference Center' },
-		select: { id: true },
-	})
-
-	await prisma.floor.createMany({
-		data: [
-			{ name: 'Ground Floor', code: 'GF', locationId: occ?.id ?? '' },
-			{ name: 'First Floor', code: '1F', locationId: occ?.id ?? '' },
-			{ name: 'Second Floor', code: '2F', locationId: occ?.id ?? '' },
-			{ name: 'Third Floor', code: '3F', locationId: occ?.id ?? '' },
-		],
-	})
-
-	const ncc = await prisma.location.findFirst({
-		where: { name: 'New Conference Center' },
-		select: { id: true },
-	})
-
-	await prisma.floor.createMany({
-		data: [
-			{ name: 'Ground Floor', code: 'GF', locationId: ncc?.id ?? '' },
-			{ name: 'First Floor', code: '1F', locationId: ncc?.id ?? '' },
-			{ name: 'Second Floor', code: '2F', locationId: ncc?.id ?? '' },
-			{ name: 'Third Floor', code: '3F', locationId: ncc?.id ?? '' },
-		],
-	})
-
-	// Create relationship
-	await prisma.relationship.createMany({
-		data: [
-			{ name: 'Sibling', code: 'Sibling' },
-			{ name: 'Spouse', code: 'Spouse' },
-			{ name: 'Child', code: 'Child' },
-			{ name: 'Other', code: 'Other' },
-			{ name: 'Mother', code: 'Mother' },
-			{ name: 'Father', code: 'Father' },
-		],
-	})
-
-	console.timeEnd(`🐨 Created lookup data"`)
-
-	console.time(`🐨 Created admin user "binalfewk"`)
-	await prisma.user.create({
-		data: {
-			email: 'binalfewk@africa-union.org',
-			username: 'binalfewk',
-			name: 'Binalfew',
-			password: {
-				create: createPassword('password'),
-			},
-			roles: {
-				connect: [{ name: 'admin' }, { name: 'user' }],
-			},
-		},
-	})
-
-	// Reset access request counter
 	await prisma.counter.createMany({
 		data: [
 			{
@@ -390,28 +391,313 @@ async function seed() {
 		],
 	})
 
-	console.timeEnd(`🐨 Created admin user "binalfewk"`)
+	console.timeEnd(`🐨 Created lookup data"`)
+}
 
-	// Create user with 'user' role
-	// const users = ['binalfew', 'makida', 'kebron', 'maidot', 'lemlem']
-	// for (const user of users) {
-	// 	console.time(`🐨 Created user "${user}"`)
-	// 	await prisma.user.create({
-	// 		data: {
-	// 			email: `${user}@staffwise.com`,
-	// 			username: user,
-	// 			name: user.charAt(0).toUpperCase() + user.slice(1),
-	// 			password: {
-	// 				create: createPassword('password'),
-	// 			},
-	// 			roles: {
-	// 				connect: [{ name: 'user' }],
-	// 			},
-	// 		},
-	// 	})
-	// 	console.timeEnd(`🐨 Created user "${user}"`)
-	// }
+// export async function seedEmployees() {
+// 	const data = await fsExtra.readJSON(path.join(inputDir, 'employees.json'))
 
+// 	// Filter unique employees
+// 	const allEmployees = data.employees
+// 	const uniqueEmails = new Set()
+// 	const employees = allEmployees.filter((employee: any) => {
+// 		if (!uniqueEmails.has(employee.Email)) {
+// 			uniqueEmails.add(employee.Email)
+// 			return true
+// 		}
+// 		return false
+// 	})
+
+// 	const unknownCountry = await prisma.country.findFirst({
+// 		where: { name: 'Unknown' },
+// 		select: { id: true },
+// 	})
+
+// 	const unknownOrgan = await prisma.organ.findFirst({
+// 		where: { name: 'Unknown' },
+// 		select: { id: true },
+// 	})
+
+// 	const unknownLocation = await prisma.location.findFirst({
+// 		where: { name: 'Unknown' },
+// 		select: { id: true },
+// 	})
+
+// 	const unknownFloor = await prisma.floor.findFirst({
+// 		where: { name: 'Unknown' },
+// 		select: { id: true },
+// 	})
+
+// 	const unknownDepartment = await prisma.department.findFirst({
+// 		where: { name: 'Unknown' },
+// 		select: { id: true },
+// 	})
+
+// 	await prisma.employee.createMany({
+// 		data: await Promise.all(
+// 			employees.map(async (employee: any) => {
+// 				// Country
+// 				const country = await prisma.country.findFirst({
+// 					where: { name: employee.country.Name.trim() },
+// 					select: { id: true },
+// 				})
+
+// 				// Station
+// 				const station = await prisma.organ.findFirst({
+// 					where: { name: employee.station.Name.trim() },
+// 					select: { id: true },
+// 				})
+
+// 				// Location
+// 				let location = null
+// 				if (employee.location) {
+// 					location = await prisma.location.findFirst({
+// 						where: { name: employee.location.Name.trim() },
+// 						select: { id: true },
+// 					})
+// 				}
+
+// 				// Floor
+// 				let floor = null
+// 				if (employee.floor) {
+// 					floor = await prisma.floor.findFirst({
+// 						where: { name: employee.floor.Name.trim() },
+// 						select: { id: true },
+// 					})
+// 				}
+
+// 				// Department
+// 				const department = await prisma.department.findFirst({
+// 					where: { name: employee.department.Name.trim() },
+// 					select: { id: true },
+// 				})
+
+// 				const dependants = employee.dependants.map(async (dependant: any) => {
+// 					const relationship = await prisma.relationship.findFirst({
+// 						where: { name: dependant.relationship.Name.trim() },
+// 						select: { id: true },
+// 					})
+
+// 					return {
+// 						auIdNumber: dependant.AuIdNumber,
+// 						firstName: dependant.FirstName,
+// 						familyName: dependant.FamilyName,
+// 						middleName: dependant.MiddleName,
+// 						nameOfSchool: dependant.NameOfSchool,
+// 						relationshipId: relationship?.id ?? '',
+// 						dateOfBirth: parseDate(dependant.DateOfBirth),
+// 					}
+// 				})
+
+// 				// Build employee object
+// 				return {
+// 					firstName: employee.FirstName,
+// 					familyName: employee.FamilyName,
+// 					middleName: employee.MiddleName,
+// 					email: employee.Email,
+// 					countryId: country?.id ?? unknownCountry?.id ?? '',
+// 					organId: station?.id ?? unknownOrgan?.id ?? '',
+// 					locationId: location?.id ?? unknownLocation?.id ?? '',
+// 					floorId: floor?.id ?? unknownFloor?.id ?? '',
+// 					departmentId: department?.id ?? unknownDepartment?.id ?? '',
+// 					nationalPassportNumber: employee.NationalPassportNumber,
+// 					auPassportNumber: employee.AuPassportNumber,
+// 					auIdNumber: employee.AuIdNumber,
+// 					dateIssued: parseDate(employee.DateIssued),
+// 					validUntil: parseDate(employee.ValidUntil),
+// 					dateOfBirth: parseDate(employee.DateOfBirth),
+// 					officeNumber: employee.OfficeNumber,
+// 					specialConditions: employee.SpecialCondition,
+// 					medicallyTrained: employee.MedicallyTrained === '1' ? true : false,
+// 					zone: employee.Zone,
+// 					team: employee.Team,
+// 					city: employee?.address?.City,
+// 					subcity: employee?.address?.Subcity,
+// 					woreda: employee?.address?.Woreda,
+// 					street: employee?.address?.Street,
+// 					kebele: employee?.address?.Kebele,
+// 					houseNumber: employee?.address?.HouseNumber,
+// 					houseTelephoneNumber: employee?.address?.HomeTelephone,
+// 					mobileTelephoneNumber: employee?.address?.MobileTelephone,
+// 					officeTelephoneNumber: employee?.address?.OfficeTelephone,
+// 					specificLocation: employee?.address?.SpecificLocation,
+// 					gpsLocation: employee?.address?.GpsCoordinates,
+// 					homeCountryAddress: employee?.address?.HomeCountryAddress,
+// 					dependant: {
+// 						create: dependants,
+// 					},
+// 				}
+// 			}),
+// 		),
+// 	})
+// }
+
+export async function seedEmployees() {
+	const data = await fsExtra.readJSON(path.join(inputDir, 'employees.json'))
+
+	// Filter unique employees
+	const allEmployees = data.employees
+	const uniqueEmails = new Set()
+	const employees = allEmployees.filter((employee: any) => {
+		if (!uniqueEmails.has(employee.Email)) {
+			uniqueEmails.add(employee.Email)
+			return true
+		}
+		return false
+	})
+
+	const unknownCountry = await prisma.country.findFirst({
+		where: { name: 'Unknown' },
+		select: { id: true },
+	})
+
+	const unknownOrgan = await prisma.organ.findFirst({
+		where: { name: 'Unknown' },
+		select: { id: true },
+	})
+
+	const unknownLocation = await prisma.location.findFirst({
+		where: { name: 'Unknown' },
+		select: { id: true },
+	})
+
+	const unknownFloor = await prisma.floor.findFirst({
+		where: { name: 'Unknown' },
+		select: { id: true },
+	})
+
+	const unknownDepartment = await prisma.department.findFirst({
+		where: { name: 'Unknown' },
+		select: { id: true },
+	})
+
+	for (const employee of employees) {
+		// Country
+		const country = await prisma.country.findFirst({
+			where: { name: employee.country.Name.trim() },
+			select: { id: true },
+		})
+
+		// Station
+		const station = await prisma.organ.findFirst({
+			where: { name: employee.station.Name.trim() },
+			select: { id: true },
+		})
+
+		// Location
+		let location = null
+		if (employee.location) {
+			location = await prisma.location.findFirst({
+				where: { name: employee.location.Name.trim() },
+				select: { id: true },
+			})
+		}
+
+		// Floor
+		let floor = null
+		if (employee.floor) {
+			floor = await prisma.floor.findFirst({
+				where: { name: employee.floor.Name.trim() },
+				select: { id: true },
+			})
+		}
+
+		// Department
+		const department = await prisma.department.findFirst({
+			where: { name: employee.department.Name.trim() },
+			select: { id: true },
+		})
+
+		// Dependants
+		const dependants = await Promise.all(
+			employee.dependants.map(async (dependant: any) => {
+				const relationship = await prisma.relationship.findFirst({
+					where: { name: dependant.relationship.Name.trim() },
+					select: { id: true },
+				})
+
+				return {
+					auIdNumber: dependant.AuIdNumber,
+					firstName: dependant.FirstName,
+					familyName: dependant.FamilyName,
+					middleName: dependant.MiddleName,
+					nameOfSchool: dependant.NameOfSchool,
+					relationshipId: relationship?.id ?? '',
+					dateOfBirth: parseDate(dependant.DateOfBirth),
+				}
+			}),
+		)
+
+		// Spouses
+		const spouses = await Promise.all(
+			employee.spouses.map(async (spouse: any) => {
+				return {
+					firstName: spouse.FirstName,
+					familyName: spouse.FamilyName,
+					middleName: spouse.MiddleName,
+					dateOfBirth: parseDate(spouse.DateOfBirth),
+					auIdNumber: spouse.AuIdNumber,
+					dateIssued: parseDate(spouse.DateIssued),
+					validUntil: parseDate(spouse.ValidUntil),
+					telephoneNumber: spouse.Telephone,
+				}
+			}),
+		)
+
+		// Create the employee with dependants
+		await prisma.employee.create({
+			data: {
+				firstName: employee.FirstName,
+				familyName: employee.FamilyName,
+				middleName: employee.MiddleName,
+				email: employee.Email,
+				countryId: country?.id ?? unknownCountry?.id ?? '',
+				organId: station?.id ?? unknownOrgan?.id ?? '',
+				locationId: location?.id ?? unknownLocation?.id ?? '',
+				floorId: floor?.id ?? unknownFloor?.id ?? '',
+				departmentId: department?.id ?? unknownDepartment?.id ?? '',
+				nationalPassportNumber: employee.NationalPassportNumber,
+				auPassportNumber: employee.AuPassportNumber,
+				auIdNumber: employee.AuIdNumber,
+				dateIssued: parseDate(employee.DateIssued),
+				validUntil: parseDate(employee.ValidUntil),
+				dateOfBirth: parseDate(employee.DateOfBirth),
+				officeNumber: employee.OfficeNumber,
+				specialConditions: employee.SpecialCondition,
+				medicallyTrained: employee.MedicallyTrained === '1' ? true : false,
+				zone: employee.Zone,
+				team: employee.Team,
+				city: employee?.address?.City,
+				subcity: employee?.address?.Subcity,
+				woreda: employee?.address?.Woreda,
+				street: employee?.address?.Street,
+				kebele: employee?.address?.Kebele,
+				houseNumber: employee?.address?.HouseNumber,
+				houseTelephoneNumber: employee?.address?.HomeTelephone,
+				mobileTelephoneNumber: employee?.address?.MobileTelephone,
+				officeTelephoneNumber: employee?.address?.OfficeTelephone,
+				specificLocation: employee?.address?.SpecificLocation,
+				gpsLocation: employee?.address?.GpsCoordinates,
+				homeCountryAddress: employee?.address?.HomeCountryAddress,
+				dependants: {
+					create: dependants,
+				},
+				spouses: {
+					create: spouses,
+				},
+			},
+		})
+	}
+}
+
+async function seed() {
+	console.log('🌱 Seeding...')
+	console.time(`🌱 Database has been seeded`)
+	await truncate()
+	await seedRolesAndPermission()
+	await seedAdminUser()
+	await seedLookups()
+	await seedEmployees()
 	console.timeEnd(`🌱 Database has been seeded`)
 }
 

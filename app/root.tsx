@@ -33,7 +33,13 @@ import { HoneypotProvider } from 'remix-utils/honeypot/react'
 import tailwindStyleSheetUrl from '~/styles/tailwind.css?url'
 
 import clsx from 'clsx'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import {
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+	useSyncExternalStore,
+} from 'react'
 import { Toaster, toast as showToast } from 'sonner'
 import { z } from 'zod'
 import {
@@ -199,12 +205,47 @@ function Layout({
 	)
 }
 
+function subscribe(onStoreChange: () => void) {
+	window.addEventListener('online', onStoreChange)
+	window.addEventListener('offline', onStoreChange)
+	return () => {
+		window.removeEventListener('online', onStoreChange)
+		window.removeEventListener('offline', onStoreChange)
+	}
+}
+
+function getSnapshot() {
+	return window.navigator.onLine
+}
+
+function getServerSnapshot() {
+	return true // Assume online for server-side rendering
+}
+
 function App() {
+	const isOnline = useSyncExternalStore(
+		subscribe,
+		getSnapshot,
+		getServerSnapshot,
+	)
 	const data = useLoaderData<typeof loader>()
 	const { navigation } = data
 	const theme = useTheme()
 	const user = useOptionalUser()
 	const isAdmin = userHasRole(user, 'admin')
+	// const isIncidentAdmin = userHasRole(user, 'incidentAdmin')
+	// const isAccessRequestAdmin = userHasRole(user, 'accessRequestAdmin')
+	// const isCarPassAdmin = userHasRole(user, 'carPassAdmin')
+	// const isIdRequestAdmin = userHasRole(user, 'idRequestAdmin')
+	// const isPhpAdmin = userHasRole(user, 'phpAdmin')
+	// console.log({
+	// 	isAdmin,
+	// 	isIncidentAdmin,
+	// 	isAccessRequestAdmin,
+	// 	isCarPassAdmin,
+	// 	isIdRequestAdmin,
+	// 	isPhpAdmin,
+	// })
 	// const canDelete = userHasPermission(user, 'delete:country:any')
 	// console.log('canDelete', canDelete)
 
@@ -234,29 +275,6 @@ function App() {
 								>
 									Dashboard
 								</NavLink>
-								{/* <NavLink
-									to="/guests"
-									className={({ isActive }) =>
-										clsx(
-											isActive ? 'text-foreground' : 'text-muted-foreground',
-											'transition-colors hover:text-foreground',
-										)
-									}
-								>
-									Guests
-								</NavLink>
-
-								<NavLink
-									to="/incidents"
-									className={({ isActive }) =>
-										clsx(
-											isActive ? 'text-foreground' : 'text-muted-foreground',
-											'transition-colors hover:text-foreground',
-										)
-									}
-								>
-									Incidents
-								</NavLink> */}
 
 								<NavLink
 									to="/settings/general"
@@ -382,6 +400,7 @@ function App() {
 							</NavLink>
 						)}
 
+						{isOnline ? <span>Online</span> : <span>Offline</span>}
 						<ThemeSwitch userPreference={theme} />
 					</div>
 				</header>

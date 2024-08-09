@@ -26,7 +26,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 	})
 
 	const employee = await prisma.employee.findFirst({
-		where: { email: user.email },
+		where: {
+			email: {
+				equals: user.email,
+				mode: 'insensitive',
+			},
+		},
 		include: {
 			country: true,
 			location: true,
@@ -42,19 +47,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 	if (!employee) {
 		throw await redirectWithToast(`/profile/${user.id}/new`, {
-			type: 'error',
-			title: 'Profile not found',
+			type: 'message',
+			title: 'Update your profile',
 			description: `You have not created your profile yet. Please update your personal information.`,
 		})
 	}
 
-	const idRequests = await prisma.idRequest.findMany({
+	const carPassRequests = await prisma.carPassRequest.findMany({
 		where: {
 			requestorEmail: employee.email,
 		},
 	})
 
-	const carPassRequests = await prisma.carPassRequest.findMany({
+	const idRequests = await prisma.idRequest.findMany({
 		where: {
 			requestorEmail: employee.email,
 		},

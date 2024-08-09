@@ -58,7 +58,12 @@ async function updateProfile({
 	const submission = await parseWithZod(formData, {
 		schema: ProfileEditorSchema.superRefine(async (data, ctx) => {
 			const employee = await prisma.employee.findFirst({
-				where: { email: user.email },
+				where: {
+					email: {
+						equals: user.email,
+						mode: 'insensitive',
+					},
+				},
 				select: { id: true },
 			})
 

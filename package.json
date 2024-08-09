@@ -6,6 +6,7 @@
   "scripts": {
     "build": "remix vite:build",
     "build:icons": "tsx ./config/build-icons.ts",
+    "build:groq": "tsx ./groq/index.ts",
     "dev": "node ./server.js",
     "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint .",
     "start": "cross-env NODE_ENV=production node ./server.js",
@@ -53,6 +54,7 @@
     "date-fns": "^3.6.0",
     "express": "^4.18.2",
     "express-rate-limit": "^7.2.0",
+    "groq-js": "^1.12.0",
     "isbot": "^4.1.0",
     "lucide-react": "^0.363.0",
     "morgan": "^1.10.0",

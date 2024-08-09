@@ -80,7 +80,12 @@ export async function action({ params, request }: ActionFunctionArgs) {
 	}
 
 	const employee = await prisma.employee.findFirst({
-		where: { email: user.email },
+		where: {
+			email: {
+				equals: user.email,
+				mode: 'insensitive',
+			},
+		},
 		select: { id: true },
 	})
 

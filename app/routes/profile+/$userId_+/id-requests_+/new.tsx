@@ -11,7 +11,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
 	invariantResponse(user, 'Not Found', { status: 404 })
 
 	const employee = await prisma.employee.findFirst({
-		where: { email: user.email },
+		where: {
+			email: {
+				equals: user.email,
+				mode: 'insensitive',
+			},
+		},
 		select: {
 			spouses: {
 				select: {

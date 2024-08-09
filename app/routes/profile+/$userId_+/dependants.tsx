@@ -32,7 +32,10 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 
 	const employee = await prisma.employee.findFirst({
 		where: {
-			email: user.email,
+			email: {
+				equals: user.email,
+				mode: 'insensitive',
+			},
 		},
 	})
 
@@ -123,7 +126,7 @@ export default function DependantsRoute() {
 											<TableCell>{dependant.familyName}</TableCell>
 											<TableCell>{dependant.middleName}</TableCell>
 											<TableCell>{dependant.relationship.name}</TableCell>
-											<TableCell className="text-right space-x-1">
+											<TableCell className="py-1 text-right space-x-1">
 												<Button asChild size="xs">
 													<Link to={`${dependant.id}/edit`}>
 														<EditIcon className="h-4 w-4" />
@@ -148,11 +151,11 @@ export default function DependantsRoute() {
 						</Table>
 					</div>
 				</CardContent>
-				{totalPages > 0 && (
-					<CardFooter className="border-t">
+				{totalPages > 0 ? (
+					<CardFooter className="border-t px-6 py-4">
 						<Paginator totalPages={totalPages} currentPage={currentPage} />
 					</CardFooter>
-				)}
+				) : null}
 			</Card>
 		</div>
 	)

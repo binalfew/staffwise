@@ -190,10 +190,10 @@ export function IdRequestEditor({
 				? ('select' as const)
 				: ('hidden' as const),
 			data: [
-				{ name: 'EMPLOYEE', value: 'EMPLOYEE' },
-				{ name: 'SPOUSE', value: 'SPOUSE' },
-				{ name: 'DEPENDANT', value: 'DEPENDANT' },
-				{ name: 'PRIVATE DRIVER', value: 'PRIVATEDRIVER' },
+				{ name: 'Employee', value: 'EMPLOYEE' },
+				{ name: 'Spouse', value: 'SPOUSE' },
+				{ name: 'Dependant', value: 'DEPENDANT' },
+				{ name: 'Private Driver', value: 'PRIVATEDRIVER' },
 			].map(t => ({
 				name: t.name,
 				value: t.value,
@@ -206,10 +206,10 @@ export function IdRequestEditor({
 			disabled,
 			errors: fields.reason.errors,
 			data: [
-				{ name: 'NEW', value: 'NEW' },
-				{ name: 'LOST', value: 'LOST' },
-				{ name: 'DAMAGED', value: 'DAMAGED' },
-				{ name: 'EXPIRED', value: 'EXPIRED' },
+				{ name: 'New', value: 'NEW' },
+				{ name: 'Lost', value: 'LOST' },
+				{ name: 'Damaged', value: 'DAMAGED' },
+				{ name: 'Expired', value: 'EXPIRED' },
 			].map(r => ({
 				name: r.name,
 				value: r.value,

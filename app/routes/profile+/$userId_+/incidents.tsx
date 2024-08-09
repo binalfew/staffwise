@@ -32,7 +32,10 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 
 	const employee = await prisma.employee.findFirst({
 		where: {
-			email: user.email,
+			email: {
+				equals: user.email,
+				mode: 'insensitive',
+			},
 		},
 	})
 
