@@ -44,7 +44,7 @@ export async function requireUserWithPermission(
 export async function requireUserWithRole(request: Request, name: string) {
 	const userId = await requireUserId(request)
 	const user = await prisma.user.findFirst({
-		select: { id: true },
+		select: { id: true, email: true },
 		where: { id: userId, roles: { some: { name } } },
 	})
 
@@ -58,5 +58,6 @@ export async function requireUserWithRole(request: Request, name: string) {
 			{ status: 403 },
 		)
 	}
-	return user.id
+
+	return user
 }

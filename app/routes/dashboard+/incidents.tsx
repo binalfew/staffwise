@@ -1,6 +1,6 @@
 import { LoaderFunctionArgs, json } from '@remix-run/node'
 import { Link, useLoaderData } from '@remix-run/react'
-import { EditIcon, PlusCircle } from 'lucide-react'
+import { ArrowLeftIcon, EditIcon, TrashIcon } from 'lucide-react'
 import { ErrorList } from '~/components/ErrorList'
 import { Paginator } from '~/components/Paginator'
 import { SearchBar } from '~/components/SearchBar'
@@ -21,12 +21,32 @@ import {
 	TableRow,
 } from '~/components/ui/table'
 import { filterAndPaginate, prisma } from '~/utils/db.server'
+import { invariantResponse } from '~/utils/misc'
+import { requireUserWithRole } from '~/utils/permission.server'
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ params, request }: LoaderFunctionArgs) {
+	const user = await requireUserWithRole(request, 'admin')
+
+	const employee = await prisma.employee.findFirst({
+		where: {
+			email: {
+				equals: user.email,
+				mode: 'insensitive',
+			},
+		},
+	})
+
+	invariantResponse(employee, 'Employee not found', {
+		status: 404,
+	})
+
 	const { data, totalPages, currentPage } = await filterAndPaginate({
 		request,
 		model: prisma.incident,
 		searchFields: ['incidentNumber'],
+		where: {
+			employeeId: employee.id,
+		},
 		orderBy: [{ incidentNumber: 'asc' }],
 		select: {
 			id: true,
@@ -39,6 +59,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 	})
 
 	return json({
+		user,
 		status: 'idle',
 		incidents: data,
 		totalPages,
@@ -48,7 +69,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function IncidentsRoute() {
 	const data = useLoaderData<typeof loader>()
-	const { totalPages, currentPage } = data
+	const { user, totalPages, currentPage } = data
 
 	return (
 		<div className="flex flex-col gap-8">
@@ -62,14 +83,14 @@ export default function IncidentsRoute() {
 					<div className="flex items-center gap-2 ml-auto">
 						<SearchBar
 							status={data.status}
-							action="/settings/incidents"
+							action={`/dashboard/incidents`}
 							autoSubmit
 						/>
 
 						<Button asChild size="sm" className="ml-auto gap-1">
-							<Link to="new">
-								<PlusCircle className="h-4 w-4" />
-								Add
+							<Link to={`/dashboard`}>
+								<ArrowLeftIcon className="h-4 w-4" />
+								Back
 							</Link>
 						</Button>
 					</div>
@@ -93,35 +114,27 @@ export default function IncidentsRoute() {
 									data.incidents.length > 0 ? (
 										data.incidents.map((incident: any) => (
 											<TableRow key={incident.id}>
-												<TableCell className="py-1">
-													{incident.incidentNumber}
-												</TableCell>
-												<TableCell className="py-1">
-													{incident.incidentType.name}
-												</TableCell>
-												<TableCell className="py-1">
-													{incident.occuredAt}
-												</TableCell>
-												<TableCell className="py-1">
-													{incident.occuredWhile}
-												</TableCell>
+												<TableCell>{incident.incidentNumber}</TableCell>
+												<TableCell>{incident.incidentType.name}</TableCell>
+												<TableCell>{incident.occuredAt}</TableCell>
+												<TableCell>{incident.occuredWhile}</TableCell>
 												<TableCell className="py-1 text-right space-x-1">
 													<Button asChild size="xs">
 														<Link to={`${incident.id}/edit`}>
 															<EditIcon className="h-4 w-4" />
 														</Link>
 													</Button>
-													{/* <Button asChild size="xs" variant="destructive">
+													<Button asChild size="xs" variant="destructive">
 														<Link to={`${incident.id}/delete`}>
 															<TrashIcon className="h-4 w-4" />
 														</Link>
-													</Button> */}
+													</Button>
 												</TableCell>
 											</TableRow>
 										))
 									) : (
 										<TableRow>
-											<TableCell colSpan={4} className="text-center">
+											<TableCell colSpan={5} className="text-center">
 												<h3 className="mt-2 text-sm font-semibold text-muted-foreground">
 													No incidents found
 												</h3>

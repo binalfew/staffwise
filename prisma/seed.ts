@@ -617,11 +617,13 @@ export async function seedEmployees() {
 				})
 
 				return {
-					auIdNumber: dependant.AuIdNumber,
+					auIdNumber:
+						dependant.AuIdNumber === 'NULL' ? null : dependant.AuIdNumber,
 					firstName: dependant.FirstName,
 					familyName: dependant.FamilyName,
 					middleName: dependant.MiddleName,
-					nameOfSchool: dependant.NameOfSchool,
+					nameOfSchool:
+						dependant.NameOfSchool === 'NULL' ? null : dependant.NameOfSchool,
 					relationshipId: relationship?.id ?? '',
 					dateOfBirth: parseDate(dependant.DateOfBirth),
 				}
@@ -636,10 +638,11 @@ export async function seedEmployees() {
 					familyName: spouse.FamilyName,
 					middleName: spouse.MiddleName,
 					dateOfBirth: parseDate(spouse.DateOfBirth),
-					auIdNumber: spouse.AuIdNumber,
+					auIdNumber: spouse.AuIdNumber === 'NULL' ? null : spouse.AuIdNumber,
 					dateIssued: parseDate(spouse.DateIssued),
 					validUntil: parseDate(spouse.ValidUntil),
-					telephoneNumber: spouse.Telephone,
+					telephoneNumber:
+						spouse.Telephone === 'NULL' ? null : spouse.Telephone,
 				}
 			}),
 		)
@@ -665,20 +668,51 @@ export async function seedEmployees() {
 				officeNumber: employee.OfficeNumber,
 				specialConditions: employee.SpecialCondition,
 				medicallyTrained: employee.MedicallyTrained === '1' ? true : false,
-				zone: employee.Zone,
-				team: employee.Team,
-				city: employee?.address?.City,
+				zone: employee.Zone === 'NULL' ? null : employee.Zone,
+				team: employee.Team === 'NULL' ? null : employee.Team,
+				city:
+					employee?.address?.City === 'NULL' ? null : employee?.address?.City,
 				subcity: employee?.address?.Subcity,
-				woreda: employee?.address?.Woreda,
-				street: employee?.address?.Street,
-				kebele: employee?.address?.Kebele,
-				houseNumber: employee?.address?.HouseNumber,
-				houseTelephoneNumber: employee?.address?.HomeTelephone,
-				mobileTelephoneNumber: employee?.address?.MobileTelephone,
-				officeTelephoneNumber: employee?.address?.OfficeTelephone,
-				specificLocation: employee?.address?.SpecificLocation,
-				gpsLocation: employee?.address?.GpsCoordinates,
-				homeCountryAddress: employee?.address?.HomeCountryAddress,
+				woreda:
+					employee?.address?.Woreda === 'NULL'
+						? null
+						: employee?.address?.Woreda,
+				street:
+					employee?.address?.Street === 'NULL'
+						? null
+						: employee?.address?.Street,
+				kebele:
+					employee?.address?.Kebele === 'NULL'
+						? null
+						: employee?.address?.Kebele,
+				houseNumber:
+					employee?.address?.HouseNumber === 'NULL'
+						? null
+						: employee?.address?.HouseNumber,
+				houseTelephoneNumber:
+					employee?.address?.HomeTelephone === 'NULL'
+						? null
+						: employee?.address?.HomeTelephone,
+				mobileTelephoneNumber:
+					employee?.address?.MobileTelephone === 'NULL'
+						? null
+						: employee?.address?.MobileTelephone,
+				officeTelephoneNumber:
+					employee?.address?.OfficeTelephone === 'NULL'
+						? null
+						: employee?.address?.OfficeTelephone,
+				specificLocation:
+					employee?.address?.SpecificLocation === 'NULL'
+						? null
+						: employee?.address?.SpecificLocation,
+				gpsLocation:
+					employee?.address?.GpsCoordinates === 'NULL'
+						? null
+						: employee?.address?.GpsCoordinates,
+				homeCountryAddress:
+					employee?.address?.HomeCountryAddress === 'NULL'
+						? null
+						: employee?.address?.HomeCountryAddress,
 				dependants: {
 					create: dependants,
 				},

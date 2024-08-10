@@ -39,8 +39,4 @@ export const settingsNavigation: NavigationItem[] = [
 		name: 'Relationships',
 		href: '/settings/relationships',
 	},
-	{
-		name: 'Incidents',
-		href: '/settings/incidents',
-	},
 ]
