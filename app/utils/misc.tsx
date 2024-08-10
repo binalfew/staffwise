@@ -289,6 +289,14 @@ export function getAttachmentFileSrc(attachmentId: string) {
 	return `/profile/resources/attachments/${attachmentId}`
 }
 
+export function getEmployeeFileSrc(employeeId: string) {
+	return `/profile/resources/employees/${employeeId}`
+}
+
+export function getEmployeesFileSrc() {
+	return `/profile/resources/employees`
+}
+
 export function getUniqueSerialNumber() {
 	const timestamp = Date.now()
 	const randomComponent = Math.floor(Math.random() * 1000)
