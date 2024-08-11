@@ -1,7 +1,7 @@
 import { EyeOpenIcon } from '@radix-ui/react-icons'
-import { json, LoaderFunctionArgs } from '@remix-run/node'
+import { LoaderFunctionArgs, json } from '@remix-run/node'
 import { Link, useLoaderData } from '@remix-run/react'
-import { ArrowLeftIcon, DownloadIcon } from 'lucide-react'
+import { ArrowLeftIcon } from 'lucide-react'
 import { ErrorList } from '~/components/ErrorList'
 import { Paginator } from '~/components/Paginator'
 import { SearchBar } from '~/components/SearchBar'
@@ -22,37 +22,55 @@ import {
 	TableRow,
 } from '~/components/ui/table'
 import { filterAndPaginate, prisma } from '~/utils/db.server'
-import { getEmployeesFileSrc } from '~/utils/misc'
+import { formatDate, invariantResponse } from '~/utils/misc'
 import { requireUserWithRole } from '~/utils/permission.server'
 
-export async function loader({ request }: LoaderFunctionArgs) {
-	await requireUserWithRole(request, 'admin')
+export async function loader({ params, request }: LoaderFunctionArgs) {
+	const user = await requireUserWithRole(request, 'admin')
+
+	const employee = await prisma.employee.findFirst({
+		where: {
+			email: {
+				equals: user.email,
+				mode: 'insensitive',
+			},
+		},
+	})
+
+	invariantResponse(employee, 'Employee not found', {
+		status: 404,
+	})
 
 	const { data, totalPages, currentPage } = await filterAndPaginate({
 		request,
-		model: prisma.employee,
-		searchFields: ['auIdNumber', 'firstName', 'middleName'],
-		orderBy: [{ firstName: 'asc' }],
+		model: prisma.incident,
+		searchFields: ['incidentNumber'],
+		where: {
+			employeeId: employee.id,
+		},
+		orderBy: [{ incidentNumber: 'asc' }],
 		select: {
 			id: true,
-			firstName: true,
-			middleName: true,
-			familyName: true,
-			auIdNumber: true,
+			incidentNumber: true,
+			incidentType: { select: { name: true } },
+			location: true,
+			occuredAt: true,
+			occuredWhile: true,
 		},
 	})
 
 	return json({
+		user,
 		status: 'idle',
-		employees: data,
+		incidents: data,
 		totalPages,
 		currentPage,
 	} as const)
 }
 
-export default function PhpRoute() {
+export default function IncidentsRoute() {
 	const data = useLoaderData<typeof loader>()
-	const { employees, totalPages, currentPage, status } = data
+	const { user, totalPages, currentPage } = data
 
 	return (
 		<div className="flex flex-col gap-8">
@@ -60,24 +78,21 @@ export default function PhpRoute() {
 				<CardHeader className="flex flex-row items-center">
 					<div className="grid gap-2">
 						<CardTitle className="text-base font-semibold leading-6 text-gray-900">
-							PHP
+							Incidents
 						</CardTitle>
 					</div>
 					<div className="flex items-center gap-2 ml-auto">
-						<SearchBar status={status} action={`/dashboard/php`} autoSubmit />
+						<SearchBar
+							status={data.status}
+							action={`/dashboard/incidents`}
+							autoSubmit
+						/>
 
 						<Button asChild size="sm" className="ml-auto gap-1">
 							<Link to={`/dashboard`}>
 								<ArrowLeftIcon className="h-4 w-4" />
 								Back
 							</Link>
-						</Button>
-
-						<Button asChild size="sm" className="ml-auto gap-1">
-							<a href={getEmployeesFileSrc()}>
-								<DownloadIcon className="h-4 w-4" />
-								Export
-							</a>
 						</Button>
 					</div>
 				</CardHeader>
@@ -86,35 +101,27 @@ export default function PhpRoute() {
 						<Table>
 							<TableHeader>
 								<TableRow>
-									<TableHead>ID</TableHead>
-									<TableHead>First Name</TableHead>
-									<TableHead>Middle Name</TableHead>
-									<TableHead>Family Name</TableHead>
+									<TableHead>#</TableHead>
+									<TableHead>Incident Type</TableHead>
+									<TableHead>Occured At</TableHead>
+									<TableHead>Occured While</TableHead>
 									<TableHead className="w-1/6 text-right pr-6">
 										Actions
 									</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
-								{status === 'idle' ? (
-									employees.length > 0 ? (
-										employees.map((employee: any) => (
-											<TableRow key={employee.id}>
-												<TableCell className="py-1">
-													{employee.auIdNumber}
-												</TableCell>
-												<TableCell className="py-1">
-													{employee.firstName}
-												</TableCell>
-												<TableCell className="py-1">
-													{employee.middleName}
-												</TableCell>
-												<TableCell className="py-1">
-													{employee.familyName}
-												</TableCell>
+								{data.status === 'idle' ? (
+									data.incidents.length > 0 ? (
+										data.incidents.map((incident: any) => (
+											<TableRow key={incident.id}>
+												<TableCell>{incident.incidentNumber}</TableCell>
+												<TableCell>{incident.incidentType.name}</TableCell>
+												<TableCell>{formatDate(incident.occuredAt)}</TableCell>
+												<TableCell>{incident.occuredWhile}</TableCell>
 												<TableCell className="py-1 text-right space-x-1">
 													<Button asChild size="xs">
-														<Link to={`${employee.id}`}>
+														<Link to={`${incident.id}`}>
 															<EyeOpenIcon className="h-4 w-4" />
 														</Link>
 													</Button>
@@ -125,12 +132,12 @@ export default function PhpRoute() {
 										<TableRow>
 											<TableCell colSpan={5} className="text-center">
 												<h3 className="mt-2 text-sm font-semibold text-muted-foreground">
-													No employees found
+													No incidents found
 												</h3>
 											</TableCell>
 										</TableRow>
 									)
-								) : status === 'error' ? (
+								) : data.status === 'error' ? (
 									<TableRow>
 										<TableCell colSpan={4} className="text-center">
 											<ErrorList
