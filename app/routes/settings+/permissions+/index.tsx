@@ -25,44 +25,21 @@ import { filterAndPaginate, prisma } from '~/utils/db.server'
 export async function loader({ request }: LoaderFunctionArgs) {
 	const { data, totalPages, currentPage } = await filterAndPaginate({
 		request,
-		model: prisma.floor,
-		searchFields: [
-			'name',
-			'code',
-			'location.name',
-			{
-				location: {
-					organ: ['code', 'name', 'address'],
-				},
-			},
-		],
-		orderBy: [{ name: 'asc' }],
-		select: {
-			id: true,
-			name: true,
-			code: true,
-			locationId: true,
-			location: {
-				select: {
-					name: true,
-					organId: true,
-					organ: { select: { name: true } },
-				},
-			},
-		},
+		model: prisma.permission,
+		searchFields: ['entity', 'action', 'access'],
+		orderBy: [{ entity: 'asc' }],
 	})
 
 	return json({
 		status: 'idle',
-		floors: data,
+		permissions: data,
 		totalPages,
 		currentPage,
 	} as const)
 }
 
-export default function FloorsRoute() {
+export default function RolesRoute() {
 	const data = useLoaderData<typeof loader>()
-
 	const { totalPages, currentPage } = data
 
 	return (
@@ -70,14 +47,14 @@ export default function FloorsRoute() {
 			<Card className="w-full">
 				<CardHeader className="flex flex-row items-center">
 					<div className="grid gap-2">
-						<CardTitle className="text-base font-semibold leading-6 text-gray-900">
-							Floors
+						<CardTitle className="text-base font-semibold leading-6 text-gray-9000">
+							Permissions
 						</CardTitle>
 					</div>
 					<div className="flex items-center gap-2 ml-auto">
 						<SearchBar
 							status={data.status}
-							action="/settings/floors"
+							action="/settings/permissions"
 							autoSubmit
 						/>
 
@@ -94,34 +71,36 @@ export default function FloorsRoute() {
 						<Table>
 							<TableHeader>
 								<TableRow>
-									<TableHead>Name</TableHead>
-									<TableHead>Code</TableHead>
-									<TableHead>Organ</TableHead>
-									<TableHead>Location</TableHead>
-									<TableHead className="text-right pr-6">Actions</TableHead>
+									<TableHead className="w-1/3">Entity</TableHead>
+									<TableHead className="w-1/4">Action</TableHead>
+									<TableHead className="w-1/4">Access</TableHead>
+									<TableHead className="w-1/6 text-right pr-6">
+										Actions
+									</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
 								{data.status === 'idle' ? (
-									data.floors.length > 0 ? (
-										data.floors.map((floor: any) => (
-											<TableRow key={floor.id}>
-												<TableCell className="py-1">{floor.name}</TableCell>
-												<TableCell className="py-1">{floor.code}</TableCell>
+									data.permissions.length > 0 ? (
+										data.permissions.map(permission => (
+											<TableRow key={permission.id}>
 												<TableCell className="py-1">
-													{floor.location.organ.name}{' '}
+													{permission.entity}
 												</TableCell>
 												<TableCell className="py-1">
-													{floor.location.name}{' '}
+													{permission.action}
+												</TableCell>
+												<TableCell className="py-1">
+													{permission.access}
 												</TableCell>
 												<TableCell className="py-1 text-right space-x-1">
 													<Button asChild size="xs">
-														<Link to={`${floor.id}/edit`}>
+														<Link to={`${permission.id}/edit`}>
 															<EditIcon className="h-4 w-4" />
 														</Link>
 													</Button>
 													<Button asChild size="xs" variant="destructive">
-														<Link to={`${floor.id}/delete`}>
+														<Link to={`${permission.id}/delete`}>
 															<TrashIcon className="h-4 w-4" />
 														</Link>
 													</Button>
@@ -130,9 +109,9 @@ export default function FloorsRoute() {
 										))
 									) : (
 										<TableRow>
-											<TableCell colSpan={5} className="text-center">
+											<TableCell colSpan={4} className="text-center">
 												<h3 className="mt-2 text-sm font-semibold text-muted-foreground">
-													No floors found
+													No permissions found
 												</h3>
 											</TableCell>
 										</TableRow>
@@ -156,11 +135,9 @@ export default function FloorsRoute() {
 						</Table>
 					</div>
 				</CardContent>
-				{totalPages > 0 ? (
-					<CardFooter className="border-t px-6 py-4">
-						<Paginator totalPages={totalPages} currentPage={currentPage} />
-					</CardFooter>
-				) : null}
+				<CardFooter className="border-t px-6 py-4">
+					<Paginator totalPages={totalPages} currentPage={currentPage} />
+				</CardFooter>
 			</Card>
 		</div>
 	)

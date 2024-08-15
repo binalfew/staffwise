@@ -9,7 +9,7 @@ export function CheckboxGroupField({
 	items,
 }: {
 	meta: FieldMetadata<string[]>
-	items: Array<{ name: string; value: string }>
+	items: Array<{ name: string; value: string; [key: string]: any }>
 }) {
 	const initialValue =
 		typeof meta.initialValue === 'string'
@@ -46,7 +46,14 @@ export function CheckboxGroupField({
 								onBlur={control.blur}
 								className="focus:ring-stone-950 focus:ring-2 focus:ring-offset-2"
 							/>
-							<label htmlFor={`${meta.name}-${item.value}`}>{item.name}</label>
+							<label htmlFor={`${meta.name}-${item.value}`}>
+								{item.name}
+								{Object.entries(item).length > 2 ? ' - ' : ''}
+								{Object.entries(item)
+									.filter(([key]) => key !== 'value' && key !== 'name')
+									.map(([key, value]) => value)
+									.join(' - ')}
+							</label>
 						</div>
 					)}
 				/>

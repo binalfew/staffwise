@@ -43,6 +43,22 @@ const prisma = singleton('prisma', () => {
 	return client
 })
 
+/**
+ * Generic type for pagination and filtering parameters.
+ * @template TWhereInput - Type for filtering conditions
+ * @template TOrderByInput - Type for ordering conditions
+ * @template TResult - Type of the result items
+ * @template TSelect - Type for selecting specific fields (optional)
+ * @template TInclude - Type for including related data (optional)
+ *
+ * @property {LoaderFunctionArgs['request']} request - The request object
+ * @property {Object} model - The database model with count and findMany methods
+ * @property {Array<SearchField>} searchFields - Fields to search in
+ * @property {TWhereInput} [where] - Additional filtering conditions
+ * @property {TOrderByInput[]} orderBy - Ordering conditions
+ * @property {TSelect} [select] - Fields to select in the result
+ * @property {TInclude} [include] - Related data to include
+ */
 type PaginationAndFilterParams<
 	TWhereInput,
 	TOrderByInput,
@@ -62,13 +78,120 @@ type PaginationAndFilterParams<
 			include?: TInclude
 		}) => Promise<TResult[]>
 	}
-	searchFields: Array<keyof TWhereInput>
+	searchFields: Array<SearchField>
 	where?: TWhereInput
 	orderBy: TOrderByInput[]
 	select?: TSelect
 	include?: TInclude
 }
 
+/**
+ * Represents a field or set of fields to be searched.
+ * Can be a string (single field), an object (nested fields),
+ * or an array of SearchFields (multiple fields).
+ *
+ * // Single field
+ * const field1: SearchField = 'name'
+ *
+ * // Nested fields
+ * const field2: SearchField = { user: { profile: 'bio' } }
+ *
+ * // Multiple fields
+ * const field3: SearchField = ['title', 'description', { author: 'name' }]
+ */
+type SearchField = string | { [key: string]: SearchField } | SearchField[]
+
+/**
+ * Represents a search condition object.
+ * Keys are strings, and values can be of any type.
+ * Used to build dynamic search queries.
+ *
+ * const condition: SearchCondition = {
+ *   name: { contains: 'John', mode: 'insensitive' },
+ *   age: { gt: 18 }
+ * }
+ */
+type SearchCondition = {
+	[key: string]: any
+}
+
+/**
+ * Creates a search condition object based on the given field and search term.
+ *
+ * // Single field
+ * createSearchCondition('name', 'John')
+ * // { name: { contains: 'John', mode: 'insensitive' } }
+ *
+ * // Nested field
+ * createSearchCondition('user.profile.bio', 'developer')
+ * // { user: { profile: { bio: { contains: 'developer', mode: 'insensitive' } } } }
+ *
+ * // Multiple fields
+ * createSearchCondition(['title', 'description'], 'example')
+ * // { OR: [
+ * //   { title: { contains: 'example', mode: 'insensitive' } },
+ * //   { description: { contains: 'example', mode: 'insensitive' } }
+ * // ] }
+ */
+function createSearchCondition(
+	field: SearchField,
+	searchTerm: string,
+): { [key: string]: any } {
+	if (typeof field === 'string') {
+		const fieldParts = field.split('.')
+		if (fieldParts.length > 1) {
+			return createNestedCondition(fieldParts, searchTerm)
+		} else {
+			return { [field]: { contains: searchTerm, mode: 'insensitive' } }
+		}
+	} else if (Array.isArray(field)) {
+		// Handle array of fields
+		return {
+			OR: field.map(subField => createSearchCondition(subField, searchTerm)),
+		}
+	} else {
+		return Object.entries(field).reduce((acc, [key, value]) => {
+			acc[key] = createSearchCondition(value, searchTerm)
+			return acc
+		}, {} as { [key: string]: any })
+	}
+}
+
+/**
+ * Creates a nested search condition object for dot-separated field paths.
+ *
+ * createNestedCondition(['user', 'profile', 'bio'], 'developer')
+ * // Returns:
+ * // {
+ * //   user: {
+ * //     profile: {
+ * //       bio: { contains: 'developer', mode: 'insensitive' }
+ * //     }
+ * //   }
+ * // }
+ */
+function createNestedCondition(
+	fieldParts: string[],
+	searchTerm: string,
+): { [key: string]: any } {
+	if (fieldParts.length === 1) {
+		return { [fieldParts[0]]: { contains: searchTerm, mode: 'insensitive' } }
+	}
+	return {
+		[fieldParts[0]]: createNestedCondition(fieldParts.slice(1), searchTerm),
+	}
+}
+
+/**
+ * Filters and paginates data based on search parameters and pagination settings.
+ *
+ * const result = await filterAndPaginate({
+ *   request,
+ *   model: prisma.user,
+ *   searchFields: ['name', 'email'],
+ *   orderBy: [{ createdAt: 'desc' }],
+ * });
+ */
 export async function filterAndPaginate<
 	TWhereInput,
 	TOrderByInput,
@@ -78,7 +201,7 @@ export async function filterAndPaginate<
 >({
 	request,
 	model,
-	searchFields = [] as Array<keyof TWhereInput>,
+	searchFields = [] as SearchField[],
 	where = {} as TWhereInput,
 	orderBy = [] as TOrderByInput[],
 	select,
@@ -97,20 +220,19 @@ export async function filterAndPaginate<
 	const pageSize =
 		pageSizeParam === 'All' ? undefined : parseInt(pageSizeParam || '10', 10)
 
-	let searchConditions: any = {}
+	let searchConditions: SearchCondition = {}
 	if (searchTerm) {
 		searchConditions = {
-			OR: searchFields.map(field => ({
-				[field]: { contains: searchTerm, mode: 'insensitive' },
-			})),
+			OR: searchFields.flatMap(field =>
+				createSearchCondition(field, searchTerm),
+			),
 		}
 	}
 
-	// Combine `where` conditions with search conditions
 	const combinedWhere = {
 		...where,
 		...searchConditions,
-	}
+	} as TWhereInput & SearchCondition
 
 	const totalItems = await model.count({ where: combinedWhere })
 

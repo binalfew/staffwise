@@ -3,9 +3,17 @@ import { DatePickerField } from '~/components/conform/DatePickerField'
 import { InputField } from '~/components/conform/InputField'
 import { SelectField } from '~/components/conform/SelectField'
 import { Label } from '~/components/ui/label'
+import { CheckboxField } from './conform/CheckboxField'
 import { TextareaField } from './conform/TextareaField'
 
-type FormFieldType = 'text' | 'textarea' | 'hidden' | 'date' | 'select' | 'file'
+type FormFieldType =
+	| 'text'
+	| 'textarea'
+	| 'hidden'
+	| 'date'
+	| 'select'
+	| 'file'
+	| 'checkbox'
 
 interface FormFieldProps {
 	item: {
@@ -22,6 +30,16 @@ interface FormFieldProps {
 export default function FormField({ item }: FormFieldProps) {
 	if (item.type === 'hidden') {
 		return <InputField key={item.field.id} meta={item.field} type="hidden" />
+	}
+
+	if (item.type === 'checkbox') {
+		return (
+			<Field key={item.field.id}>
+				<Label htmlFor={item.field.id}>{item.label}</Label>
+				<CheckboxField meta={item.field} disabled={item.disabled} />
+				{item.errors && <FieldError>{item.errors}</FieldError>}
+			</Field>
+		)
 	}
 
 	if (item.type === 'file') {

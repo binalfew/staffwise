@@ -10,14 +10,18 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
 	const user = await prisma.user.findUnique({
 		where: { id: userId },
+		include: { roles: true },
 	})
 
 	invariantResponse(user, 'Not Found', { status: 404 })
 
-	return json({ user })
+	const roles = await prisma.role.findMany()
+
+	return json({ user, roles })
 }
 
 export default function EditCountryRoute() {
-	const { user } = useLoaderData<typeof loader>()
-	return <UserEditor user={user} title="Edit User" />
+	const { user, roles } = useLoaderData<typeof loader>()
+
+	return <UserEditor user={user} roles={roles} title="Edit User" />
 }

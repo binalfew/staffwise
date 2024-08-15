@@ -1,15 +1,7 @@
-import { getFormProps, useForm } from '@conform-to/react'
-import { getZodConstraint, parseWithZod } from '@conform-to/zod'
+import { parseWithZod } from '@conform-to/zod'
+import { InfoCircledIcon } from '@radix-ui/react-icons'
 import { ActionFunctionArgs, LoaderFunctionArgs, json } from '@remix-run/node'
-import { Form, Link, useActionData, useSearchParams } from '@remix-run/react'
-import { AuthenticityTokenInput } from 'remix-utils/csrf/react'
-import { HoneypotInputs } from 'remix-utils/honeypot/react'
 import { z } from 'zod'
-import { ErrorList } from '~/components/ErrorList'
-import { Field, FieldError } from '~/components/Field'
-import { CheckboxField } from '~/components/conform/CheckboxField'
-import { InputField } from '~/components/conform/InputField'
-import { Button } from '~/components/ui/button'
 import {
 	Card,
 	CardContent,
@@ -17,7 +9,6 @@ import {
 	CardHeader,
 	CardTitle,
 } from '~/components/ui/card'
-import { Label } from '~/components/ui/label'
 import { insertAuditLog } from '~/utils/audit.server'
 import { login, requireAnonymous } from '~/utils/auth.server'
 import { ProviderConnectionForm } from '~/utils/connections'
@@ -86,91 +77,34 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function LoginRoute() {
-	const actionData = useActionData<typeof action>()
-	const [searchParams] = useSearchParams()
-	const redirectTo = searchParams.get('redirectTo')
-	const [form, fields] = useForm({
-		id: 'login-form',
-		constraint: getZodConstraint(LoginFormSchema),
-		lastResult: actionData?.result,
-		defaultValue: { redirectTo },
-		onValidate({ formData }) {
-			return parseWithZod(formData, { schema: LoginFormSchema })
-		},
-		shouldRevalidate: 'onBlur',
-	})
-
 	return (
-		<Card className="mx-auto max-w-sm">
-			<CardHeader>
-				<CardTitle className="text-2xl">Login</CardTitle>
-				<CardDescription>
-					Enter your email below to login to your account
-				</CardDescription>
-			</CardHeader>
-			<CardContent>
-				<Form className="grid gap-4" method="POST" {...getFormProps(form)}>
-					<AuthenticityTokenInput />
-					<HoneypotInputs />
-					<div className="grid gap-4">
-						<Field>
-							<Label htmlFor={fields.username.id}>Username</Label>
-							<InputField meta={fields.username} type="text" />
-							{fields.username.errors && (
-								<FieldError>{fields.username.errors}</FieldError>
-							)}
-						</Field>
-
-						<div className="grid gap-2">
-							<div className="flex items-center">
-								<Label htmlFor="password">Password</Label>
-								<Link
-									to="/forgot-password"
-									className="ml-auto inline-block text-sm underline"
-								>
-									Forgot your password?
-								</Link>
-							</div>
-							<InputField meta={fields.password} type="password" />
-							{fields.password.errors && (
-								<FieldError>{fields.username.errors}</FieldError>
-							)}
-						</div>
-
-						<Field>
-							<div className="flex items-center gap-2">
-								<CheckboxField meta={fields.remember} />
-								<Label htmlFor={fields.remember.id}>Remember me</Label>
-							</div>
-							{fields.remember.errors && (
-								<FieldError>{fields.remember.errors}</FieldError>
-							)}
-						</Field>
-
-						<InputField meta={fields.redirectTo} type="hidden" />
-						<ErrorList errors={form.errors} id={form.errorId} />
-
-						<Button type="submit" className="w-full">
-							Login
-						</Button>
+		<div className="flex items-center justify-center min-h-full p-4">
+			<Card className="w-full max-w-lg shadow-lg">
+				<CardHeader className="space-y-1">
+					<CardTitle className="text-2xl font-bold text-center">
+						Welcome Back
+					</CardTitle>
+					<CardDescription className="text-center text-gray-500">
+						Sign in to your account to continue
+					</CardDescription>
+				</CardHeader>
+				<CardContent className="space-y-4">
+					<div className="bg-green-50 p-4 rounded-lg border border-green-200">
+						<h3 className="flex items-center text-sm font-semibold text-green-800 mb-2">
+							<InfoCircledIcon className="w-4 h-4 mr-2" />
+							How to log in
+						</h3>
+						<ul className="text-sm list-disc list-inside space-y-1">
+							<li>{`Click the "Login with Outlook" button below`}</li>
+							<li>{`You'll be redirected to the Microsoft login page`}</li>
+							<li>{`Enter your Outlook email and password`}</li>
+							<li>{`Grant permission to access your account (if prompted)`}</li>
+							<li>{`You'll be automatically returned to our application`}</li>
+						</ul>
 					</div>
-				</Form>
-
-				<div className="mt-4">
 					<ProviderConnectionForm type="Login" providerName="microsoft" />
-				</div>
-
-				{/* <div className="mt-4">
-					<ProviderConnectionForm type="Login" providerName="github" />
-				</div>  */}
-
-				<div className="mt-4 text-center text-sm space-x-1">
-					<span>Don&apos;t have an account?</span>
-					<Link to="/signup" className="underline">
-						Sign up
-					</Link>
-				</div>
-			</CardContent>
-		</Card>
+				</CardContent>
+			</Card>
+		</div>
 	)
 }

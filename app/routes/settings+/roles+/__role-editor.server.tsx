@@ -25,14 +25,14 @@ export async function action({ request }: ActionFunctionArgs) {
 				{ status: submission.status === 'error' ? 400 : 200 },
 			)
 		}
-		await prisma.country.delete({
+		await prisma.role.delete({
 			where: { id: submission.value.id },
 		})
 
-		return redirectWithToast('/settings/countries', {
+		return redirectWithToast('/settings/roles', {
 			type: 'success',
-			title: `Country Deleted`,
-			description: `Country deleted successfully.`,
+			title: `Role Deleted`,
+			description: `Role deleted successfully.`,
 		})
 	}
 
@@ -62,18 +62,31 @@ export async function action({ request }: ActionFunctionArgs) {
 		)
 	}
 
-	const { id: roleId, name, description } = submission.value
+	const { id: roleId, name, description, permissions } = submission.value
 
 	const data = {
 		name,
 		description,
+		permissions: {
+			set: permissions.map(permission => ({ id: permission })),
+		},
 	}
 
 	await prisma.role.upsert({
 		select: { id: true },
 		where: { id: roleId ?? '__new_role__' },
-		create: data,
-		update: data,
+		create: {
+			...data,
+			permissions: {
+				connect: permissions.map(permission => ({ id: permission })),
+			},
+		},
+		update: {
+			...data,
+			permissions: {
+				set: permissions.map(permission => ({ id: permission })),
+			},
+		},
 	})
 
 	return redirectWithToast('/settings/roles', {

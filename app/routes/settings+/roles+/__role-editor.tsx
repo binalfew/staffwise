@@ -1,12 +1,13 @@
 import { getFormProps, useForm } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod'
-import { Role } from '@prisma/client'
+import { Permission, Role } from '@prisma/client'
 import { SerializeFrom } from '@remix-run/node'
 import { Form, Link, useActionData } from '@remix-run/react'
 import { AuthenticityTokenInput } from 'remix-utils/csrf/react'
 import { HoneypotInputs } from 'remix-utils/honeypot/react'
 import { z } from 'zod'
 import { Field, FieldError } from '~/components/Field'
+import { CheckboxGroupField } from '~/components/conform/CheckboxGroupField'
 import { InputField } from '~/components/conform/InputField'
 import { Button } from '~/components/ui/button'
 import {
@@ -24,6 +25,9 @@ export const RoleEditorSchema = z.object({
 	id: z.string().optional(),
 	name: z.string({ required_error: 'Name is required' }),
 	description: z.string({ required_error: 'Description is required' }),
+	permissions: z
+		.array(z.string())
+		.min(1, { message: 'At least one permission is required' }),
 })
 
 export const RoleDeleteSchema = z.object({
@@ -32,10 +36,18 @@ export const RoleDeleteSchema = z.object({
 
 export function RoleEditor({
 	role,
+	permissions,
 	title,
 	intent,
 }: {
-	role?: SerializeFrom<Pick<Role, 'id' | 'name' | 'description'>>
+	role?: SerializeFrom<
+		Pick<Role, 'id' | 'name' | 'description'> & {
+			permissions?: Array<
+				Pick<Permission, 'id' | 'entity' | 'action' | 'access'>
+			>
+		}
+	>
+	permissions: Array<Pick<Permission, 'id' | 'entity' | 'action' | 'access'>>
 	title: string
 	intent?: 'add' | 'edit' | 'delete'
 }) {
@@ -51,7 +63,10 @@ export function RoleEditor({
 		},
 		shouldValidate: 'onBlur',
 		shouldRevalidate: 'onInput',
-		defaultValue: role,
+		defaultValue: {
+			...role,
+			permissions: role?.permissions?.map(permission => permission.id) ?? [],
+		},
 	})
 
 	return (
@@ -94,6 +109,24 @@ export function RoleEditor({
 							/>
 							{fields.description.errors && (
 								<FieldError>{fields.description.errors}</FieldError>
+							)}
+						</Field>
+
+						<Field>
+							<fieldset>
+								<legend>Permissions</legend>
+							</fieldset>
+							<CheckboxGroupField
+								meta={fields.permissions}
+								items={permissions.map(permission => ({
+									name: permission.entity,
+									value: permission.id,
+									access: permission.access,
+									action: permission.action,
+								}))}
+							/>
+							{fields.permissions.errors && (
+								<FieldError>{fields.permissions.errors}</FieldError>
 							)}
 						</Field>
 					</Form>

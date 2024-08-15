@@ -75,6 +75,7 @@ export async function seedRolesAndPermission() {
 		'user',
 		'role',
 		'permission',
+		'php',
 		'accessRequest',
 		'idRequest',
 		'carPassRequest',
@@ -108,9 +109,8 @@ export async function seedRolesAndPermission() {
 	await prisma.permission.createMany({ data: permissions })
 
 	// Fetch permissions with 'any' access once
-	const permissionsAny = await prisma.permission.findMany({
+	const allPermissions = await prisma.permission.findMany({
 		select: { id: true },
-		where: { access: 'any' },
 	})
 
 	// Fetch permissions with 'own' access
@@ -125,62 +125,84 @@ export async function seedRolesAndPermission() {
 			name: 'admin',
 			description: 'admin',
 			permissions: {
-				connect: permissionsAny,
+				connect: allPermissions,
 			},
 		},
 	})
 
 	// Create idRequestAdmin role
+	const idRequestsPermissions = await prisma.permission.findMany({
+		select: { id: true },
+		where: { entity: 'idRequest' },
+	})
+
 	await prisma.role.create({
 		data: {
 			name: 'idRequestAdmin',
 			description: 'idRequestAdmin',
 			permissions: {
-				connect: permissionsAny,
+				connect: idRequestsPermissions,
 			},
 		},
 	})
 
 	// Create incidentAdmin role
+	const incidentPermissions = await prisma.permission.findMany({
+		select: { id: true },
+		where: { entity: 'incident' },
+	})
+
 	await prisma.role.create({
 		data: {
 			name: 'incidentAdmin',
 			description: 'incidentAdmin',
 			permissions: {
-				connect: permissionsAny,
+				connect: incidentPermissions,
 			},
 		},
 	})
 
 	// Create accessRequestAdmin role
+	const accessRequestPermissions = await prisma.permission.findMany({
+		select: { id: true },
+		where: { entity: 'accessRequest' },
+	})
 	await prisma.role.create({
 		data: {
 			name: 'accessRequestAdmin',
 			description: 'accessRequestAdmin',
 			permissions: {
-				connect: permissionsAny,
+				connect: accessRequestPermissions,
 			},
 		},
 	})
 
 	// Create carPassAdmin role
+	const carPassPermissions = await prisma.permission.findMany({
+		select: { id: true },
+		where: { entity: 'carPassRequest' },
+	})
 	await prisma.role.create({
 		data: {
 			name: 'carPassAdmin',
 			description: 'carPassAdmin',
 			permissions: {
-				connect: permissionsAny,
+				connect: carPassPermissions,
 			},
 		},
 	})
 
 	// Create phpAdmin role
+	const phpPermissions = await prisma.permission.findMany({
+		select: { id: true },
+		where: { entity: 'php' },
+	})
 	await prisma.role.create({
 		data: {
 			name: 'phpAdmin',
 			description: 'phpAdmin',
 			permissions: {
-				connect: permissionsAny,
+				connect: phpPermissions,
 			},
 		},
 	})

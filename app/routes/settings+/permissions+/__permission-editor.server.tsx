@@ -5,7 +5,10 @@ import { validateCSRF } from '~/utils/csrf.server'
 import { prisma } from '~/utils/db.server'
 import { checkHoneypot } from '~/utils/honeypot.server'
 import { redirectWithToast } from '~/utils/toast.server'
-import { UserDeleteSchema, UserEditorSchema } from './__user-editor'
+import {
+	PermissionDeleteSchema,
+	PermissionEditorSchema,
+} from './__permission-editor'
 
 export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData()
@@ -16,7 +19,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 	if (intent === 'delete') {
 		const submission = await parseWithZod(formData, {
-			schema: UserDeleteSchema,
+			schema: PermissionDeleteSchema,
 			async: true,
 		})
 		if (submission.status !== 'success') {
@@ -25,29 +28,36 @@ export async function action({ request }: ActionFunctionArgs) {
 				{ status: submission.status === 'error' ? 400 : 200 },
 			)
 		}
-		await prisma.user.delete({
+		await prisma.permission.delete({
 			where: { id: submission.value.id },
 		})
 
-		return redirectWithToast('/settings/users', {
+		return redirectWithToast('/settings/permissions', {
 			type: 'success',
-			title: `User Deleted`,
-			description: `User deleted successfully.`,
+			title: `Permission Deleted`,
+			description: `Permission deleted successfully.`,
 		})
 	}
 
 	const submission = await parseWithZod(formData, {
-		schema: UserEditorSchema.superRefine(async (data, ctx) => {
-			const user = await prisma.user.findUnique({
-				where: { email: data.email },
+		schema: PermissionEditorSchema.superRefine(async (data, ctx) => {
+			const role = await prisma.permission.findUnique({
+				where: {
+					action_entity_access: {
+						entity: data.entity,
+						action: data.action,
+						access: data.access,
+					},
+				},
 				select: { id: true },
 			})
 
-			if (user && user.id !== data.id) {
+			if (role && role.id !== data.id) {
 				ctx.addIssue({
-					path: ['email'],
+					path: ['entity'],
 					code: z.ZodIssueCode.custom,
-					message: 'User with this email already exists.',
+					message:
+						'Permission with this entity, action and access already exists.',
 				})
 				return
 			}
@@ -62,37 +72,33 @@ export async function action({ request }: ActionFunctionArgs) {
 		)
 	}
 
-	const { id: userId, name, email, username, roles } = submission.value
+	const {
+		id: permissionId,
+		entity,
+		action,
+		access,
+		description,
+	} = submission.value
 
 	const data = {
-		name,
-		email,
-		username,
-		roles: {
-			set: roles.map(role => ({ id: role })),
-		},
+		entity,
+		action,
+		access,
+		description,
 	}
 
-	await prisma.user.upsert({
+	await prisma.permission.upsert({
 		select: { id: true },
-		where: { id: userId ?? '__new_user__' },
-		create: {
-			...data,
-			roles: {
-				connect: roles.map(role => ({ id: role })),
-			},
-		},
-		update: {
-			...data,
-			roles: {
-				set: roles.map(role => ({ id: role })),
-			},
-		},
+		where: { id: permissionId ?? '__new_permission__' },
+		create: data,
+		update: data,
 	})
 
-	return redirectWithToast('/settings/users', {
+	return redirectWithToast('/settings/permissions', {
 		type: 'success',
-		title: `User ${userId ? 'Updated' : 'Created'}`,
-		description: `User ${userId ? 'updated' : 'created'} successfully.`,
+		title: `Permission ${permissionId ? 'Updated' : 'Created'}`,
+		description: `Permission ${
+			permissionId ? 'updated' : 'created'
+		} successfully.`,
 	})
 }
