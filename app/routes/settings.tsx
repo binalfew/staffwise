@@ -13,31 +13,31 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function SettingsRoute() {
 	const { navigation } = useLoaderData<typeof loader>()
 	return (
-		<>
-			<div className="mx-auto grid w-full max-w-full gap-2 border-b">
-				<h1 className="text-3xl font-semibold py-2">Settings</h1>
+		<div className="mx-auto grid w-full max-w-full items-start gap-6 md:grid-cols-[180px_1fr] lg:grid-cols-[250px_1fr]">
+			<nav className="grid gap-2 text-sm p-4 border border-border rounded-lg">
+				{navigation.map(item => {
+					return (
+						<NavLink
+							key={item.name}
+							to={item.href}
+							className={({ isActive }) =>
+								clsx(
+									'rounded-md px-3 py-2 transition-colors',
+									isActive
+										? 'bg-primary text-primary-foreground font-semibold'
+										: 'text-muted-foreground hover:bg-muted hover:text-foreground',
+								)
+							}
+						>
+							{item.name}
+						</NavLink>
+					)
+				})}
+			</nav>
+			<div className="grid gap-6">
+				<Outlet />
 			</div>
-			<div className="mx-auto grid w-full max-w-full items-start gap-6 md:grid-cols-[180px_1fr] lg:grid-cols-[250px_1fr]">
-				<nav className="grid gap-4 text-sm text-muted-foreground">
-					{navigation.map(item => {
-						return (
-							<NavLink
-								key={item.name}
-								to={item.href}
-								className={({ isActive }) =>
-									clsx(isActive ? 'font-semibold text-primary' : '')
-								}
-							>
-								{item.name}
-							</NavLink>
-						)
-					})}
-				</nav>
-				<div className="grid gap-6">
-					<Outlet />
-				</div>
-			</div>
-		</>
+		</div>
 	)
 }
 export function ErrorBoundary() {

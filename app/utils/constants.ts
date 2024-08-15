@@ -39,4 +39,12 @@ export const settingsNavigation: NavigationItem[] = [
 		name: 'Relationships',
 		href: '/settings/relationships',
 	},
+	{
+		name: 'Users',
+		href: '/settings/users',
+	},
+	{
+		name: 'Roles',
+		href: '/settings/roles',
+	},
 ]

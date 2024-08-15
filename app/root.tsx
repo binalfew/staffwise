@@ -1,5 +1,12 @@
 import { getFormProps, useForm } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod'
+import {
+	Menu,
+	MenuButton,
+	MenuItem,
+	MenuItems,
+	MenuSeparator,
+} from '@headlessui/react'
 import { cssBundleHref } from '@remix-run/css-bundle'
 import {
 	ActionFunctionArgs,
@@ -24,11 +31,16 @@ import {
 	useLocation,
 	useSubmit,
 } from '@remix-run/react'
-import { CircleUser, Menu, Moon, Search, Sun, Users } from 'lucide-react'
 import {
-	AuthenticityTokenInput,
-	AuthenticityTokenProvider,
-} from 'remix-utils/csrf/react'
+	CircleUser,
+	MenuIcon,
+	Moon,
+	Search,
+	Settings,
+	Sun,
+	Users,
+} from 'lucide-react'
+import { AuthenticityTokenProvider } from 'remix-utils/csrf/react'
 import { HoneypotProvider } from 'remix-utils/honeypot/react'
 import tailwindStyleSheetUrl from '~/styles/tailwind.css?url'
 
@@ -275,18 +287,6 @@ function App() {
 								>
 									Dashboard
 								</NavLink>
-
-								<NavLink
-									to="/settings/general"
-									className={({ isActive }) =>
-										clsx(
-											isActive ? 'text-foreground' : 'text-muted-foreground',
-											'transition-colors hover:text-foreground',
-										)
-									}
-								>
-									Settings
-								</NavLink>
 							</>
 						) : null}
 
@@ -323,7 +323,7 @@ function App() {
 								size="icon"
 								className="shrink-0 md:hidden"
 							>
-								<Menu className="h-5 w-5" />
+								<MenuIcon className="h-5 w-5" />
 								<span className="sr-only">Toggle navigation menu</span>
 							</Button>
 						</SheetTrigger>
@@ -336,12 +336,10 @@ function App() {
 									<Users className="h-6 w-6" />
 									<span className="sr-only">Staffwise</span>
 								</NavLink>
-
-								{navigation.map(item => {
-									return (
+								{isAdmin ? (
+									<>
 										<NavLink
-											key={item.name}
-											to={item.href}
+											to="/dashboard"
 											className={({ isActive }) =>
 												clsx(
 													isActive
@@ -351,10 +349,49 @@ function App() {
 												)
 											}
 										>
-											{item.name}
+											Dashboard
 										</NavLink>
-									)
-								})}
+
+										<NavLink
+											to="/settings/general"
+											className={({ isActive }) =>
+												clsx(
+													isActive
+														? 'text-foreground'
+														: 'text-muted-foreground',
+													'transition-colors hover:text-foreground',
+												)
+											}
+										>
+											Settings
+										</NavLink>
+									</>
+								) : null}
+
+								{user
+									? navigation.map(item => {
+											return (
+												<NavLink
+													key={item.name}
+													to={
+														item.href.includes('profile')
+															? `/profile/${user.id}`
+															: item.href
+													}
+													className={({ isActive }) =>
+														clsx(
+															isActive
+																? 'text-foreground'
+																: 'text-muted-foreground',
+															'transition-colors hover:text-foreground',
+														)
+													}
+												>
+													{item.name}
+												</NavLink>
+											)
+									  })
+									: null}
 							</nav>
 						</SheetContent>
 					</Sheet>
@@ -374,22 +411,15 @@ function App() {
 						{user ? (
 							<div className="flex flex-row">
 								<div className="flex flex-row items-center justify-between">
+									<CircleUser
+										className={`h-5 w-5 ${
+											isOnline ? 'text-green-500' : 'text-red-500'
+										}`}
+									/>
 									<span className="ml-4 text-sm font-medium text-gray-900 dark:text-gray-100 mr-2">
 										{user?.name}
 									</span>
-									<CircleUser className="h-5 w-5" />
 								</div>
-								<Form action="/logout" method="POST">
-									<AuthenticityTokenInput />
-									<Button
-										size="sm"
-										type="submit"
-										variant={'link'}
-										className="ml-4 text-sm font-medium text-gray-900 dark:text-gray-100"
-									>
-										<span>Logout</span>
-									</Button>
-								</Form>
 							</div>
 						) : (
 							<NavLink
@@ -400,8 +430,59 @@ function App() {
 							</NavLink>
 						)}
 
-						{isOnline ? <span>Online</span> : <span>Offline</span>}
 						<ThemeSwitch userPreference={theme} />
+
+						{user ? (
+							<Menu as="div" className="relative ml-3">
+								<div>
+									<MenuButton className="relative flex rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+										<span className="absolute -inset-1.5" />
+										<span className="sr-only">Open user menu</span>
+										<Settings
+											className={`h-5 w-5 ${
+												isOnline ? 'text-green-500' : 'text-red-500'
+											}`}
+										/>
+									</MenuButton>
+								</div>
+								<MenuItems
+									transition
+									className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 transition focus:outline-none data-[closed]:scale-95 data-[closed]:transform data-[closed]:opacity-0 data-[enter]:duration-200 data-[leave]:duration-75 data-[enter]:ease-out data-[leave]:ease-in"
+								>
+									<MenuItem>
+										<Link
+											to={`/profile/${user?.id}`}
+											className="block px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100"
+										>
+											Your Profile
+										</Link>
+									</MenuItem>
+									{isAdmin ? (
+										<MenuItem>
+											<Link
+												to="/settings/general"
+												className="block px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100"
+											>
+												Settings
+											</Link>
+										</MenuItem>
+									) : null}
+									<MenuSeparator className="my-1 h-px bg-gray-200" />
+									<MenuItem>
+										<Form action="/logout" method="POST">
+											<Button
+												size="sm"
+												type="submit"
+												variant="ghost"
+												className="w-full px-4 py-2 text-sm text-left text-gray-700 rounded-none hover:bg-gray-100 focus:bg-gray-100 justify-start"
+											>
+												Sign out
+											</Button>
+										</Form>
+									</MenuItem>
+								</MenuItems>
+							</Menu>
+						) : null}
 					</div>
 				</header>
 				<main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 bg-muted/40">
