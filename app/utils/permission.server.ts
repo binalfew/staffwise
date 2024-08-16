@@ -61,3 +61,31 @@ export async function requireUserWithRole(request: Request, name: string) {
 
 	return user
 }
+
+export async function requireUserWithRoles(request: Request, roles: string[]) {
+	const userId = await requireUserId(request)
+	const user = await prisma.user.findFirst({
+		select: { id: true, email: true },
+		where: {
+			id: userId,
+			roles: {
+				some: {
+					name: { in: roles },
+				},
+			},
+		},
+	})
+
+	if (!user) {
+		throw json(
+			{
+				error: 'Unauthorized',
+				requiredRoles: roles,
+				message: `Unauthorized: required roles: ${roles.join(', ')}`,
+			},
+			{ status: 403 },
+		)
+	}
+
+	return user
+}

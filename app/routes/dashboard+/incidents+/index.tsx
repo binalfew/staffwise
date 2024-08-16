@@ -22,32 +22,16 @@ import {
 	TableRow,
 } from '~/components/ui/table'
 import { filterAndPaginate, prisma } from '~/utils/db.server'
-import { formatDate, invariantResponse } from '~/utils/misc'
-import { requireUserWithRole } from '~/utils/permission.server'
+import { formatDate } from '~/utils/misc'
+import { requireUserWithRoles } from '~/utils/permission.server'
 
-export async function loader({ params, request }: LoaderFunctionArgs) {
-	const user = await requireUserWithRole(request, 'admin')
-
-	const employee = await prisma.employee.findFirst({
-		where: {
-			email: {
-				equals: user.email,
-				mode: 'insensitive',
-			},
-		},
-	})
-
-	invariantResponse(employee, 'Employee not found', {
-		status: 404,
-	})
+export async function loader({ request }: LoaderFunctionArgs) {
+	await requireUserWithRoles(request, ['admin', 'incidentAdmin'])
 
 	const { data, totalPages, currentPage } = await filterAndPaginate({
 		request,
 		model: prisma.incident,
 		searchFields: ['incidentNumber'],
-		where: {
-			employeeId: employee.id,
-		},
 		orderBy: [{ incidentNumber: 'asc' }],
 		select: {
 			id: true,
@@ -60,7 +44,6 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 	})
 
 	return json({
-		user,
 		status: 'idle',
 		incidents: data,
 		totalPages,
@@ -70,7 +53,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 
 export default function IncidentsRoute() {
 	const data = useLoaderData<typeof loader>()
-	const { user, totalPages, currentPage } = data
+	const { totalPages, currentPage } = data
 
 	return (
 		<div className="flex flex-col gap-8">

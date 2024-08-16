@@ -9,10 +9,10 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
 import { GeneralErrorBoundary } from '~/components/ui/error-boundary'
 import { prisma } from '~/utils/db.server'
-import { requireUserWithRole } from '~/utils/permission.server'
+import { requireUserWithRoles } from '~/utils/permission.server'
 
 export async function loader({ request }: LoaderFunctionArgs) {
-	await requireUserWithRole(request, 'admin')
+	await requireUserWithRoles(request, ['admin', 'phpAdmin'])
 	const phpCount = await prisma.employee.count()
 	const incidentsCount = await prisma.incident.count()
 	const idRequestsCount = await prisma.idRequest.count()

@@ -78,7 +78,7 @@ import { combineHeaders, invariantResponse } from './utils/misc'
 import { sessionStorage } from './utils/session.server'
 import { Theme, getTheme, setTheme } from './utils/theme.server'
 import { Toast, getToast } from './utils/toast.server'
-import { useOptionalUser, userHasRole } from './utils/user'
+import { useOptionalUser, userHasRole, userHasRoles } from './utils/user'
 
 const ThemeFormSchema = z.object({
 	theme: z.enum(['light', 'dark']),
@@ -244,22 +244,8 @@ function App() {
 	const { navigation } = data
 	const theme = useTheme()
 	const user = useOptionalUser()
-	const isAdmin = userHasRole(user, 'admin')
-	// const isIncidentAdmin = userHasRole(user, 'incidentAdmin')
-	// const isAccessRequestAdmin = userHasRole(user, 'accessRequestAdmin')
-	// const isCarPassAdmin = userHasRole(user, 'carPassAdmin')
-	// const isIdRequestAdmin = userHasRole(user, 'idRequestAdmin')
-	// const isPhpAdmin = userHasRole(user, 'phpAdmin')
-	// console.log({
-	// 	isAdmin,
-	// 	isIncidentAdmin,
-	// 	isAccessRequestAdmin,
-	// 	isCarPassAdmin,
-	// 	isIdRequestAdmin,
-	// 	isPhpAdmin,
-	// })
-	// const canDelete = userHasPermission(user, 'delete:country:any')
-	// console.log('canDelete', canDelete)
+	const isGlobalAdmin = userHasRole(user, 'admin')
+	const isStaffwiseAdmin = userHasRoles(user, ['admin', 'phpAdmin'])
 
 	return (
 		<Layout isLoggedIn={Boolean(user)} theme={theme} env={data.ENV}>
@@ -274,7 +260,7 @@ function App() {
 							<span className="sr-only">Staffwise</span>
 						</NavLink>
 
-						{isAdmin ? (
+						{isStaffwiseAdmin ? (
 							<>
 								<NavLink
 									to="/dashboard"
@@ -336,7 +322,7 @@ function App() {
 									<Users className="h-6 w-6" />
 									<span className="sr-only">Staffwise</span>
 								</NavLink>
-								{isAdmin ? (
+								{isStaffwiseAdmin ? (
 									<>
 										<NavLink
 											to="/dashboard"
@@ -351,7 +337,11 @@ function App() {
 										>
 											Dashboard
 										</NavLink>
+									</>
+								) : null}
 
+								{isGlobalAdmin ? (
+									<>
 										<NavLink
 											to="/settings/general"
 											className={({ isActive }) =>
@@ -457,7 +447,7 @@ function App() {
 											Your Profile
 										</Link>
 									</MenuItem>
-									{isAdmin ? (
+									{isGlobalAdmin ? (
 										<MenuItem>
 											<Link
 												to="/settings/general"

@@ -15,8 +15,11 @@ import {
 	getEmployeeFileSrc,
 	invariantResponse,
 } from '~/utils/misc.tsx'
+import { requireUserWithRoles } from '~/utils/permission.server'
 
-export async function loader({ params }: LoaderFunctionArgs) {
+export async function loader({ params, request }: LoaderFunctionArgs) {
+	await requireUserWithRoles(request, ['admin', 'incidentAdmin'])
+
 	const { incidentId } = params
 
 	const incident = await prisma.incident.findUnique({
@@ -24,7 +27,13 @@ export async function loader({ params }: LoaderFunctionArgs) {
 		include: { attachments: true, incidentType: true },
 	})
 
-	invariantResponse(incident, 'Not Found', { status: 404 })
+	invariantResponse(
+		incident,
+		`Incident with id ${incidentId} does not exist.`,
+		{
+			status: 404,
+		},
+	)
 
 	const incidentTypes = await prisma.incidentType.findMany({
 		select: { id: true, name: true },

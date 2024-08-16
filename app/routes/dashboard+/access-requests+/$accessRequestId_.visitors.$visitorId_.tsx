@@ -9,8 +9,10 @@ import {
 } from '~/components/ui/dialog'
 import { prisma } from '~/utils/db.server.ts'
 import { invariantResponse } from '~/utils/misc.tsx'
+import { requireUserWithRoles } from '~/utils/permission.server'
+export async function loader({ params, request }: LoaderFunctionArgs) {
+	await requireUserWithRoles(request, ['admin', 'accessRequestAdmin'])
 
-export async function loader({ params }: LoaderFunctionArgs) {
 	const { visitorId } = params
 
 	const visitor = await prisma.visitor.findUnique({
@@ -34,7 +36,9 @@ export async function loader({ params }: LoaderFunctionArgs) {
 		},
 	})
 
-	invariantResponse(visitor, 'Not Found', { status: 404 })
+	invariantResponse(visitor, `Visitor with id ${visitorId} does not exist.`, {
+		status: 404,
+	})
 
 	return json({ visitor })
 }

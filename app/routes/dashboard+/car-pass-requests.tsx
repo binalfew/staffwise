@@ -13,6 +13,10 @@ import {
 	CardTitle,
 } from '~/components/ui/card'
 import {
+	ErrorDisplay,
+	GeneralErrorBoundary,
+} from '~/components/ui/error-boundary'
+import {
 	Table,
 	TableBody,
 	TableCell,
@@ -22,10 +26,10 @@ import {
 } from '~/components/ui/table'
 import { filterAndPaginate, prisma } from '~/utils/db.server'
 import { invariantResponse } from '~/utils/misc'
-import { requireUserWithRole } from '~/utils/permission.server'
+import { requireUserWithRoles } from '~/utils/permission.server'
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
-	const user = await requireUserWithRole(request, 'admin')
+	const user = await requireUserWithRoles(request, ['admin', 'carPassAdmin'])
 
 	const employee = await prisma.employee.findFirst({
 		where: {
@@ -167,5 +171,21 @@ export default function CarPassRequestsRoute() {
 				)}
 			</Card>
 		</div>
+	)
+}
+
+export function ErrorBoundary() {
+	return (
+		<GeneralErrorBoundary
+			statusHandlers={{
+				403: () => (
+					<ErrorDisplay
+						title="Access Denied"
+						message="You don't have permission to view car pass requests."
+						redirectUrl="/dashboard"
+					/>
+				),
+			}}
+		/>
 	)
 }

@@ -22,32 +22,16 @@ import {
 	TableRow,
 } from '~/components/ui/table'
 import { filterAndPaginate, prisma } from '~/utils/db.server'
-import { formatDate, invariantResponse } from '~/utils/misc'
-import { requireUserWithRole } from '~/utils/permission.server'
+import { formatDate } from '~/utils/misc'
+import { requireUserWithRoles } from '~/utils/permission.server'
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-	const user = await requireUserWithRole(request, 'admin')
-
-	const employee = await prisma.employee.findFirst({
-		where: {
-			email: {
-				equals: user.email,
-				mode: 'insensitive',
-			},
-		},
-	})
-
-	invariantResponse(employee, 'Employee not found', {
-		status: 404,
-	})
+	await requireUserWithRoles(request, ['admin', 'accessRequestAdmin'])
 
 	const { data, totalPages, currentPage } = await filterAndPaginate({
 		request,
 		model: prisma.accessRequest,
 		searchFields: ['requestNumber'],
-		where: {
-			requestorId: employee.id,
-		},
 		orderBy: [{ requestNumber: 'asc' }],
 		select: {
 			id: true,
@@ -59,7 +43,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 	})
 
 	return json({
-		user,
 		status: 'idle',
 		accessRequests: data,
 		totalPages,

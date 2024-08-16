@@ -70,3 +70,11 @@ export function userHasRole(
 	if (!user) return false
 	return user.roles.some(r => r.name === role)
 }
+
+export function userHasRoles(
+	user: Pick<ReturnType<typeof useUser>, 'roles'> | null,
+	roles: string[],
+) {
+	if (!user) return false
+	return roles.some(role => userHasRole(user, role))
+}

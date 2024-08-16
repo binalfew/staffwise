@@ -16,12 +16,12 @@ import {
 	TableRow,
 } from '~/components/ui/table'
 import { prisma } from '~/utils/db.server'
-import { formatDate, getEmployeeFileSrc } from '~/utils/misc'
-import { requireUserWithRole } from '~/utils/permission.server'
+import { formatDate, getEmployeeFileSrc, invariantResponse } from '~/utils/misc'
+import { requireUserWithRoles } from '~/utils/permission.server'
 import { redirectWithToast } from '~/utils/toast.server'
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-	await requireUserWithRole(request, 'admin')
+	await requireUserWithRoles(request, ['admin', 'phpAdmin'])
 
 	const employeeId = params.employeeId
 
@@ -39,6 +39,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 			vehicles: true,
 		},
 	})
+
+	invariantResponse(
+		employee,
+		`Employee with id ${employeeId} does not exist.`,
+		{
+			status: 404,
+		},
+	)
 
 	if (!employee) {
 		throw await redirectWithToast(`/dashboard/php`, {

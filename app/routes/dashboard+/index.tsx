@@ -1,10 +1,13 @@
 import { LoaderFunctionArgs } from '@remix-run/node'
 import { json } from '@remix-run/react'
-import { GeneralErrorBoundary } from '~/components/ui/error-boundary'
-import { requireUserWithRole } from '~/utils/permission.server'
+import {
+	ErrorDisplay,
+	GeneralErrorBoundary,
+} from '~/components/ui/error-boundary'
+import { requireUserWithRoles } from '~/utils/permission.server'
 
 export async function loader({ request }: LoaderFunctionArgs) {
-	await requireUserWithRole(request, 'admin')
+	await requireUserWithRoles(request, ['admin', 'phpAdmin'])
 
 	return json({})
 }
@@ -17,7 +20,12 @@ export function ErrorBoundary() {
 	return (
 		<GeneralErrorBoundary
 			statusHandlers={{
-				403: () => <p>You are not allowed to do that</p>,
+				403: () => (
+					<ErrorDisplay
+						title="Access Denied"
+						message="You don't have permission to view the dashboard."
+					/>
+				),
 			}}
 		/>
 	)

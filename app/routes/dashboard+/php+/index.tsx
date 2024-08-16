@@ -23,10 +23,10 @@ import {
 } from '~/components/ui/table'
 import { filterAndPaginate, prisma } from '~/utils/db.server'
 import { getEmployeesFileSrc } from '~/utils/misc'
-import { requireUserWithRole } from '~/utils/permission.server'
+import { requireUserWithRoles } from '~/utils/permission.server'
 
 export async function loader({ request }: LoaderFunctionArgs) {
-	await requireUserWithRole(request, 'admin')
+	await requireUserWithRoles(request, ['admin', 'phpAdmin'])
 
 	const { data, totalPages, currentPage } = await filterAndPaginate({
 		request,

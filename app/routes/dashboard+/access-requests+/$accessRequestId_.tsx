@@ -23,8 +23,11 @@ import {
 	getEmployeeFileSrc,
 	invariantResponse,
 } from '~/utils/misc.tsx'
+import { requireUserWithRoles } from '~/utils/permission.server'
 
-export async function loader({ params }: LoaderFunctionArgs) {
+export async function loader({ params, request }: LoaderFunctionArgs) {
+	await requireUserWithRoles(request, ['admin', 'accessRequestAdmin'])
+
 	const { accessRequestId } = params
 
 	const accessRequest = await prisma.accessRequest.findUnique({
@@ -32,7 +35,11 @@ export async function loader({ params }: LoaderFunctionArgs) {
 		include: { visitors: true },
 	})
 
-	invariantResponse(accessRequest, 'Not Found', { status: 404 })
+	invariantResponse(
+		accessRequest,
+		`Access request with id ${accessRequestId} does not exist.`,
+		{ status: 404 },
+	)
 
 	return json({ accessRequest })
 }
