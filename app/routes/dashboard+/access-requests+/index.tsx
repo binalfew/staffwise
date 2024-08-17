@@ -36,6 +36,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 		select: {
 			id: true,
 			requestNumber: true,
+			requestor: {
+				select: {
+					firstName: true,
+					middleName: true,
+				},
+			},
+			_count: {
+				select: {
+					visitors: true,
+				},
+			},
 			startDate: true,
 			endDate: true,
 			createdAt: true,
@@ -52,7 +63,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export default function AccessRequestsRoute() {
 	const data = useLoaderData<typeof loader>()
-	const { user, totalPages, currentPage } = data
+	console.log(data)
+	const { totalPages, currentPage } = data
 
 	return (
 		<div className="flex flex-col gap-8">
@@ -84,6 +96,7 @@ export default function AccessRequestsRoute() {
 							<TableHeader>
 								<TableRow>
 									<TableHead>Request Number</TableHead>
+									<TableHead>Requestor</TableHead>
 									<TableHead>Date Requested</TableHead>
 									<TableHead>Start Date</TableHead>
 									<TableHead>End Date</TableHead>
@@ -97,19 +110,26 @@ export default function AccessRequestsRoute() {
 									data.accessRequests.length > 0 ? (
 										data.accessRequests.map((accessRequest: any) => (
 											<TableRow key={accessRequest.id}>
-												<TableCell>{accessRequest.requestNumber}</TableCell>
-												<TableCell>
+												<TableCell className="py-1">
+													{accessRequest.requestNumber}
+												</TableCell>
+												<TableCell className="py-1">
+													{accessRequest.requestor.firstName}{' '}
+													{accessRequest.requestor.middleName}
+												</TableCell>
+												<TableCell className="py-1">
 													{formatDate(accessRequest.createdAt)}
 												</TableCell>
-												<TableCell>
+												<TableCell className="py-1">
 													{formatDate(accessRequest.startDate)}
 												</TableCell>
-												<TableCell>
+												<TableCell className="py-1">
 													{formatDate(accessRequest.endDate)}
 												</TableCell>
 												<TableCell className="py-1 text-right space-x-1">
-													<Button asChild size="xs">
+													<Button asChild size="xs" className="gap-1">
 														<Link to={`${accessRequest.id}`}>
+															<span>{accessRequest._count.visitors}</span>
 															<EyeOpenIcon className="h-4 w-4" />
 														</Link>
 													</Button>

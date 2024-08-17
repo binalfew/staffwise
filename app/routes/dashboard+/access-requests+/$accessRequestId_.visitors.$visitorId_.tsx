@@ -10,6 +10,7 @@ import {
 import { prisma } from '~/utils/db.server.ts'
 import { invariantResponse } from '~/utils/misc.tsx'
 import { requireUserWithRoles } from '~/utils/permission.server'
+
 export async function loader({ params, request }: LoaderFunctionArgs) {
 	await requireUserWithRoles(request, ['admin', 'accessRequestAdmin'])
 

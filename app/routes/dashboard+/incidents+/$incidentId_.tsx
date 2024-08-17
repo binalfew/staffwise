@@ -1,18 +1,25 @@
 import { EyeClosedIcon } from '@radix-ui/react-icons'
 import { LoaderFunctionArgs, json } from '@remix-run/node'
-import { Link, useLoaderData } from '@remix-run/react'
-import { PaperclipIcon, PrinterIcon } from 'lucide-react'
+import { Link, Outlet, useLoaderData } from '@remix-run/react'
+import { PaperclipIcon, UserPlusIcon } from 'lucide-react'
 import { FC } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { Separator } from '~/components/ui/separator'
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from '~/components/ui/table'
 import { Textarea } from '~/components/ui/textarea'
 import { prisma } from '~/utils/db.server.ts'
 import {
 	formatDate,
 	getAttachmentFileSrc,
-	getEmployeeFileSrc,
 	invariantResponse,
 } from '~/utils/misc.tsx'
 import { requireUserWithRoles } from '~/utils/permission.server'
@@ -24,7 +31,18 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 
 	const incident = await prisma.incident.findUnique({
 		where: { id: incidentId },
-		include: { attachments: true, incidentType: true },
+		include: {
+			attachments: true,
+			incidentType: true,
+			assignments: {
+				include: {
+					officer: {
+						include: { employee: true },
+					},
+				},
+			},
+			assessment: true,
+		},
 	})
 
 	invariantResponse(
@@ -70,9 +88,11 @@ export default function DeleteIncidentRoute() {
 						<EyeClosedIcon className="h-4 w-4 text-orange-500 hover:text-orange-700" />
 					</Link>
 					{showActions && (
-						<a href={getEmployeeFileSrc(incident.id)}>
-							<PrinterIcon className="h-4 w-4 text-orange-500 hover:text-orange-700" />
-						</a>
+						<Link
+							to={`/dashboard/incidents/${incident.id}/assignments/new?intent=assignOfficer`}
+						>
+							<UserPlusIcon className="h-4 w-4 text-orange-500 hover:text-orange-7000" />
+						</Link>
 					)}
 				</div>
 			</CardHeader>
@@ -166,16 +186,62 @@ export default function DeleteIncidentRoute() {
 					url={`/dashboard/incidents`}
 					showActions={false}
 				>
-					{incident.attachments.map(attachment => (
-						<a
-							key={attachment.id}
-							href={getAttachmentFileSrc(attachment.id)}
-							className="flex items-center space-x-2 gap-2 font-medium text-green-600 hover:text-green-500"
-						>
-							<PaperclipIcon className="h-4 w-4" />
-							{attachment.altText}
-						</a>
-					))}
+					{incident.attachments.length > 0 ? (
+						incident.attachments.map(attachment => (
+							<a
+								key={attachment.id}
+								href={getAttachmentFileSrc(attachment.id)}
+								className="flex items-center space-x-2 gap-2 font-medium text-green-600 hover:text-green-500"
+							>
+								<PaperclipIcon className="h-4 w-4" />
+								{attachment.altText}
+							</a>
+						))
+					) : (
+						<></>
+					)}
+				</IncidentSection>
+
+				<IncidentSection
+					title="Officers"
+					url={`/dashboard/incidents`}
+					showActions={false}
+				>
+					<Outlet context={{ incident }} />
+					{incident.assignments.length > 0 ? (
+						<div className="overflow-x-auto rounded-md border">
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>ID</TableHead>
+										<TableHead>Email</TableHead>
+										<TableHead>First Name</TableHead>
+										<TableHead>Middle Name</TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody>
+									{incident.assignments.map((assignment: any) => (
+										<TableRow key={assignment.id}>
+											<TableCell className="py-1">
+												{assignment.officer.employee.auIdNumber}
+											</TableCell>
+											<TableCell className="py-1">
+												{assignment.officer.employee.email}
+											</TableCell>
+											<TableCell className="py-1">
+												{assignment.officer.employee.firstName}
+											</TableCell>
+											<TableCell className="py-1">
+												{assignment.officer.employee.middleName}
+											</TableCell>
+										</TableRow>
+									))}
+								</TableBody>
+							</Table>
+						</div>
+					) : (
+						<></>
+					)}
 				</IncidentSection>
 			</div>
 		</div>

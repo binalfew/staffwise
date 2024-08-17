@@ -43,22 +43,6 @@ const prisma = singleton('prisma', () => {
 	return client
 })
 
-/**
- * Generic type for pagination and filtering parameters.
- * @template TWhereInput - Type for filtering conditions
- * @template TOrderByInput - Type for ordering conditions
- * @template TResult - Type of the result items
- * @template TSelect - Type for selecting specific fields (optional)
- * @template TInclude - Type for including related data (optional)
- *
- * @property {LoaderFunctionArgs['request']} request - The request object
- * @property {Object} model - The database model with count and findMany methods
- * @property {Array<SearchField>} searchFields - Fields to search in
- * @property {TWhereInput} [where] - Additional filtering conditions
- * @property {TOrderByInput[]} orderBy - Ordering conditions
- * @property {TSelect} [select] - Fields to select in the result
- * @property {TInclude} [include] - Related data to include
- */
 type PaginationAndFilterParams<
 	TWhereInput,
 	TOrderByInput,

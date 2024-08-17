@@ -71,8 +71,6 @@ export function AccessRequestEditor({
 					| 'whomToVisit'
 					| 'destination'
 					| 'carPlateNumber'
-					| 'timeIn'
-					| 'timeOut'
 				>
 			>
 		}

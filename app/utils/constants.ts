@@ -51,4 +51,8 @@ export const settingsNavigation: NavigationItem[] = [
 		name: 'Users',
 		href: '/settings/users',
 	},
+	{
+		name: 'Officers',
+		href: '/settings/officers',
+	},
 ]

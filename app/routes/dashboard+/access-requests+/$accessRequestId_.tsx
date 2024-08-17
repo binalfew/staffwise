@@ -183,13 +183,25 @@ export default function DeleteIncidentRoute() {
 								{accessRequest.visitors.length > 0 ? (
 									accessRequest.visitors.map(visitor => (
 										<TableRow key={visitor.id}>
-											<TableCell>{visitor.firstName}</TableCell>
-											<TableCell>{visitor.familyName}</TableCell>
-											<TableCell>{visitor.telephone}</TableCell>
-											<TableCell>{visitor.organization}</TableCell>
-											<TableCell>{visitor.whomToVisit}</TableCell>
-											<TableCell>{visitor.destination}</TableCell>
-											<TableCell>
+											<TableCell className="py-1">
+												{visitor.firstName}
+											</TableCell>
+											<TableCell className="py-1">
+												{visitor.familyName}
+											</TableCell>
+											<TableCell className="py-1">
+												{visitor.telephone}
+											</TableCell>
+											<TableCell className="py-1">
+												{visitor.organization}
+											</TableCell>
+											<TableCell className="py-1">
+												{visitor.whomToVisit}
+											</TableCell>
+											<TableCell className="py-1">
+												{visitor.destination}
+											</TableCell>
+											<TableCell className="py-1 text-right space-x-1">
 												<Button asChild size="xs" variant="destructive">
 													<Link
 														to={`/dashboard/access-requests/${accessRequest.id}/visitors/${visitor.id}`}

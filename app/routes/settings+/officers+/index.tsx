@@ -1,7 +1,7 @@
-import { EyeOpenIcon } from '@radix-ui/react-icons'
+import { Employee, Officer } from '@prisma/client'
 import { LoaderFunctionArgs, json } from '@remix-run/node'
 import { Link, useLoaderData } from '@remix-run/react'
-import { ArrowLeftIcon, PlusCircle } from 'lucide-react'
+import { EditIcon, PlusCircle, TrashIcon } from 'lucide-react'
 import { ErrorList } from '~/components/ErrorList'
 import { Paginator } from '~/components/Paginator'
 import { SearchBar } from '~/components/SearchBar'
@@ -22,36 +22,39 @@ import {
 	TableRow,
 } from '~/components/ui/table'
 import { filterAndPaginate, prisma } from '~/utils/db.server'
-import { formatDate } from '~/utils/misc'
-import { requireUserWithRoles } from '~/utils/permission.server'
 
 export async function loader({ request }: LoaderFunctionArgs) {
-	await requireUserWithRoles(request, ['admin', 'incidentAdmin'])
-
 	const { data, totalPages, currentPage } = await filterAndPaginate({
 		request,
-		model: prisma.incident,
-		searchFields: ['incidentNumber'],
-		orderBy: [{ incidentNumber: 'asc' }],
+		model: prisma.officer,
+		searchFields: ['employee.firstName', 'employee.middleName'],
+		orderBy: [{ employee: { firstName: 'asc' } }],
 		select: {
 			id: true,
-			incidentNumber: true,
-			incidentType: { select: { name: true } },
-			location: true,
-			occuredAt: true,
-			occuredWhile: true,
+			isActive: true,
+			type: true,
+			employeeId: true,
+			employee: {
+				select: {
+					id: true,
+					auIdNumber: true,
+					firstName: true,
+					middleName: true,
+					email: true,
+				},
+			},
 		},
 	})
 
 	return json({
 		status: 'idle',
-		incidents: data,
+		officers: data as (Officer & { employee: Employee })[],
 		totalPages,
 		currentPage,
 	} as const)
 }
 
-export default function IncidentsRoute() {
+export default function OfficersRoute() {
 	const data = useLoaderData<typeof loader>()
 	const { totalPages, currentPage } = data
 
@@ -60,26 +63,21 @@ export default function IncidentsRoute() {
 			<Card className="w-full">
 				<CardHeader className="flex flex-row items-center">
 					<div className="grid gap-2">
-						<CardTitle className="text-base font-semibold leading-6 text-gray-900">
-							Incidents
+						<CardTitle className="text-base font-semibold leading-6 text-gray-9000">
+							Officers
 						</CardTitle>
 					</div>
 					<div className="flex items-center gap-2 ml-auto">
 						<SearchBar
 							status={data.status}
-							action={`/dashboard/incidents`}
+							action="/settings/officers"
 							autoSubmit
 						/>
+
 						<Button asChild size="sm" className="ml-auto gap-1">
 							<Link to="new">
 								<PlusCircle className="h-4 w-4" />
 								Add
-							</Link>
-						</Button>
-						<Button asChild size="sm" className="ml-auto gap-1">
-							<Link to={`/dashboard`}>
-								<ArrowLeftIcon className="h-4 w-4" />
-								Back
 							</Link>
 						</Button>
 					</div>
@@ -89,10 +87,10 @@ export default function IncidentsRoute() {
 						<Table>
 							<TableHeader>
 								<TableRow>
-									<TableHead>#</TableHead>
-									<TableHead>Incident Type</TableHead>
-									<TableHead>Occured At</TableHead>
-									<TableHead>Occured While</TableHead>
+									<TableHead className="w-1/6">ID</TableHead>
+									<TableHead className="w-1/6">Name</TableHead>
+									<TableHead className="w-1/6">Email</TableHead>
+									<TableHead className="w-1/6">Active</TableHead>
 									<TableHead className="w-1/6 text-right pr-6">
 										Actions
 									</TableHead>
@@ -100,25 +98,30 @@ export default function IncidentsRoute() {
 							</TableHeader>
 							<TableBody>
 								{data.status === 'idle' ? (
-									data.incidents.length > 0 ? (
-										data.incidents.map((incident: any) => (
-											<TableRow key={incident.id}>
+									data.officers.length > 0 ? (
+										data.officers.map(officer => (
+											<TableRow key={officer.id}>
 												<TableCell className="py-1">
-													{incident.incidentNumber}
+													{officer.employee.auIdNumber}
 												</TableCell>
 												<TableCell className="py-1">
-													{incident.incidentType.name}
+													{`${officer.employee.firstName} ${officer.employee.middleName}`}
 												</TableCell>
 												<TableCell className="py-1">
-													{formatDate(incident.occuredAt)}
+													{officer.employee.email}
 												</TableCell>
 												<TableCell className="py-1">
-													{incident.occuredWhile}
+													{officer.isActive ? 'Yes' : 'No'}
 												</TableCell>
 												<TableCell className="py-1 text-right space-x-1">
 													<Button asChild size="xs">
-														<Link to={`${incident.id}`}>
-															<EyeOpenIcon className="h-4 w-4" />
+														<Link to={`${officer.id}/edit`}>
+															<EditIcon className="h-4 w-4" />
+														</Link>
+													</Button>
+													<Button asChild size="xs" variant="destructive">
+														<Link to={`${officer.id}/delete`}>
+															<TrashIcon className="h-4 w-4" />
 														</Link>
 													</Button>
 												</TableCell>
@@ -128,14 +131,14 @@ export default function IncidentsRoute() {
 										<TableRow>
 											<TableCell colSpan={5} className="text-center">
 												<h3 className="mt-2 text-sm font-semibold text-muted-foreground">
-													No incidents found
+													No officers found
 												</h3>
 											</TableCell>
 										</TableRow>
 									)
 								) : data.status === 'error' ? (
 									<TableRow>
-										<TableCell colSpan={4} className="text-center">
+										<TableCell colSpan={5} className="text-center">
 											<ErrorList
 												errors={['There was an error parsing the results']}
 											/>
@@ -143,7 +146,7 @@ export default function IncidentsRoute() {
 									</TableRow>
 								) : (
 									<TableRow>
-										<TableCell colSpan={4} className="text-center">
+										<TableCell colSpan={5} className="text-center">
 											Loading...
 										</TableCell>
 									</TableRow>
@@ -152,11 +155,9 @@ export default function IncidentsRoute() {
 						</Table>
 					</div>
 				</CardContent>
-				{totalPages > 0 ? (
-					<CardFooter className="border-t px-6 py-4">
-						<Paginator totalPages={totalPages} currentPage={currentPage} />
-					</CardFooter>
-				) : null}
+				<CardFooter className="border-t px-6 py-4">
+					<Paginator totalPages={totalPages} currentPage={currentPage} />
+				</CardFooter>
 			</Card>
 		</div>
 	)

@@ -242,9 +242,13 @@ export default function ProfileRoute() {
 								{employee.spouses.length > 0 ? (
 									employee.spouses.map((spouse: any) => (
 										<TableRow key={spouse.id}>
-											<TableCell>{spouse.firstName}</TableCell>
-											<TableCell>{spouse.middleName}</TableCell>
-											<TableCell>{spouse.familyName}</TableCell>
+											<TableCell className="py-1">{spouse.firstName}</TableCell>
+											<TableCell className="py-1">
+												{spouse.middleName}
+											</TableCell>
+											<TableCell className="py-1">
+												{spouse.familyName}
+											</TableCell>
 										</TableRow>
 									))
 								) : (
@@ -275,9 +279,15 @@ export default function ProfileRoute() {
 								{employee.dependants.length > 0 ? (
 									employee.dependants.map((dependant: any) => (
 										<TableRow key={dependant.id}>
-											<TableCell>{dependant.firstName}</TableCell>
-											<TableCell>{dependant.middleName}</TableCell>
-											<TableCell>{dependant.familyName}</TableCell>
+											<TableCell className="py-1">
+												{dependant.firstName}
+											</TableCell>
+											<TableCell className="py-1">
+												{dependant.middleName}
+											</TableCell>
+											<TableCell className="py-1">
+												{dependant.familyName}
+											</TableCell>
 										</TableRow>
 									))
 								) : (
@@ -312,13 +322,17 @@ export default function ProfileRoute() {
 								{employee.vehicles.length > 0 ? (
 									employee.vehicles.map((vehicle: any) => (
 										<TableRow key={vehicle.id}>
-											<TableCell>{vehicle.plateNumber}</TableCell>
-											<TableCell>{vehicle.make}</TableCell>
-											<TableCell>{vehicle.model}</TableCell>
-											<TableCell>{vehicle.year}</TableCell>
-											<TableCell>{vehicle.color}</TableCell>
-											<TableCell>{vehicle.capacity}</TableCell>
-											<TableCell>{vehicle.ownership}</TableCell>
+											<TableCell className="py-1">
+												{vehicle.plateNumber}
+											</TableCell>
+											<TableCell className="py-1">{vehicle.make}</TableCell>
+											<TableCell className="py-1">{vehicle.model}</TableCell>
+											<TableCell className="py-1">{vehicle.year}</TableCell>
+											<TableCell className="py-1">{vehicle.color}</TableCell>
+											<TableCell className="py-1">{vehicle.capacity}</TableCell>
+											<TableCell className="py-1">
+												{vehicle.ownership}
+											</TableCell>
 										</TableRow>
 									))
 								) : (

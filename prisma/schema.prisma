@@ -77,6 +77,14 @@ enum AuditLogAction {
   VERIFY_EMAIL
 }
 
+enum OfficerType {
+  ID
+  INCIDENT
+  CARPASS
+  ACCESS
+  PARKING
+}
+
 model User {
   id          String       @id @default(cuid())
   email       String       @unique
@@ -259,6 +267,7 @@ model Employee {
   incidents      Incident[]
   accessRequests AccessRequest[]
   idRequests     EmployeeIdRequest[]
+  officers       Officer[]
 }
 
 model Dependant {
@@ -313,22 +322,37 @@ model Vehicle {
   carPassRequests EmployeeCarPassRequest[]
 }
 
+model Officer {
+  id                  String               @id @default(cuid())
+  type                OfficerType
+  employeeId          String
+  employee            Employee             @relation(fields: [employeeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdAt           DateTime             @default(now())
+  isActive            Boolean              @default(true)
+  updatedAt           DateTime             @updatedAt
+  incidentAssignments IncidentAssignment[]
+  incidentAssessments IncidentAssessment[]
+
+  @@unique([type, employeeId])
+}
+
 model Incident {
-  id             String       @id @default(cuid())
+  id             String               @id @default(cuid())
   employeeId     String
-  employee       Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  incidentNumber String       @default("")
+  employee       Employee             @relation(fields: [employeeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  incidentNumber String               @default("")
   incidentTypeId String
-  incidentType   IncidentType @relation(fields: [incidentTypeId], references: [id])
-  location       String       @default("")
-  description    String       @default("")
-  eyeWitnesses   String       @default("")
-  occuredWhile   String       @default("")
-  occuredAt      DateTime     @default(now())
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  assessment     Assessment?
+  incidentType   IncidentType         @relation(fields: [incidentTypeId], references: [id])
+  location       String               @default("")
+  description    String               @default("")
+  eyeWitnesses   String               @default("")
+  occuredWhile   String               @default("")
+  occuredAt      DateTime             @default(now())
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  assessment     IncidentAssessment?
   attachments    Attachment[]
+  assignments    IncidentAssignment[]
 }
 
 model Attachment {
@@ -352,20 +376,32 @@ model Attachment {
   @@index([carPassRequestId])
 }
 
-model Assessment {
+model IncidentAssignment {
+  id         String   @id @default(cuid())
+  incidentId String
+  incident   Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  officerId  String
+  officer    Officer  @relation(fields: [officerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  remarks    String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model IncidentAssessment {
   id                String   @id @default(cuid())
   incidentId        String   @unique
   incident          Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  cause             String   @default("")
-  actionTaken       String   @default("")
-  severity          String   @default("")
-  impactType        String   @default("")
-  likelihood        String   @default("")
-  training          String   @default("")
-  changeOfProcedure String   @default("")
-  physicalMeasures  String   @default("")
-  status            String   @default("")
-  officer           String   @default("")
+  cause             String
+  actionTaken       String
+  severity          String
+  impactType        String
+  likelihood        String
+  training          String
+  changeOfProcedure String
+  physicalMeasures  String
+  status            String
+  officerId         String
+  officer           Officer  @relation(fields: [officerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }
@@ -399,8 +435,6 @@ model Visitor {
   whomToVisit     String        @default("")
   destination     String        @default("")
   carPlateNumber  String        @default("")
-  timeIn          DateTime      @default(now())
-  timeOut         DateTime      @default(now())
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
   logs            VisitorLog[]
@@ -410,9 +444,10 @@ model VisitorLog {
   id          String    @id @default(cuid())
   visitorId   String
   visitor     Visitor   @relation(fields: [visitorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  checkIn     DateTime
+  checkIn     DateTime  @default(now())
   checkOut    DateTime?
   badgeNumber String
+  remarks     String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
