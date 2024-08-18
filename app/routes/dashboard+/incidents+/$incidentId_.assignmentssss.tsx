@@ -151,7 +151,7 @@ export default function AssignmentEditor({
 			<CardHeader className="flex flex-row items-center py-2 px-6 bg-gray-100 rounded-t-lg">
 				<div className="grid gap-1">
 					<CardTitle className="text-base font-semibold leading-6 text-gray-900">
-						Assign Officer
+						Assessment
 					</CardTitle>
 				</div>
 			</CardHeader>

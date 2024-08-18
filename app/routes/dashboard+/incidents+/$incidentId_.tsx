@@ -1,8 +1,14 @@
 import { EyeClosedIcon } from '@radix-ui/react-icons'
 import { LoaderFunctionArgs, json } from '@remix-run/node'
 import { Link, Outlet, useLoaderData } from '@remix-run/react'
-import { PaperclipIcon, UserPlusIcon } from 'lucide-react'
+import {
+	LaptopMinimal,
+	PaperclipIcon,
+	TrashIcon,
+	UserPlusIcon,
+} from 'lucide-react'
 import { FC } from 'react'
+import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
@@ -41,6 +47,13 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 					},
 				},
 			},
+			activities: {
+				include: {
+					officer: {
+						include: { employee: true },
+					},
+				},
+			},
 			assessment: true,
 		},
 	})
@@ -61,7 +74,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 }
 
 export default function DeleteIncidentRoute() {
-	const { incident, incidentTypes } = useLoaderData<typeof loader>()
+	const { incident } = useLoaderData<typeof loader>()
 
 	type IncidentSectionProps = {
 		title: string
@@ -88,11 +101,20 @@ export default function DeleteIncidentRoute() {
 						<EyeClosedIcon className="h-4 w-4 text-orange-500 hover:text-orange-700" />
 					</Link>
 					{showActions && (
-						<Link
-							to={`/dashboard/incidents/${incident.id}/assignments/new?intent=assignOfficer`}
-						>
-							<UserPlusIcon className="h-4 w-4 text-orange-500 hover:text-orange-7000" />
-						</Link>
+						<>
+							<Link
+								to={`/dashboard/incidents/${incident.id}/assignments/new`}
+								preventScrollReset
+							>
+								<UserPlusIcon className="h-4 w-4 text-orange-500 hover:text-orange-7000" />
+							</Link>
+							<Link
+								to={`/dashboard/incidents/${incident.id}/assessment`}
+								preventScrollReset
+							>
+								<LaptopMinimal className="h-4 w-4 text-orange-500 hover:text-orange-700" />
+							</Link>
+						</>
 					)}
 				</div>
 			</CardHeader>
@@ -150,6 +172,7 @@ export default function DeleteIncidentRoute() {
 	return (
 		<div className="grid gap-6">
 			<div className="grid gap-4 md:gap-8">
+				<Outlet />
 				<IncidentSection title="Incident" url={`/dashboard/incidents`}>
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 						{[
@@ -182,6 +205,58 @@ export default function DeleteIncidentRoute() {
 				</IncidentSection>
 
 				<IncidentSection
+					title="Officers"
+					url={`/dashboard/incidents`}
+					showActions={false}
+				>
+					{incident.assignments.length > 0 ? (
+						<div className="overflow-x-auto rounded-md border">
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>ID</TableHead>
+										<TableHead>Email</TableHead>
+										<TableHead>First Name</TableHead>
+										<TableHead>Middle Name</TableHead>
+										<TableHead className="text-right pr-6">Actions</TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody>
+									{incident.assignments.map((assignment: any) => (
+										<TableRow key={assignment.id}>
+											<TableCell className="py-1">
+												{assignment.officer.employee.auIdNumber}
+											</TableCell>
+											<TableCell className="py-1">
+												{assignment.officer.employee.email}
+											</TableCell>
+											<TableCell className="py-1">
+												{assignment.officer.employee.firstName}
+											</TableCell>
+											<TableCell className="py-1">
+												{assignment.officer.employee.middleName}
+											</TableCell>
+											<TableCell className="py-1 flex justify-end gap-2">
+												<Button asChild size="xs" variant="destructive">
+													<Link
+														to={`/dashboard/incidents/${incident.id}/assignments/${assignment.id}/delete`}
+														preventScrollReset
+													>
+														<TrashIcon className="h-4 w-4" />
+													</Link>
+												</Button>
+											</TableCell>
+										</TableRow>
+									))}
+								</TableBody>
+							</Table>
+						</div>
+					) : (
+						<></>
+					)}
+				</IncidentSection>
+
+				<IncidentSection
 					title="Attachments"
 					url={`/dashboard/incidents`}
 					showActions={false}
@@ -203,37 +278,26 @@ export default function DeleteIncidentRoute() {
 				</IncidentSection>
 
 				<IncidentSection
-					title="Officers"
+					title="Activities"
 					url={`/dashboard/incidents`}
 					showActions={false}
 				>
-					<Outlet context={{ incident }} />
-					{incident.assignments.length > 0 ? (
+					{incident.activities.length > 0 ? (
 						<div className="overflow-x-auto rounded-md border">
 							<Table>
 								<TableHeader>
 									<TableRow>
-										<TableHead>ID</TableHead>
-										<TableHead>Email</TableHead>
-										<TableHead>First Name</TableHead>
-										<TableHead>Middle Name</TableHead>
+										<TableHead>Officer</TableHead>
+										<TableHead>Date</TableHead>
+										<TableHead>Activity</TableHead>
 									</TableRow>
 								</TableHeader>
 								<TableBody>
-									{incident.assignments.map((assignment: any) => (
-										<TableRow key={assignment.id}>
-											<TableCell className="py-1">
-												{assignment.officer.employee.auIdNumber}
-											</TableCell>
-											<TableCell className="py-1">
-												{assignment.officer.employee.email}
-											</TableCell>
-											<TableCell className="py-1">
-												{assignment.officer.employee.firstName}
-											</TableCell>
-											<TableCell className="py-1">
-												{assignment.officer.employee.middleName}
-											</TableCell>
+									{incident.activities.map((activity: any) => (
+										<TableRow key={activity.id}>
+											<TableCell>{`${activity.officer.employee.firstName} ${activity.officer.employee.middleName} ${activity.officer.employee.lastName}`}</TableCell>
+											<TableCell>{formatDate(activity.date)}</TableCell>
+											<TableCell>{activity.activity}</TableCell>
 										</TableRow>
 									))}
 								</TableBody>

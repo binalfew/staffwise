@@ -1,12 +1,6 @@
 import { getFormProps, useForm } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod'
-import { IncidentAssignment } from '@prisma/client'
-import {
-	ActionFunctionArgs,
-	json,
-	LoaderFunctionArgs,
-	SerializeFrom,
-} from '@remix-run/node'
+import { ActionFunctionArgs, json, LoaderFunctionArgs } from '@remix-run/node'
 import {
 	Form,
 	Link,
@@ -21,6 +15,8 @@ import { InputField } from '~/components/conform/InputField'
 import { SelectField } from '~/components/conform/SelectField'
 import { FieldError } from '~/components/Field'
 import { Button } from '~/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
+import { Separator } from '~/components/ui/separator'
 import { validateCSRF } from '~/utils/csrf.server'
 import { prisma } from '~/utils/db.server'
 import { checkHoneypot } from '~/utils/honeypot.server'
@@ -28,24 +24,21 @@ import { invariantResponse } from '~/utils/misc'
 import { requireUserWithRoles } from '~/utils/permission.server'
 import { redirectWithToast } from '~/utils/toast.server'
 
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
-import { Separator } from '~/components/ui/separator'
-
-export const AssignmentSchema = z.object({
-	id: z.string().optional(),
-	incidentNumber: z.string().optional(),
+export const AssignmentDeleteSchema = z.object({
+	id: z.string(),
 	officerId: z.string(),
 	remarks: z.string().optional(),
 })
 
-export async function action({ request }: ActionFunctionArgs) {
+export async function action({ request, params }: ActionFunctionArgs) {
+	const { incidentId } = params
 	await requireUserWithRoles(request, ['admin', 'incidentAdmin'])
 	const formData = await request.formData()
 	checkHoneypot(formData)
 	await validateCSRF(formData, request.headers)
 
 	const submission = await parseWithZod(formData, {
-		schema: AssignmentSchema,
+		schema: AssignmentDeleteSchema,
 		async: true,
 	})
 
@@ -56,51 +49,33 @@ export async function action({ request }: ActionFunctionArgs) {
 		)
 	}
 
-	const { id: assignmentId, incidentNumber, ...assignment } = submission.value
+	const { id } = submission.value
 
-	const incident = await prisma.incident.findFirst({
-		where: { incidentNumber },
-		select: { id: true },
-	})
-
-	invariantResponse(incident, 'Incident not found', {
-		status: 404,
-	})
-
-	const data = {
-		...assignment,
-		incidentId: incident.id,
-	}
-	await prisma.incidentAssignment.upsert({
-		select: { id: true },
-		where: { id: assignmentId ?? '__new_assignment__' },
-		create: {
-			...data,
-		},
-		update: {
-			...data,
+	await prisma.incidentAssignment.delete({
+		where: {
+			id,
 		},
 	})
 
-	return redirectWithToast(`/dashboard/incidents/${incident.id}`, {
+	return redirectWithToast(`/dashboard/incidents/${incidentId}`, {
 		type: 'success',
-		title: 'Officer Assigned',
-		description: `Officer successfully assigned to incident.`,
+		title: `Officer Removed`,
+		description: `Officer successfully removed from incident.`,
 	})
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
 	await requireUserWithRoles(request, ['admin', 'incidentAdmin'])
 
-	const { incidentId } = params
+	const { assignmentId } = params
 
-	const incident = await prisma.incident.findUnique({
+	const assignment = await prisma.incidentAssignment.findUnique({
 		where: {
-			id: incidentId,
+			id: assignmentId,
 		},
 	})
 
-	invariantResponse(incident, 'Incident not found', { status: 404 })
+	invariantResponse(assignment, 'Assignment not found', { status: 404 })
 
 	const officers = await prisma.officer.findMany({
 		where: {
@@ -117,21 +92,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 		},
 	})
 
-	return json({ incident, officers })
+	return json({ assignment, officers })
 }
 
-export default function AssignmentEditor({
-	assignment,
-}: {
-	assignment?: SerializeFrom<
-		Pick<IncidentAssignment, 'id' | 'officerId' | 'remarks'>
-	>
-}) {
-	const { incident, officers } = useLoaderData<typeof loader>()
+export default function AssignmentEditor() {
+	const { assignment, officers } = useLoaderData<typeof loader>()
 
 	const params = useParams()
 	const actionData = useActionData<typeof action>()
-	const schema = AssignmentSchema
+	const schema = AssignmentDeleteSchema
 	const [form, fields] = useForm({
 		id: 'assignment-form',
 		constraint: getZodConstraint(schema),
@@ -143,7 +112,6 @@ export default function AssignmentEditor({
 		shouldRevalidate: 'onInput',
 		defaultValue: {
 			...assignment,
-			incidentNumber: incident.incidentNumber,
 		},
 	})
 	return (
@@ -151,7 +119,7 @@ export default function AssignmentEditor({
 			<CardHeader className="flex flex-row items-center py-2 px-6 bg-gray-100 rounded-t-lg">
 				<div className="grid gap-1">
 					<CardTitle className="text-base font-semibold leading-6 text-gray-900">
-						Assign Officer
+						Remove Officer
 					</CardTitle>
 				</div>
 			</CardHeader>
@@ -175,6 +143,7 @@ export default function AssignmentEditor({
 									value: officer.id,
 								}))}
 								placeholder="Select an officer"
+								disabled={true}
 							/>
 							{fields.officerId.errors && (
 								<FieldError>{fields.officerId.errors}</FieldError>
@@ -186,6 +155,7 @@ export default function AssignmentEditor({
 								meta={fields.remarks}
 								type="text"
 								autoComplete="off"
+								disabled={true}
 								placeholder="Remarks"
 								className="h-10 w-full"
 							/>
@@ -195,8 +165,12 @@ export default function AssignmentEditor({
 						</div>
 
 						<div className="flex gap-2 w-full sm:w-auto">
-							<Button type="submit" className="flex-grow sm:flex-grow-0">
-								Assign
+							<Button
+								type="submit"
+								variant="destructive"
+								className="flex-grow sm:flex-grow-0"
+							>
+								Remove
 							</Button>
 
 							<Button

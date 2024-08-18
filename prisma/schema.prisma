@@ -331,7 +331,7 @@ model Officer {
   isActive            Boolean              @default(true)
   updatedAt           DateTime             @updatedAt
   incidentAssignments IncidentAssignment[]
-  incidentAssessments IncidentAssessment[]
+  incidentActivities  IncidentActivity[]
 
   @@unique([type, employeeId])
 }
@@ -353,6 +353,7 @@ model Incident {
   assessment     IncidentAssessment?
   attachments    Attachment[]
   assignments    IncidentAssignment[]
+  activities     IncidentActivity[]
 }
 
 model Attachment {
@@ -387,6 +388,18 @@ model IncidentAssignment {
   updatedAt  DateTime @updatedAt
 }
 
+model IncidentActivity {
+  id         String   @id @default(cuid())
+  incidentId String
+  incident   Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  officerId  String
+  officer    Officer  @relation(fields: [officerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  activity   String
+  date       DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
 model IncidentAssessment {
   id                String   @id @default(cuid())
   incidentId        String   @unique
@@ -400,8 +413,6 @@ model IncidentAssessment {
   changeOfProcedure String
   physicalMeasures  String
   status            String
-  officerId         String
-  officer           Officer  @relation(fields: [officerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }
