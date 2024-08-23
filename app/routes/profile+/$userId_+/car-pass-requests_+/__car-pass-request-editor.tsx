@@ -171,9 +171,10 @@ export function CarPassRequestEditor({
 			type: 'EMPLOYEE',
 			requirements: [
 				{ description: 'Valid ID copy' },
-				{ description: 'Copy of ownership Booklet' },
+				{ description: 'Copy of ownership Booklet (if owned)' },
 				{ description: 'Copy of valid vehicle inspection' },
 				{ description: 'Copy valid third part insurance certificate' },
+				{ description: 'Copy of rental agreement (if rented)' },
 			],
 		},
 	]

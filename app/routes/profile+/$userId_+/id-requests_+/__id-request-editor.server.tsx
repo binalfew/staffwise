@@ -2,6 +2,8 @@ import { parseWithZod } from '@conform-to/zod'
 import { createId as cuid } from '@paralleldrive/cuid2'
 import { IdRequestReason, IdRequestType } from '@prisma/client'
 import { ActionFunctionArgs, json } from '@remix-run/node'
+import { differenceInYears } from 'date-fns'
+import { z } from 'zod'
 import { insertAuditLog } from '~/utils/audit.server'
 import { requireUser } from '~/utils/auth.server'
 import { validateCSRF } from '~/utils/csrf.server'
@@ -63,49 +65,78 @@ export async function action({ request }: ActionFunctionArgs) {
 	}
 
 	const submission = await parseWithZod(formData, {
-		schema: IdRequestEditorSchema.transform(
-			async ({ attachments = [], ...data }) => {
-				return {
-					...data,
-					updatedAttachments: await Promise.all(
-						attachments.filter(attachmentHasId).map(async i => {
-							const attachment = await prisma.attachment.findUnique({
-								where: { id: i.id },
-							})
+		schema: IdRequestEditorSchema.superRefine(async (data, ctx) => {
+			if (data.type === 'DEPENDANT') {
+				const dependant = await prisma.dependant.findUnique({
+					where: {
+						id: data.dependantIdRequest?.dependantId,
+					},
+				})
 
-							if (attachmentHasFile(i)) {
-								return {
-									id: i.id,
-									altText: i.altText,
-									contentType: i.file.type,
-									blob: Buffer.from(await i.file.arrayBuffer()),
-									fileName: attachment?.fileName ?? cuid(),
-									extension: i.file.name.split('.').pop() ?? '',
-								}
-							} else {
-								return { id: i.id }
+				if (!dependant) {
+					ctx.addIssue({
+						path: ['dependantIdRequest.dependantId'],
+						code: z.ZodIssueCode.custom,
+						message: 'Dependant not found.',
+					})
+					return
+				}
+
+				const dateOfBirth = new Date(dependant.dateOfBirth ?? '')
+				const age = differenceInYears(new Date(), dateOfBirth)
+				console.log(age)
+
+				// Only dependants of age between 14 and 24 are allowed
+				if (age < 14 || age > 24) {
+					ctx.addIssue({
+						path: ['dependantIdRequest.dependantId'],
+						code: z.ZodIssueCode.custom,
+						message: 'Dependant age must be between 14 and 24.',
+					})
+					return
+				}
+			}
+		}).transform(async ({ attachments = [], ...data }) => {
+			return {
+				...data,
+				updatedAttachments: await Promise.all(
+					attachments.filter(attachmentHasId).map(async i => {
+						const attachment = await prisma.attachment.findUnique({
+							where: { id: i.id },
+						})
+
+						if (attachmentHasFile(i)) {
+							return {
+								id: i.id,
+								altText: i.altText,
+								contentType: i.file.type,
+								blob: Buffer.from(await i.file.arrayBuffer()),
+								fileName: attachment?.fileName ?? cuid(),
+								extension: i.file.name.split('.').pop() ?? '',
+							}
+						} else {
+							return { id: i.id }
+						}
+					}),
+				),
+				newAttachments: await Promise.all(
+					attachments
+						.filter(attachmentHasFile)
+						.filter(image => !image.id)
+						.map(async image => {
+							const extension = image.file.name.split('.').pop() ?? ''
+							return {
+								altText: `${image.file.name}.${extension}`,
+								contentType: image.file.type,
+								blob: Buffer.from(await image.file.arrayBuffer()),
+								fileName: cuid(),
+								extension,
+								type: 'id-requests',
 							}
 						}),
-					),
-					newAttachments: await Promise.all(
-						attachments
-							.filter(attachmentHasFile)
-							.filter(image => !image.id)
-							.map(async image => {
-								const extension = image.file.name.split('.').pop() ?? ''
-								return {
-									altText: `${image.file.name}.${extension}`,
-									contentType: image.file.type,
-									blob: Buffer.from(await image.file.arrayBuffer()),
-									fileName: cuid(),
-									extension,
-									type: 'id-requests',
-								}
-							}),
-					),
-				}
-			},
-		),
+				),
+			}
+		}),
 		async: true,
 	})
 

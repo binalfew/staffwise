@@ -224,28 +224,15 @@ export function IdRequestEditor({
 				{
 					description: 'Attach contract with SAP no. from AHRM',
 				},
-				{
-					description: 'Attach Copy of Passport/Resident ID',
-				},
 			],
 		},
 		{
 			type: 'SPOUSE',
-			requirements: [
-				{
-					description: 'Attach spouse’s passport/resident ID',
-				},
-			],
+			requirements: [],
 		},
 		{
 			type: 'DEPENDANT',
 			requirements: [
-				{
-					description: 'Filling application form by concerned staff member',
-				},
-				{
-					description: 'Copy of marriage certificate for spouse and',
-				},
 				{
 					description: 'Birth certificate for children (14-24)',
 				},
@@ -254,10 +241,6 @@ export function IdRequestEditor({
 		{
 			type: 'PRIVATEDRIVER',
 			requirements: [
-				{
-					description:
-						'Filling of the application form by concerned staff member',
-				},
 				{
 					description:
 						'Copy employment agreement letter between the staff and the driver',
@@ -275,11 +258,27 @@ export function IdRequestEditor({
 		},
 	]
 
-	if (['LOST', 'DAMAGED'].includes(fields.reason.value ?? '')) {
+	if (['NEW'].includes(fields.reason.value ?? '')) {
 		documents.map(document => {
 			document.requirements.push({
-				description: 'Request letter from the staff with detailed information',
+				description: 'Attach valid copy of Passport/Resident ID',
 			})
+		})
+	}
+
+	if (
+		['NEW'].includes(fields.reason.value ?? '') &&
+		fields.type.value === 'SPOUSE'
+	) {
+		documents.map(document => {
+			document.requirements.push({
+				description: 'Attach copy of marriage certificate',
+			})
+		})
+	}
+
+	if (['LOST', 'DAMAGED'].includes(fields.reason.value ?? '')) {
+		documents.map(document => {
 			document.requirements.push({
 				description: 'Approval letter from OSSS',
 			})
@@ -298,7 +297,8 @@ export function IdRequestEditor({
 			encType="multipart/form-data"
 			fields={[
 				['SPOUSE', 'DEPENDANT'].includes(fields.type.value ?? '') &&
-				spouses.length === 0 ? (
+				((fields.type.value === 'SPOUSE' && spouses.length === 0) ||
+					(fields.type.value === 'DEPENDANT' && dependants.length === 0)) ? (
 					<div
 						className="bg-red-100 border border-red-200 text-red-700 p-4 rounded-md mb-4"
 						key="info"
