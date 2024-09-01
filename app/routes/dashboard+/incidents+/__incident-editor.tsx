@@ -49,10 +49,12 @@ export const IncidentEditorSchema = z.object({
 	incidentNumber: z.string().optional(),
 	incidentTypeId: z.string({ required_error: 'Incident Type is required' }),
 	location: z.string({ required_error: 'Location is required' }),
+	severity: z.string({ required_error: 'Severity is required' }),
 	description: z.string({ required_error: 'Description is required' }),
 	eyeWitnesses: z.string({ required_error: 'Eye Witnesses is required' }),
 	occuredWhile: z.string({ required_error: 'Occured While is required' }),
-	occuredAt: z.date({ required_error: 'Occured At is required' }),
+	occuredAt: z.date({ required_error: 'Incident Date is required' }),
+	timeOfDay: z.string({ required_error: 'Incident Time is required' }),
 	attachments: z.array(AttachmentFieldSetSchema).optional(),
 })
 
@@ -79,6 +81,8 @@ export function IncidentEditor({
 			| 'eyeWitnesses'
 			| 'occuredWhile'
 			| 'occuredAt'
+			| 'timeOfDay'
+			| 'severity'
 		> & {
 			attachments: Array<Pick<Attachment, 'id' | 'altText'>>
 		}
@@ -106,6 +110,8 @@ export function IncidentEditor({
 		defaultValue: {
 			...incident,
 			incidentNumber: incident?.incidentNumber ?? 'New',
+			occuredAt: incident?.occuredAt ?? new Date(),
+			timeOfDay: incident?.timeOfDay ?? new Date().toTimeString().slice(0, 5),
 			attachments: incident?.attachments ?? [],
 		},
 	})
@@ -143,17 +149,22 @@ export function IncidentEditor({
 			})),
 		},
 		{
-			label: 'Location',
+			label: 'Severity',
+			field: fields.severity,
+			disabled,
+			errors: fields.severity.errors,
+			type: 'select' as const,
+			data: [
+				{ name: 'Minor', value: 'minor' },
+				{ name: 'Major', value: 'major' },
+				{ name: 'Critical', value: 'critical' },
+			],
+		},
+		{
+			label: 'Specific Location',
 			field: fields.location,
 			disabled,
 			errors: fields.location.errors,
-			type: 'text' as const,
-		},
-		{
-			label: 'Eye Witnesses',
-			field: fields.eyeWitnesses,
-			disabled,
-			errors: fields.eyeWitnesses.errors,
 			type: 'text' as const,
 		},
 		{
@@ -164,18 +175,32 @@ export function IncidentEditor({
 			type: 'text' as const,
 		},
 		{
-			label: 'Occured At',
+			label: 'Incident Date',
 			field: fields.occuredAt,
 			disabled,
 			errors: fields.occuredAt.errors,
 			type: 'date' as const,
 		},
 		{
-			label: 'Description',
+			label: 'Incident Time',
+			field: fields.timeOfDay,
+			disabled,
+			errors: fields.timeOfDay.errors,
+			type: 'time' as const,
+		},
+		{
+			label: 'Incident Details',
 			field: fields.description,
 			disabled,
 			errors: fields.description.errors,
 			type: 'textarea' as const,
+		},
+		{
+			label: 'Eye Witnesses',
+			field: fields.eyeWitnesses,
+			disabled,
+			errors: fields.eyeWitnesses.errors,
+			type: 'text' as const,
 		},
 	]
 
@@ -199,9 +224,11 @@ export function IncidentEditor({
 								className={
 									[
 										'Email',
-										'Description',
+										'Incident Details',
 										'Incident Type',
 										'Incident Number',
+										'Severity',
+										'Eye Witnesses',
 									].includes(item.label ?? '')
 										? 'col-span-1 md:col-span-2'
 										: ''

@@ -29,7 +29,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
 	return json({ role, permissions })
 }
 
-export default function EditCountryRoute() {
+export default function EditRoleRoute() {
 	const { role, permissions } = useLoaderData<typeof loader>()
 	return <RoleEditor role={role} permissions={permissions} title="Edit Role" />
 }

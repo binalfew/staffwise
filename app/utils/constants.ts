@@ -55,4 +55,8 @@ export const settingsNavigation: NavigationItem[] = [
 		name: 'Officers',
 		href: '/settings/officers',
 	},
+	{
+		name: 'Incident Types',
+		href: '/settings/incident-types',
+	},
 ]

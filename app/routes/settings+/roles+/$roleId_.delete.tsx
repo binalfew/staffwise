@@ -19,7 +19,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
 	return json({ role, permissions })
 }
 
-export default function EditCountryRoute() {
+export default function DeleteRoleRoute() {
 	const { role, permissions } = useLoaderData<typeof loader>()
 	return (
 		<RoleEditor

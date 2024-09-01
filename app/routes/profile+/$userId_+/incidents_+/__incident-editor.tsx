@@ -48,10 +48,12 @@ export const IncidentEditorSchema = z.object({
 	incidentNumber: z.string().optional(),
 	incidentTypeId: z.string({ required_error: 'Incident Type is required' }),
 	location: z.string({ required_error: 'Location is required' }),
-	description: z.string({ required_error: 'Description is required' }),
+	description: z.string({ required_error: 'Incident Details is required' }),
 	eyeWitnesses: z.string({ required_error: 'Eye Witnesses is required' }),
 	occuredWhile: z.string({ required_error: 'Occured While is required' }),
-	occuredAt: z.date({ required_error: 'Occured At is required' }),
+	occuredAt: z.date({ required_error: 'Incident Date is required' }),
+	severity: z.string({ required_error: 'Severity is required' }),
+	timeOfDay: z.string({ required_error: 'Incident Time is required' }),
 	attachments: z.array(AttachmentFieldSetSchema).optional(),
 })
 
@@ -78,6 +80,8 @@ export function IncidentEditor({
 			| 'eyeWitnesses'
 			| 'occuredWhile'
 			| 'occuredAt'
+			| 'severity'
+			| 'timeOfDay'
 		> & {
 			attachments: Array<Pick<Attachment, 'id' | 'altText'>>
 		}
@@ -105,6 +109,8 @@ export function IncidentEditor({
 		defaultValue: {
 			...incident,
 			incidentNumber: incident?.incidentNumber ?? 'New',
+			occuredAt: incident?.occuredAt ?? new Date(),
+			timeOfDay: incident?.timeOfDay ?? new Date().toTimeString().slice(0, 5),
 			attachments: incident?.attachments ?? [],
 		},
 	})
@@ -135,17 +141,22 @@ export function IncidentEditor({
 			})),
 		},
 		{
-			label: 'Location',
+			label: 'Severity',
+			field: fields.severity,
+			disabled,
+			errors: fields.severity.errors,
+			type: 'select' as const,
+			data: [
+				{ name: 'Minor', value: 'minor' },
+				{ name: 'Major', value: 'major' },
+				{ name: 'Critical', value: 'critical' },
+			],
+		},
+		{
+			label: 'Specific Location',
 			field: fields.location,
 			disabled,
 			errors: fields.location.errors,
-			type: 'text' as const,
-		},
-		{
-			label: 'Eye Witnesses',
-			field: fields.eyeWitnesses,
-			disabled,
-			errors: fields.eyeWitnesses.errors,
 			type: 'text' as const,
 		},
 		{
@@ -156,17 +167,31 @@ export function IncidentEditor({
 			type: 'text' as const,
 		},
 		{
-			label: 'Occured At',
+			label: 'Incident Date',
 			field: fields.occuredAt,
 			disabled,
 			errors: fields.occuredAt.errors,
 			type: 'date' as const,
 		},
 		{
-			label: 'Description',
+			label: 'Incident Time',
+			field: fields.timeOfDay,
+			disabled,
+			errors: fields.timeOfDay.errors,
+			type: 'time' as const,
+		},
+		{
+			label: 'Incident Details',
 			field: fields.description,
 			disabled,
 			errors: fields.description.errors,
+			type: 'textarea' as const,
+		},
+		{
+			label: 'Eye Witnesses',
+			field: fields.eyeWitnesses,
+			disabled,
+			errors: fields.eyeWitnesses.errors,
 			type: 'textarea' as const,
 		},
 	]
@@ -179,6 +204,34 @@ export function IncidentEditor({
 			intent={intent}
 			encType="multipart/form-data"
 			fields={[
+				<fieldset
+					className="border p-4 rounded-md bg-green-50"
+					key="disclaimer"
+				>
+					<legend className="text-md px-2 font-semibold text-green-700">
+						Disclaimer
+					</legend>
+					<div className="flex items-center space-x-3">
+						<div className="flex-shrink-0">
+							<svg
+								className="h-5 w-5 text-green-500"
+								fill="currentColor"
+								viewBox="0 0 20 20"
+							>
+								<path
+									fillRule="evenodd"
+									d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+									clipRule="evenodd"
+								/>
+							</svg>
+						</div>
+						<p className="text-sm text-green-700">
+							Information in incident record is confidential and subject to All
+							AU rules, regulations and procedures regarding personal
+							information protection.
+						</p>
+					</div>
+				</fieldset>,
 				<fieldset className="border p-4 rounded-md" key="incident">
 					<legend className="text-md px-2 font-semibold text-gray-500">
 						Incident
@@ -189,9 +242,13 @@ export function IncidentEditor({
 							<div
 								key={index}
 								className={
-									['Description', 'Incident Type', 'Incident Number'].includes(
-										item.label ?? '',
-									)
+									[
+										'Incident Details',
+										'Incident Type',
+										'Incident Number',
+										'Severity',
+										'Eye Witnesses',
+									].includes(item.label ?? '')
 										? 'col-span-1 md:col-span-2'
 										: ''
 								}

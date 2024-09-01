@@ -343,11 +343,13 @@ model Incident {
   incidentNumber String               @default("")
   incidentTypeId String
   incidentType   IncidentType         @relation(fields: [incidentTypeId], references: [id])
+  severity       String               @default("")
   location       String               @default("")
   description    String               @default("")
   eyeWitnesses   String               @default("")
   occuredWhile   String               @default("")
   occuredAt      DateTime             @default(now())
+  timeOfDay      String               @default("")
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
   assessment     IncidentAssessment?

@@ -26,16 +26,20 @@ import { type action } from './__profile-editor.server'
 
 export const AddressEditorSchema = z.object({
 	id: z.string().optional(),
-	city: z.string().optional(),
-	subcity: z.string().optional(),
-	woreda: z.string().optional(),
+	city: z.string({ required_error: 'City is required' }),
+	subcity: z.string({ required_error: 'Subcity is required' }),
+	woreda: z.string({ required_error: 'Woreda is required' }),
 	street: z.string().optional(),
 	kebele: z.string().optional(),
-	houseNumber: z.string().optional(),
+	houseNumber: z.string({ required_error: 'House Number is required' }),
 	houseTelephoneNumber: z.string().optional(),
-	mobileTelephoneNumber: z.string().optional(),
+	mobileTelephoneNumber: z.string({
+		required_error: 'Mobile Telephone Number is required',
+	}),
 	officeTelephoneNumber: z.string().optional(),
-	specificLocation: z.string().optional(),
+	specificLocation: z.string({
+		required_error: 'Specific Location is required',
+	}),
 	gpsLocation: z.string().optional(),
 	homeCountryAddress: z.string().optional(),
 })

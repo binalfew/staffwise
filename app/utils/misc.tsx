@@ -1,5 +1,6 @@
 import { useFormAction, useNavigation } from '@remix-run/react'
 import { clsx, type ClassValue } from 'clsx'
+import { format, parse } from 'date-fns'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSpinDelay } from 'spin-delay'
 import { twMerge } from 'tailwind-merge'
@@ -283,6 +284,12 @@ export const formatDate = (dateString: string | undefined): string => {
 		month: 'long',
 		day: 'numeric',
 	}).format(date)
+}
+
+export const formatTime = (timeString: string | undefined): string => {
+	return timeString
+		? format(parse(timeString, 'HH:mm', new Date()), 'h:mm a')
+		: ''
 }
 
 export function getAttachmentFileSrc(attachmentId: string) {

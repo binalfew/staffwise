@@ -1,10 +1,10 @@
 import { LoaderFunctionArgs, json } from '@remix-run/node'
 import { Outlet, useLoaderData } from '@remix-run/react'
-import { requireUserId } from '~/utils/auth.server'
 import { prisma } from '~/utils/db.server'
+import { requireUserWithRole } from '~/utils/permission.server'
 
 export async function loader({ request }: LoaderFunctionArgs) {
-	await requireUserId(request)
+	await requireUserWithRole(request, 'admin')
 
 	const organs = await prisma.organ.findMany({
 		select: {

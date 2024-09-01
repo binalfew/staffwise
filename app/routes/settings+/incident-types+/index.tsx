@@ -1,6 +1,6 @@
 import { LoaderFunctionArgs, json } from '@remix-run/node'
 import { Link, useLoaderData } from '@remix-run/react'
-import { ArrowLeftIcon, EditIcon, PlusCircle, TrashIcon } from 'lucide-react'
+import { EditIcon, PlusCircle, TrashIcon } from 'lucide-react'
 import { ErrorList } from '~/components/ErrorList'
 import { Paginator } from '~/components/Paginator'
 import { SearchBar } from '~/components/SearchBar'
@@ -20,75 +20,41 @@ import {
 	TableHeader,
 	TableRow,
 } from '~/components/ui/table'
-import { requireUser } from '~/utils/auth.server'
 import { filterAndPaginate, prisma } from '~/utils/db.server'
-import { formatDate, formatTime, invariantResponse } from '~/utils/misc'
 
-export async function loader({ params, request }: LoaderFunctionArgs) {
-	const user = await requireUser(request)
-	invariantResponse(user.id === params.userId, 'Not authorized', {
-		status: 403,
-	})
-
-	const employee = await prisma.employee.findFirst({
-		where: {
-			email: {
-				equals: user.email,
-				mode: 'insensitive',
-			},
-		},
-	})
-
-	invariantResponse(employee, 'Employee not found', {
-		status: 404,
-	})
-
+export async function loader({ request }: LoaderFunctionArgs) {
 	const { data, totalPages, currentPage } = await filterAndPaginate({
 		request,
-		model: prisma.incident,
-		searchFields: ['incidentNumber'],
-		where: {
-			employeeId: employee.id,
-		},
-		orderBy: [{ incidentNumber: 'asc' }],
-		select: {
-			id: true,
-			incidentNumber: true,
-			incidentType: { select: { name: true } },
-			severity: true,
-			location: true,
-			occuredAt: true,
-			timeOfDay: true,
-			occuredWhile: true,
-		},
+		model: prisma.incidentType,
+		searchFields: ['name'],
+		orderBy: [{ name: 'asc' }],
 	})
 
 	return json({
-		user,
 		status: 'idle',
-		incidents: data,
+		incidentTypes: data,
 		totalPages,
 		currentPage,
 	} as const)
 }
 
-export default function IncidentsRoute() {
+export default function IncidentTypesRoute() {
 	const data = useLoaderData<typeof loader>()
-	const { user, totalPages, currentPage } = data
+	const { totalPages, currentPage } = data
 
 	return (
 		<div className="flex flex-col gap-8">
 			<Card className="w-full">
 				<CardHeader className="flex flex-row items-center">
 					<div className="grid gap-2">
-						<CardTitle className="text-base font-semibold leading-6 text-gray-900">
-							Incidents
+						<CardTitle className="text-base font-semibold leading-6 text-gray-9000">
+							Incident Types
 						</CardTitle>
 					</div>
 					<div className="flex items-center gap-2 ml-auto">
 						<SearchBar
 							status={data.status}
-							action={`/profile/${user.id}/incidents`}
+							action="/settings/incident-types"
 							autoSubmit
 						/>
 
@@ -98,12 +64,6 @@ export default function IncidentsRoute() {
 								Add
 							</Link>
 						</Button>
-						<Button asChild size="sm" className="ml-auto gap-1">
-							<Link to={`/profile/${user.id}`}>
-								<ArrowLeftIcon className="h-4 w-4" />
-								Back
-							</Link>
-						</Button>
 					</div>
 				</CardHeader>
 				<CardContent>
@@ -111,12 +71,8 @@ export default function IncidentsRoute() {
 						<Table>
 							<TableHeader>
 								<TableRow>
-									<TableHead>Incident Number</TableHead>
-									<TableHead>Type</TableHead>
-									<TableHead>Severity</TableHead>
-									<TableHead>Location</TableHead>
-									<TableHead>Date & Time</TableHead>
-									<TableHead>Occured While</TableHead>
+									<TableHead className="w-1/3">Name</TableHead>
+									<TableHead className="w-1/4">Code</TableHead>
 									<TableHead className="w-1/6 text-right pr-6">
 										Actions
 									</TableHead>
@@ -124,26 +80,23 @@ export default function IncidentsRoute() {
 							</TableHeader>
 							<TableBody>
 								{data.status === 'idle' ? (
-									data.incidents.length > 0 ? (
-										data.incidents.map((incident: any) => (
-											<TableRow key={incident.id}>
-												<TableCell>{incident.incidentNumber}</TableCell>
-												<TableCell>{incident.incidentType.name}</TableCell>
-												<TableCell>{incident.severity}</TableCell>
-												<TableCell>{incident.location}</TableCell>
-												<TableCell>
-													{formatDate(incident.occuredAt)}{' '}
-													{formatTime(incident.timeOfDay)}
+									data.incidentTypes.length > 0 ? (
+										data.incidentTypes.map(incidentType => (
+											<TableRow key={incidentType.id}>
+												<TableCell className="py-1">
+													{incidentType.name}
 												</TableCell>
-												<TableCell>{incident.occuredWhile}</TableCell>
+												<TableCell className="py-1">
+													{incidentType.code}
+												</TableCell>
 												<TableCell className="py-1 text-right space-x-1">
 													<Button asChild size="xs">
-														<Link to={`${incident.id}/edit`}>
+														<Link to={`${incidentType.id}/edit`}>
 															<EditIcon className="h-4 w-4" />
 														</Link>
 													</Button>
 													<Button asChild size="xs" variant="destructive">
-														<Link to={`${incident.id}/delete`}>
+														<Link to={`${incidentType.id}/delete`}>
 															<TrashIcon className="h-4 w-4" />
 														</Link>
 													</Button>
@@ -152,9 +105,9 @@ export default function IncidentsRoute() {
 										))
 									) : (
 										<TableRow>
-											<TableCell colSpan={5} className="text-center">
+											<TableCell colSpan={4} className="text-center">
 												<h3 className="mt-2 text-sm font-semibold text-muted-foreground">
-													No incidents found
+													No incident types found
 												</h3>
 											</TableCell>
 										</TableRow>
@@ -178,11 +131,9 @@ export default function IncidentsRoute() {
 						</Table>
 					</div>
 				</CardContent>
-				{totalPages > 0 ? (
-					<CardFooter className="border-t px-6 py-4">
-						<Paginator totalPages={totalPages} currentPage={currentPage} />
-					</CardFooter>
-				) : null}
+				<CardFooter className="border-t px-6 py-4">
+					<Paginator totalPages={totalPages} currentPage={currentPage} />
+				</CardFooter>
 			</Card>
 		</div>
 	)

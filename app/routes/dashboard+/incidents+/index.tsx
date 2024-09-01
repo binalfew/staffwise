@@ -22,7 +22,7 @@ import {
 	TableRow,
 } from '~/components/ui/table'
 import { filterAndPaginate, prisma } from '~/utils/db.server'
-import { formatDate } from '~/utils/misc'
+import { formatDate, formatTime } from '~/utils/misc'
 import { requireUserWithRoles } from '~/utils/permission.server'
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -38,7 +38,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 			incidentNumber: true,
 			incidentType: { select: { name: true } },
 			location: true,
+			severity: true,
 			occuredAt: true,
+			timeOfDay: true,
 			occuredWhile: true,
 		},
 	})
@@ -89,9 +91,11 @@ export default function IncidentsRoute() {
 						<Table>
 							<TableHeader>
 								<TableRow>
-									<TableHead>#</TableHead>
-									<TableHead>Incident Type</TableHead>
-									<TableHead>Occured At</TableHead>
+									<TableHead>Incident Number</TableHead>
+									<TableHead>Type</TableHead>
+									<TableHead>Location</TableHead>
+									<TableHead>Severity</TableHead>
+									<TableHead>Date & Time</TableHead>
 									<TableHead>Occured While</TableHead>
 									<TableHead className="w-1/6 text-right pr-6">
 										Actions
@@ -110,7 +114,14 @@ export default function IncidentsRoute() {
 													{incident.incidentType.name}
 												</TableCell>
 												<TableCell className="py-1">
-													{formatDate(incident.occuredAt)}
+													{incident.location}
+												</TableCell>
+												<TableCell className="py-1">
+													{incident.severity}
+												</TableCell>
+												<TableCell className="py-1">
+													{formatDate(incident.occuredAt)}{' '}
+													{formatTime(incident.timeOfDay)}
 												</TableCell>
 												<TableCell className="py-1">
 													{incident.occuredWhile}
