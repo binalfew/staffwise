@@ -11,9 +11,6 @@ import {
 import { AuthenticityTokenInput } from 'remix-utils/csrf/react'
 import { HoneypotInputs } from 'remix-utils/honeypot/react'
 import { z } from 'zod'
-import { InputField } from '~/components/conform/InputField'
-import { SelectField } from '~/components/conform/SelectField'
-import { FieldError } from '~/components/Field'
 import { Button } from '~/components/ui/button'
 import { validateCSRF } from '~/utils/csrf.server'
 import { prisma } from '~/utils/db.server'
@@ -22,7 +19,7 @@ import { invariantResponse } from '~/utils/misc'
 import { requireUserWithRoles } from '~/utils/permission.server'
 import { redirectWithToast } from '~/utils/toast.server'
 
-import { TextareaField } from '~/components/conform/TextareaField'
+import FormField from '~/components/FormField'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
 import { Separator } from '~/components/ui/separator'
 
@@ -130,7 +127,88 @@ export default function AssessmentEditor() {
 			incidentId: incident.id,
 		},
 	})
-	console.log(fields.incidentId.initialValue)
+
+	const formItems = [
+		{
+			type: 'hidden' as const,
+			field: fields.id,
+		},
+		{
+			type: 'hidden' as const,
+			field: fields.incidentId,
+		},
+		{
+			label: 'Cause',
+			field: fields.cause,
+			errors: fields.cause.errors,
+			type: 'textarea' as const,
+		},
+		{
+			label: 'Action Taken',
+			field: fields.actionTaken,
+			errors: fields.actionTaken.errors,
+			type: 'textarea' as const,
+		},
+		{
+			label: 'Severity',
+			field: fields.severity,
+			errors: fields.severity.errors,
+			type: 'select' as const,
+			data: ['Low', 'Medium', 'High', 'Critical'].map(severity => ({
+				name: severity,
+				value: severity,
+			})),
+		},
+		{
+			label: 'Impact Type',
+			field: fields.impactType,
+			errors: fields.impactType.errors,
+			type: 'select' as const,
+			data: ['Direct', 'Indirect', 'Systemic'].map(impactType => ({
+				name: impactType,
+				value: impactType,
+			})),
+		},
+		{
+			label: 'Likelihood',
+			field: fields.likelihood,
+			errors: fields.likelihood.errors,
+			type: 'select' as const,
+			data: ['Low', 'Medium', 'High', 'Critical'].map(likelihood => ({
+				name: likelihood,
+				value: likelihood,
+			})),
+		},
+		{
+			label: 'Training',
+			field: fields.training,
+			errors: fields.training.errors,
+			type: 'textarea' as const,
+		},
+		{
+			label: 'Change of Procedure',
+			field: fields.changeOfProcedure,
+			errors: fields.changeOfProcedure.errors,
+			type: 'textarea' as const,
+		},
+		{
+			label: 'Physical Measures',
+			field: fields.physicalMeasures,
+			errors: fields.physicalMeasures.errors,
+			type: 'textarea' as const,
+		},
+		{
+			label: 'Status',
+			field: fields.status,
+			errors: fields.status.errors,
+			type: 'select' as const,
+			data: ['Open', 'Closed'].map(status => ({
+				name: status,
+				value: status,
+			})),
+		},
+	]
+
 	return (
 		<Card className="xl:col-span-2 bg-white shadow-sm rounded-sm">
 			<CardHeader className="flex flex-row items-center py-2 px-6 bg-gray-100 rounded-t-lg">
@@ -146,122 +224,12 @@ export default function AssessmentEditor() {
 					<Form className="grid gap-4" method="POST" {...getFormProps(form)}>
 						<AuthenticityTokenInput />
 						<HoneypotInputs />
-						<InputField meta={fields.id} type="hidden" />
-						<InputField meta={fields.incidentId} type="hidden" />
-
-						<div className="w-full">
-							<TextareaField
-								meta={fields.cause}
-								autoComplete="off"
-								placeholder="Cause"
-								className="h-10 w-full"
-							/>
-							{fields.cause.errors && (
-								<FieldError>{fields.cause.errors}</FieldError>
-							)}
-						</div>
-
-						<div className="w-full">
-							<TextareaField
-								meta={fields.actionTaken}
-								autoComplete="off"
-								placeholder="Action Taken"
-								className="h-10 w-full"
-							/>
-							{fields.actionTaken.errors && (
-								<FieldError>{fields.actionTaken.errors}</FieldError>
-							)}
-						</div>
-
-						<div className="w-full">
-							<SelectField
-								meta={fields.severity}
-								items={['Low', 'Medium', 'High', 'Critical'].map(severity => ({
-									name: severity,
-									value: severity,
-								}))}
-								placeholder="Select a severity"
-							/>
-							{fields.severity.errors && (
-								<FieldError>{fields.severity.errors}</FieldError>
-							)}
-						</div>
-
-						<div className="w-full">
-							<SelectField
-								meta={fields.impactType}
-								items={['Direct', 'Indirect', 'Systemic'].map(impactType => ({
-									name: impactType,
-									value: impactType,
-								}))}
-								placeholder="Select an impact type"
-							/>
-							{fields.impactType.errors && (
-								<FieldError>{fields.impactType.errors}</FieldError>
-							)}
-						</div>
-
-						<div className="w-full">
-							<SelectField
-								meta={fields.likelihood}
-								items={['Low', 'Medium', 'High', 'Critical'].map(
-									likelihood => ({
-										name: likelihood,
-										value: likelihood,
-									}),
-								)}
-								placeholder="Select a likelihood"
-							/>
-							{fields.likelihood.errors && (
-								<FieldError>{fields.likelihood.errors}</FieldError>
-							)}
-						</div>
-
-						<div className="w-full">
-							<TextareaField
-								meta={fields.training}
-								autoComplete="off"
-								placeholder="Training"
-								className="h-10 w-full"
-							/>
-							{fields.training.errors && (
-								<FieldError>{fields.training.errors}</FieldError>
-							)}
-						</div>
-
-						<div className="w-full">
-							<TextareaField
-								meta={fields.changeOfProcedure}
-								autoComplete="off"
-								placeholder="Change of Procedure"
-								className="h-10 w-full"
-							/>
-							{fields.changeOfProcedure.errors && (
-								<FieldError>{fields.changeOfProcedure.errors}</FieldError>
-							)}
-						</div>
-
-						<div className="w-full">
-							<TextareaField
-								meta={fields.physicalMeasures}
-								autoComplete="off"
-								placeholder="Physical Measures"
-								className="h-10 w-full"
-							/>
-							{fields.physicalMeasures.errors && (
-								<FieldError>{fields.physicalMeasures.errors}</FieldError>
-							)}
-						</div>
-
-						<div className="w-full">
-							<SelectField
-								meta={fields.status}
-								items={['Open', 'Closed'].map(status => ({
-									name: status,
-									value: status,
-								}))}
-								placeholder="Select a status"
-							/>
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+							{formItems.map((item, index) => (
+								<div key={index} className="w-full">
+									<FormField item={item} />
+								</div>
+							))}
 						</div>
 
 						<div className="flex gap-2 w-full">
