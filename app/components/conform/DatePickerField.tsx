@@ -119,11 +119,17 @@ export function DatePickerField({
 								</SelectValue>
 							</SelectTrigger>
 							<SelectContent position="popper">
-								{Array.from({ length: 100 }, (_, i) => (
-									<SelectItem key={i} value={`${i + 1920}`}>
-										{i + 1920}
-									</SelectItem>
-								))}
+								{Array.from(
+									{ length: new Date().getFullYear() - 1929 },
+									(_, i) => {
+										const year = new Date().getFullYear() - i
+										return (
+											<SelectItem key={year} value={`${year}`}>
+												{year}
+											</SelectItem>
+										)
+									},
+								)}
 							</SelectContent>
 						</Select>
 						<Select
