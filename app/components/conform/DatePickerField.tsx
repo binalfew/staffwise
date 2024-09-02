@@ -69,6 +69,9 @@ export function DatePickerField({
 		'December',
 	]
 
+	const currentYear = new Date().getFullYear()
+	const startYear = 1900
+
 	return (
 		<div>
 			<input
@@ -120,9 +123,9 @@ export function DatePickerField({
 							</SelectTrigger>
 							<SelectContent position="popper">
 								{Array.from(
-									{ length: new Date().getFullYear() - 1929 },
+									{ length: currentYear - startYear + 101 }, // 100 years into the future
 									(_, i) => {
-										const year = new Date().getFullYear() - i
+										const year = currentYear + 100 - i
 										return (
 											<SelectItem key={year} value={`${year}`}>
 												{year}
