@@ -85,6 +85,12 @@ enum OfficerType {
   PARKING
 }
 
+enum EmployeeProfileStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model User {
   id          String       @id @default(cuid())
   email       String       @unique
@@ -259,6 +265,9 @@ model Employee {
   gpsLocation           String?
   homeCountryAddress    String?
 
+  profileStatus  EmployeeProfileStatus @default(PENDING)
+  profileRemarks String?
+
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
   dependants     Dependant[]
@@ -345,6 +354,7 @@ model Incident {
   incidentType   IncidentType         @relation(fields: [incidentTypeId], references: [id])
   severity       String               @default("")
   location       String               @default("")
+  gpsLocation    String?
   description    String               @default("")
   eyeWitnesses   String               @default("")
   occuredWhile   String               @default("")

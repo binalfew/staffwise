@@ -1,3 +1,4 @@
+import { InformationCircleIcon } from '@heroicons/react/20/solid'
 import { IdCardIcon, LockClosedIcon } from '@radix-ui/react-icons'
 import { LoaderFunctionArgs } from '@remix-run/node'
 import { Link, json, useLoaderData } from '@remix-run/react'
@@ -125,7 +126,7 @@ export default function ProfileRoute() {
 
 	type ProfileItemProps = {
 		label: string
-		value: string | number | undefined
+		value: string | number | null | undefined
 		isDate?: boolean
 	}
 
@@ -234,7 +235,46 @@ export default function ProfileRoute() {
 
 	return (
 		<div className="grid gap-6">
-			{renderCards()}
+			{employee.profileStatus === 'APPROVED' ? (
+				renderCards()
+			) : employee.profileStatus === 'PENDING' ? (
+				<div className="rounded-md bg-green-100 p-6 border border-green-400">
+					<div className="flex">
+						<div className="flex-shrink-0">
+							<InformationCircleIcon
+								aria-hidden="true"
+								className="h-6 w-6 text-green-600"
+							/>
+						</div>
+						<div className="ml-4 flex-1 md:flex md:justify-between">
+							<p className="text-base font-semibold text-green-800">
+								Your profile is under review. You will be notified when it is
+								approved.
+							</p>
+						</div>
+					</div>
+				</div>
+			) : employee.profileStatus === 'REJECTED' ? (
+				<div className="rounded-md bg-red-100 p-6 border border-red-400">
+					<div className="flex">
+						<div className="flex-shrink-0">
+							<InformationCircleIcon
+								aria-hidden="true"
+								className="h-6 w-6 text-red-600"
+							/>
+						</div>
+						<div className="ml-4 flex-1">
+							<p className="text-base font-semibold text-red-800">
+								Your profile is rejected.
+							</p>
+							<p className="mt-2 text-sm text-red-700">
+								{employee.profileRemarks}
+							</p>
+						</div>
+					</div>
+				</div>
+			) : null}
+
 			<div className="grid gap-4 md:gap-8">
 				<ProfileSection
 					title="Personal Information"

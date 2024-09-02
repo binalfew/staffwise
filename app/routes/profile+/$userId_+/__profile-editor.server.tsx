@@ -142,7 +142,10 @@ async function updatePersonalInfo({
 
 	await prisma.employee.update({
 		where: { id: employeeId },
-		data,
+		data: {
+			...data,
+			profileStatus: 'PENDING',
+		},
 	})
 
 	await insertAuditLog({

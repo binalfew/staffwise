@@ -1,7 +1,7 @@
 import { EyeClosedIcon } from '@radix-ui/react-icons'
 import { LoaderFunctionArgs } from '@remix-run/node'
-import { Link, json, useLoaderData } from '@remix-run/react'
-import { PrinterIcon } from 'lucide-react'
+import { Link, Outlet, json, useLoaderData } from '@remix-run/react'
+import { CheckIcon, PrinterIcon, XIcon } from 'lucide-react'
 import { FC } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
 import { Input } from '~/components/ui/input'
@@ -66,12 +66,16 @@ export default function ProfileRoute() {
 		title: string
 		url: string
 		children: React.ReactNode
+		showApprove?: boolean
+		showReject?: boolean
 	}
 
 	const ProfileSection: FC<ProfileSectionProps> = ({
 		title,
 		url,
 		children,
+		showApprove = false,
+		showReject = false,
 	}) => (
 		<Card className="xl:col-span-2 bg-white shadow-sm rounded-sm">
 			<CardHeader className="flex flex-row items-center py-2 px-6 bg-gray-100 rounded-t-lg">
@@ -81,12 +85,30 @@ export default function ProfileRoute() {
 					</CardTitle>
 				</div>
 				<div className="flex items-center gap-2 ml-auto">
-					<Link to={url}>
-						<EyeClosedIcon className="h-4 w-4 text-orange-500 hover:text-orange-700" />
-					</Link>
-					<a href={getEmployeeFileSrc(employee.id)}>
-						<PrinterIcon className="h-4 w-4 text-orange-500 hover:text-orange-700" />
-					</a>
+					<div className="flex h-5 items-center space-x-4 text-sm">
+						<Link to={url}>
+							<EyeClosedIcon className="h-4 w-4 text-orange-500 hover:text-orange-700" />
+						</Link>
+						<a href={getEmployeeFileSrc(employee.id)}>
+							<PrinterIcon className="h-4 w-4 text-orange-500 hover:text-orange-700" />
+						</a>
+
+						{showApprove || showReject ? (
+							<Separator orientation="vertical" />
+						) : null}
+
+						{showApprove && (
+							<Link to={`/dashboard/php/${employee.id}/approve`}>
+								<CheckIcon className="h-4 w-4 text-green-500 hover:text-green-700" />
+							</Link>
+						)}
+
+						{showReject && (
+							<Link to={`/dashboard/php/${employee.id}/reject`}>
+								<XIcon className="h-4 w-4 text-red-500 hover:text-red-700" />
+							</Link>
+						)}
+					</div>
 				</div>
 			</CardHeader>
 			<Separator className="mb-2" />
@@ -128,9 +150,18 @@ export default function ProfileRoute() {
 	return (
 		<div className="grid gap-6">
 			<div className="grid gap-4 md:gap-8">
+				<Outlet />
 				<ProfileSection
-					title={`Personal Information: ${employee.auIdNumber}`}
+					title={`Personal Information: ${employee.auIdNumber} (${
+						employee.profileStatus === 'APPROVED'
+							? 'Approved'
+							: employee.profileStatus === 'REJECTED'
+							? 'Rejected'
+							: 'Pending'
+					})`}
 					url={`/dashboard/php`}
+					showApprove={employee.profileStatus === 'PENDING'}
+					showReject={employee.profileStatus === 'PENDING'}
 				>
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 						{[

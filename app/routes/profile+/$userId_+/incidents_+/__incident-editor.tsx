@@ -48,6 +48,7 @@ export const IncidentEditorSchema = z.object({
 	incidentNumber: z.string().optional(),
 	incidentTypeId: z.string({ required_error: 'Incident Type is required' }),
 	location: z.string({ required_error: 'Location is required' }),
+	gpsLocation: z.string().optional(),
 	description: z.string({ required_error: 'Incident Details is required' }),
 	eyeWitnesses: z.string({ required_error: 'Eye Witnesses is required' }),
 	occuredWhile: z.string({ required_error: 'Occured While is required' }),
@@ -76,6 +77,7 @@ export function IncidentEditor({
 			| 'incidentNumber'
 			| 'incidentTypeId'
 			| 'location'
+			| 'gpsLocation'
 			| 'description'
 			| 'eyeWitnesses'
 			| 'occuredWhile'
@@ -153,10 +155,17 @@ export function IncidentEditor({
 			],
 		},
 		{
-			label: 'Specific Location',
+			label: 'Location',
 			field: fields.location,
 			disabled,
 			errors: fields.location.errors,
+			type: 'text' as const,
+		},
+		{
+			label: 'GPS Location',
+			field: fields.gpsLocation,
+			disabled,
+			errors: fields.gpsLocation.errors,
 			type: 'text' as const,
 		},
 		{
