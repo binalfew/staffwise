@@ -354,9 +354,9 @@ export default function ProfileRoute() {
 						{[
 							{ label: 'City', value: employee.city },
 							{ label: 'Sub City', value: employee.subcity },
-							{ label: 'Woreda', value: employee.woreda },
+							// { label: 'Woreda', value: employee.woreda },
 							{ label: 'Street', value: employee.street },
-							{ label: 'Kebele', value: employee.kebele },
+							// { label: 'Kebele', value: employee.kebele },
 							{ label: 'House Number', value: employee.houseNumber },
 							{
 								label: 'House Telephone Number',
