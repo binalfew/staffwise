@@ -28,9 +28,9 @@ export const AddressEditorSchema = z.object({
 	id: z.string().optional(),
 	city: z.string({ required_error: 'City is required' }),
 	subcity: z.string({ required_error: 'Subcity is required' }),
-	woreda: z.string({ required_error: 'Woreda is required' }),
+	woreda: z.string({ required_error: 'Woreda is required' }).default('N/A'),
 	street: z.string().optional(),
-	kebele: z.string().optional(),
+	kebele: z.string().optional().default('N/A'),
 	houseNumber: z.string({ required_error: 'House Number is required' }),
 	houseTelephoneNumber: z.string().optional(),
 	mobileTelephoneNumber: z.string({
@@ -123,7 +123,7 @@ export function AddressEditor({
 							)}
 						</Field>
 					</div>
-					<div className="space-y-2">
+					{/* <div className="space-y-2">
 						<Field>
 							<Label htmlFor={fields.woreda.id}>Woreda</Label>
 							<InputField meta={fields.woreda} type="text" autoComplete="off" />
@@ -131,7 +131,7 @@ export function AddressEditor({
 								<FieldError>{fields.woreda.errors}</FieldError>
 							)}
 						</Field>
-					</div>
+					</div> */}
 
 					<div className="space-y-2">
 						<Field>
@@ -143,7 +143,7 @@ export function AddressEditor({
 						</Field>
 					</div>
 
-					<div className="space-y-2">
+					{/* <div className="space-y-2">
 						<Field>
 							<Label htmlFor={fields.kebele.id}>Kebele</Label>
 							<InputField meta={fields.kebele} type="text" autoComplete="off" />
@@ -151,7 +151,7 @@ export function AddressEditor({
 								<FieldError>{fields.kebele.errors}</FieldError>
 							)}
 						</Field>
-					</div>
+					</div> */}
 
 					<div className="space-y-2">
 						<Field>
