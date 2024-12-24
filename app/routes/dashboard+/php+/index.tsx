@@ -1,6 +1,7 @@
 import { EyeOpenIcon } from '@radix-ui/react-icons'
 import { json, LoaderFunctionArgs } from '@remix-run/node'
 import { Link, useLoaderData } from '@remix-run/react'
+import { formatDistance } from 'date-fns'
 import { ArrowLeftIcon, DownloadIcon } from 'lucide-react'
 import { ErrorList } from '~/components/ErrorList'
 import { Paginator } from '~/components/Paginator'
@@ -28,6 +29,29 @@ import { requireUserWithRoles } from '~/utils/permission.server'
 export async function loader({ request }: LoaderFunctionArgs) {
 	await requireUserWithRoles(request, ['admin', 'phpAdmin'])
 
+	// Get recent pending updates (last 7 days)
+	const oneWeekAgo = new Date()
+	oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
+
+	const recentPendingUpdates = await prisma.employee.findMany({
+		where: {
+			profileStatus: 'PENDING',
+			updatedAt: {
+				gte: oneWeekAgo,
+			},
+		},
+		select: {
+			id: true,
+			firstName: true,
+			familyName: true,
+			auIdNumber: true,
+			updatedAt: true,
+		},
+		orderBy: {
+			updatedAt: 'desc',
+		},
+	})
+
 	const { data, totalPages, currentPage } = await filterAndPaginate({
 		request,
 		model: prisma.employee,
@@ -39,12 +63,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
 			middleName: true,
 			familyName: true,
 			auIdNumber: true,
+			updatedAt: true,
+			profileStatus: true,
 		},
 	})
 
 	return json({
 		status: 'idle',
 		employees: data,
+		recentPendingUpdates,
 		totalPages,
 		currentPage,
 	} as const)
@@ -52,10 +79,63 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function PhpRoute() {
 	const data = useLoaderData<typeof loader>()
-	const { employees, totalPages, currentPage, status } = data
+	const { employees, recentPendingUpdates, totalPages, currentPage, status } =
+		data
 
 	return (
 		<div className="flex flex-col gap-8">
+			{recentPendingUpdates.length > 0 && (
+				<Card className="w-full">
+					<CardHeader>
+						<CardTitle className="text-base font-semibold leading-6 text-gray-900">
+							Pending Approvals
+						</CardTitle>
+					</CardHeader>
+					<CardContent>
+						<div className="overflow-x-auto rounded-md border">
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>ID</TableHead>
+										<TableHead>Name</TableHead>
+										<TableHead>Updated</TableHead>
+										<TableHead className="w-1/6 text-right pr-6">
+											Actions
+										</TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody>
+									{recentPendingUpdates.map(employee => (
+										<TableRow key={employee.id}>
+											<TableCell className="py-1">
+												{employee.auIdNumber}
+											</TableCell>
+											<TableCell className="py-1">
+												{employee.firstName} {employee.familyName}
+											</TableCell>
+											<TableCell className="py-1">
+												{formatDistance(
+													new Date(employee.updatedAt),
+													new Date(),
+													{ addSuffix: true },
+												)}
+											</TableCell>
+											<TableCell className="py-1 text-right space-x-1">
+												<Button asChild size="xs">
+													<Link to={`${employee.id}`}>
+														<EyeOpenIcon className="h-4 w-4" />
+													</Link>
+												</Button>
+											</TableCell>
+										</TableRow>
+									))}
+								</TableBody>
+							</Table>
+						</div>
+					</CardContent>
+				</Card>
+			)}
+
 			<Card className="w-full">
 				<CardHeader className="flex flex-row items-center">
 					<div className="grid gap-2">
