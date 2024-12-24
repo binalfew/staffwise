@@ -23,6 +23,7 @@ import { FieldError } from '~/components/Field'
 import FormField from '~/components/FormField'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
 import { Separator } from '~/components/ui/separator'
+import { sendEmail } from '~/utils/email.server'
 
 export const EmployeeRejectionSchema = z.object({
 	id: z.string().optional(),
@@ -58,16 +59,21 @@ export async function action({ request }: ActionFunctionArgs) {
 		status: 404,
 	})
 
-	const data = {
-		...employee,
-	}
-
-	await prisma.employee.update({
+	const updatedEmployee = await prisma.employee.update({
 		where: { id: employeeId },
+		select: { email: true },
 		data: {
 			profileStatus: 'REJECTED',
 			profileRemarks: submission.value.reason,
 		},
+	})
+
+	sendEmail({
+		to: updatedEmployee.email,
+		subject: 'Profile Update Rejected',
+		plainText:
+			'Your profile has been rejected. Please ammend the changes requested and submit again.',
+		html: '<html><body><h1>Your profile has been rejected. Please ammend the changes requested and submit again.</h1></body></html>',
 	})
 
 	return redirectWithToast(`/dashboard/php/${employee.id}`, {

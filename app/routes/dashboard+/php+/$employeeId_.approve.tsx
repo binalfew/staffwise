@@ -22,6 +22,7 @@ import { redirectWithToast } from '~/utils/toast.server'
 import FormField from '~/components/FormField'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
 import { Separator } from '~/components/ui/separator'
+import { sendEmail } from '~/utils/email.server'
 
 export const EmployeeApprovalSchema = z.object({
 	id: z.string().optional(),
@@ -56,16 +57,21 @@ export async function action({ request }: ActionFunctionArgs) {
 		status: 404,
 	})
 
-	const data = {
-		...employee,
-	}
-
-	await prisma.employee.update({
+	const updatedEmployee = await prisma.employee.update({
 		where: { id: employeeId },
+		select: { email: true },
 		data: {
 			profileStatus: 'APPROVED',
 			profileRemarks: null,
 		},
+	})
+
+	sendEmail({
+		to: updatedEmployee.email,
+		subject: 'Profile Update Approved',
+		plainText:
+			'Your profile update has been approved. You can now login to the system and request services.',
+		html: '<html><body><h1>Your profile update has been approved. You can now login to the system and request services.</h1></body></html>',
 	})
 
 	return redirectWithToast(`/dashboard/php/${employee.id}`, {
