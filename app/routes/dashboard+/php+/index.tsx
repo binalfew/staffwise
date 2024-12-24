@@ -29,15 +29,15 @@ import { requireUserWithRoles } from '~/utils/permission.server'
 export async function loader({ request }: LoaderFunctionArgs) {
 	await requireUserWithRoles(request, ['admin', 'phpAdmin'])
 
-	// Get recent pending updates (last 7 days)
-	const oneWeekAgo = new Date()
-	oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
+	// Get recent pending updates (last 10 days)
+	const tenDaysAgo = new Date()
+	tenDaysAgo.setDate(tenDaysAgo.getDate() - 10)
 
 	const recentPendingUpdates = await prisma.employee.findMany({
 		where: {
 			profileStatus: 'PENDING',
 			updatedAt: {
-				gte: oneWeekAgo,
+				gte: tenDaysAgo,
 			},
 		},
 		select: {
