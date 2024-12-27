@@ -42,6 +42,8 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 		},
 	})
 
+	console.log(employee)
+
 	invariantResponse(employee, 'Employee not found', { status: 404 })
 
 	const { data, totalPages, currentPage } = await filterAndPaginate({
@@ -49,7 +51,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 		model: prisma.carPassRequest,
 		searchFields: ['requestNumber', 'requestorEmail'],
 		where: {
-			requestorEmail: employee.email,
+			requestorEmail: employee.email.toLowerCase(),
 		},
 		orderBy: [{ createdAt: 'asc' }],
 		select: {
