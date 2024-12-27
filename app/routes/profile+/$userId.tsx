@@ -56,13 +56,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 	const carPassRequests = await prisma.carPassRequest.findMany({
 		where: {
-			requestorEmail: employee.email,
+			requestorEmail: employee.email.toLowerCase(),
 		},
 	})
 
 	const idRequests = await prisma.idRequest.findMany({
 		where: {
-			requestorEmail: employee.email,
+			requestorEmail: employee.email.toLowerCase(),
 		},
 	})
 
