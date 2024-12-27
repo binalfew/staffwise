@@ -196,7 +196,7 @@ export default function ProfileRoute() {
 				{
 					title: 'Parking Reservations',
 					icon: CarIcon,
-					count: employee.vehicles.length,
+					count: 0,
 					link: 'parking',
 					color: 'bg-blue-100 text-indigo-800',
 				},
