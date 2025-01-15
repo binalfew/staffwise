@@ -1,7 +1,7 @@
 import { EyeClosedIcon } from '@radix-ui/react-icons'
 import { LoaderFunctionArgs, json } from '@remix-run/node'
-import { Link, useLoaderData } from '@remix-run/react'
-import { PaperclipIcon, PrinterIcon } from 'lucide-react'
+import { Link, Outlet, useLoaderData } from '@remix-run/react'
+import { CheckIcon, PaperclipIcon, PrinterIcon } from 'lucide-react'
 import { FC } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
 import { Input } from '~/components/ui/input'
@@ -46,6 +46,7 @@ export default function CarPassRequestRoute() {
 		url: string
 		children: React.ReactNode
 		showActions?: boolean
+		showComplete?: boolean
 	}
 
 	const CarPassRequestSection: FC<CarPassRequestSectionProps> = ({
@@ -53,6 +54,7 @@ export default function CarPassRequestRoute() {
 		url,
 		children,
 		showActions = true,
+		showComplete = false,
 	}) => (
 		<Card className="xl:col-span-2 bg-white shadow-sm rounded-sm">
 			<CardHeader className="flex flex-row items-center py-2 px-6 bg-gray-100 rounded-t-lg">
@@ -69,6 +71,13 @@ export default function CarPassRequestRoute() {
 						<a href={getEmployeeFileSrc(carPassRequest.id)}>
 							<PrinterIcon className="h-4 w-4 text-orange-500 hover:text-orange-700" />
 						</a>
+					)}
+					{showComplete && (
+						<Link
+							to={`/dashboard/car-pass-requests/${carPassRequest.id}/complete`}
+						>
+							<CheckIcon className="h-4 w-4 text-green-500 hover:text-green-700" />
+						</Link>
 					)}
 				</div>
 			</CardHeader>
@@ -126,10 +135,12 @@ export default function CarPassRequestRoute() {
 	return (
 		<div className="grid gap-6">
 			<div className="grid gap-4 md:gap-8">
+				<Outlet />
 				<CarPassRequestSection
 					title={`Car Pass Request #${carPassRequest.requestNumber}`}
 					url={`/dashboard/car-pass-requests`}
 					showActions={false}
+					showComplete={carPassRequest.status === 'PENDING'}
 				>
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 						{[
