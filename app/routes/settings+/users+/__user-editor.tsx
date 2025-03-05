@@ -130,7 +130,7 @@ export function UserEditor({
 							</fieldset>
 							<CheckboxGroupField
 								meta={fields.roles}
-								items={roles.map(role => ({
+								items={roles?.map(role => ({
 									name: role.name,
 									value: role.id,
 								}))}
