@@ -287,7 +287,7 @@ export async function generateSerialNumber(counterType: CounterType) {
 	})
 
 	// Pad the counter with leading zeros to ensure it is 10 digits long
-	const uniqueNumber = result.toString().padStart(10, '0')
+	const uniqueNumber = result.toString().padStart(6, '0')
 	return uniqueNumber
 }
 

@@ -100,9 +100,7 @@ export default function AccessRequestsRoute() {
 									<TableHead>Date Requested</TableHead>
 									<TableHead>Start Date</TableHead>
 									<TableHead>End Date</TableHead>
-									<TableHead className="w-1/6 text-right pr-6">
-										Actions
-									</TableHead>
+									<TableHead className="w-1/6 text-right">Actions</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>

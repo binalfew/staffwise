@@ -1,9 +1,8 @@
-import { EyeClosedIcon, EyeOpenIcon } from '@radix-ui/react-icons'
+import { EyeClosedIcon } from '@radix-ui/react-icons'
 import { LoaderFunctionArgs, json } from '@remix-run/node'
 import { Link, Outlet, useLoaderData } from '@remix-run/react'
-import { ArrowLeftCircle, ArrowRightCircle, PrinterIcon } from 'lucide-react'
+import { PrinterIcon } from 'lucide-react'
 import { FC } from 'react'
-import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
@@ -17,16 +16,17 @@ import {
 	TableRow,
 } from '~/components/ui/table'
 import { Textarea } from '~/components/ui/textarea'
+import { requireUser } from '~/utils/auth.server'
 import { prisma } from '~/utils/db.server.ts'
 import {
 	formatDate,
 	getEmployeeFileSrc,
 	invariantResponse,
 } from '~/utils/misc.tsx'
-import { requireUserWithRoles } from '~/utils/permission.server'
+import { useOptionalUser } from '~/utils/user'
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
-	await requireUserWithRoles(request, ['admin', 'accessRequestAdmin'])
+	await requireUser(request)
 
 	const { accessRequestId } = params
 
@@ -52,64 +52,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 
 export default function AccessRequestRoute() {
 	const { accessRequest } = useLoaderData<typeof loader>()
-
-	const getVisitorStatus = (logs: any[]) => {
-		const today = new Date()
-		today.setHours(0, 0, 0, 0)
-
-		const todayLog = logs.find(log => {
-			const logDate = new Date(log.checkIn)
-			logDate.setHours(0, 0, 0, 0)
-			return logDate.getTime() === today.getTime() && !log.checkOut
-		})
-
-		return todayLog ? 'checked-in' : 'not-checked-in'
-	}
-
-	const isWithinDateRange = () => {
-		const today = new Date()
-		today.setHours(0, 0, 0, 0)
-
-		const startDate = new Date(accessRequest.startDate)
-		startDate.setHours(0, 0, 0, 0)
-		const endDate = new Date(accessRequest.endDate)
-		endDate.setHours(23, 59, 59, 999)
-
-		return today >= startDate && today <= endDate
-	}
-
-	const visitorActionLink = (visitor: any) => {
-		const isCheckedIn = getVisitorStatus(visitor.logs) === 'checked-in'
-		const path = isCheckedIn ? 'checkout' : 'checkin'
-		const withinRange = isWithinDateRange()
-
-		// Only show check-in button if within date range
-		if (!isCheckedIn && !withinRange) {
-			return null
-		}
-
-		// Always show check-out button if checked in
-		return (
-			<Button
-				asChild
-				size="xs"
-				variant={isCheckedIn ? 'destructive' : 'default'}
-			>
-				<Link
-					to={`/dashboard/access-requests/${accessRequest.id}/visitors/${visitor.id}/${path}`}
-				>
-					<div className="flex items-center gap-1">
-						<span>{isCheckedIn ? 'Check Out' : 'Check In'}</span>
-						{isCheckedIn ? (
-							<ArrowRightCircle className="h-4 w-4" />
-						) : (
-							<ArrowLeftCircle className="h-4 w-4" />
-						)}
-					</div>
-				</Link>
-			</Button>
-		)
-	}
+	const user = useOptionalUser()
 
 	type AccessRequestSectionProps = {
 		title: string
@@ -198,7 +141,7 @@ export default function AccessRequestRoute() {
 			<div className="grid gap-4 md:gap-8">
 				<AccessRequestSection
 					title={`Access Request #${accessRequest.requestNumber}`}
-					url={`/dashboard/access-requests`}
+					url={`/profile/${user?.id}/access-requests`}
 					showActions={false}
 				>
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -228,7 +171,7 @@ export default function AccessRequestRoute() {
 
 				<AccessRequestSection
 					title="Visitors"
-					url={`/dashboard/access-requests`}
+					url={`/profile/${user?.id}/access-requests`}
 					showActions={false}
 				>
 					<div className="overflow-x-auto rounded-md border">
@@ -241,7 +184,6 @@ export default function AccessRequestRoute() {
 									<TableHead>Organization</TableHead>
 									<TableHead>Visiting</TableHead>
 									<TableHead>Destination</TableHead>
-									<TableHead className="w-1/6 text-right">Actions</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
@@ -265,21 +207,6 @@ export default function AccessRequestRoute() {
 											</TableCell>
 											<TableCell className="py-1">
 												{visitor.destination}
-											</TableCell>
-											<TableCell className="py-1">
-												<div className="flex items-center justify-end gap-1">
-													{visitorActionLink(visitor)}
-													<Button asChild size="xs" variant="secondary">
-														<Link
-															to={`/dashboard/access-requests/${accessRequest.id}/visitors/${visitor.id}`}
-														>
-															<div className="flex items-center gap-1">
-																<span>History</span>
-																<EyeOpenIcon className="h-4 w-4" />
-															</div>
-														</Link>
-													</Button>
-												</div>
 											</TableCell>
 										</TableRow>
 									))

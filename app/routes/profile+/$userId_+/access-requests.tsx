@@ -1,6 +1,6 @@
 import { LoaderFunctionArgs, json } from '@remix-run/node'
 import { Link, useLoaderData } from '@remix-run/react'
-import { ArrowLeftIcon, EditIcon, PlusCircle, TrashIcon } from 'lucide-react'
+import { ArrowLeftIcon, EyeIcon, PlusCircle } from 'lucide-react'
 import { ErrorList } from '~/components/ErrorList'
 import { Paginator } from '~/components/Paginator'
 import { SearchBar } from '~/components/SearchBar'
@@ -135,13 +135,8 @@ export default function AccessRequestsRoute() {
 												</TableCell>
 												<TableCell className="py-1 text-right space-x-1">
 													<Button asChild size="xs">
-														<Link to={`${accessRequest.id}/edit`}>
-															<EditIcon className="h-4 w-4" />
-														</Link>
-													</Button>
-													<Button asChild size="xs" variant="destructive">
-														<Link to={`${accessRequest.id}/delete`}>
-															<TrashIcon className="h-4 w-4" />
+														<Link to={`${accessRequest.id}`}>
+															<EyeIcon className="h-4 w-4" />
 														</Link>
 													</Button>
 												</TableCell>
