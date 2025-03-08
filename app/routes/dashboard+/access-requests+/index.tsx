@@ -31,7 +31,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 	const { data, totalPages, currentPage } = await filterAndPaginate({
 		request,
 		model: prisma.accessRequest,
-		searchFields: ['requestNumber'],
+		searchFields: [
+			'requestNumber',
+			'requestor.firstName',
+			'requestor.middleName',
+			'requestor.familyName',
+			'requestor.email',
+		],
 		orderBy: [{ requestNumber: 'desc' }],
 		select: {
 			id: true,
