@@ -32,7 +32,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 		request,
 		model: prisma.accessRequest,
 		searchFields: ['requestNumber'],
-		orderBy: [{ requestNumber: 'asc' }],
+		orderBy: [{ requestNumber: 'desc' }],
 		select: {
 			id: true,
 			requestNumber: true,
