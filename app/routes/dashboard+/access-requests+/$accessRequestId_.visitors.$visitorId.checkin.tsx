@@ -39,23 +39,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 	invariantResponse(accessRequest, 'Access Request not found', { status: 404 })
 
-	const today = new Date()
-	today.setHours(0, 0, 0, 0)
-
-	const startDate = new Date(accessRequest.startDate)
-	startDate.setHours(0, 0, 0, 0)
-	const endDate = new Date(accessRequest.endDate)
-	endDate.setHours(23, 59, 59, 999)
-
-	// Compare dates with end date set to end of day
-	const isWithinDateRange = today >= startDate && today <= endDate
-
-	invariantResponse(
-		isWithinDateRange,
-		`Check-in is only allowed from ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()}`,
-		{ status: 403 },
-	)
-
 	const formData = await request.formData()
 	checkHoneypot(formData)
 	await validateCSRF(formData, request.headers)
@@ -111,23 +94,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 	})
 
 	invariantResponse(accessRequest, 'Access Request not found', { status: 404 })
-
-	const today = new Date()
-	today.setHours(0, 0, 0, 0)
-
-	const startDate = new Date(accessRequest.startDate)
-	startDate.setHours(0, 0, 0, 0)
-	const endDate = new Date(accessRequest.endDate)
-	endDate.setHours(23, 59, 59, 999)
-
-	// Compare dates with end date set to end of day
-	const isWithinDateRange = today >= startDate && today <= endDate
-
-	invariantResponse(
-		isWithinDateRange,
-		`Check-in is only allowed from ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()}`,
-		{ status: 400 },
-	)
 
 	const visitor = await prisma.visitor.findUnique({
 		where: { id: visitorId },
