@@ -40,18 +40,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
 	invariantResponse(accessRequest, 'Access Request not found', { status: 404 })
 
 	const today = new Date()
+	// Set to beginning of day for consistent date comparison
 	today.setHours(0, 0, 0, 0)
 
 	const startDate = new Date(accessRequest.startDate)
+	// Set to beginning of day for consistent date comparison
 	startDate.setHours(0, 0, 0, 0)
-	const endDate = new Date(accessRequest.endDate)
-	endDate.setHours(23, 59, 59, 999)
 
-	// Check if today's date is within the access request date range
-	// Using getTime() for more accurate date comparison
-	const isWithinDateRange =
-		today.getTime() >= startDate.getTime() &&
-		today.getTime() <= endDate.getTime()
+	const endDate = new Date(accessRequest.endDate)
+	// Set to beginning of day for consistent date comparison
+	endDate.setHours(0, 0, 0, 0)
+
+	// Compare only the date part (year, month, day)
+	const isWithinDateRange = today >= startDate && today <= endDate
 
 	invariantResponse(
 		isWithinDateRange,
@@ -116,18 +117,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 	invariantResponse(accessRequest, 'Access Request not found', { status: 404 })
 
 	const today = new Date()
+	// Set to beginning of day for consistent date comparison
 	today.setHours(0, 0, 0, 0)
 
 	const startDate = new Date(accessRequest.startDate)
+	// Set to beginning of day for consistent date comparison
 	startDate.setHours(0, 0, 0, 0)
-	const endDate = new Date(accessRequest.endDate)
-	endDate.setHours(23, 59, 59, 999)
 
-	// Check if today's date is within the access request date range
-	// Using getTime() for more accurate date comparison
-	const isWithinDateRange =
-		today.getTime() >= startDate.getTime() &&
-		today.getTime() <= endDate.getTime()
+	const endDate = new Date(accessRequest.endDate)
+	// Set to beginning of day for consistent date comparison
+	endDate.setHours(0, 0, 0, 0)
+
+	// Compare only the date part (year, month, day)
+	const isWithinDateRange = today >= startDate && today <= endDate
 
 	invariantResponse(
 		isWithinDateRange,
