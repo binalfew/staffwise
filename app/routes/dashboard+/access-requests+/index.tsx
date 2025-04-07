@@ -69,7 +69,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export default function AccessRequestsRoute() {
 	const data = useLoaderData<typeof loader>()
-	console.log(data)
 	const { totalPages, currentPage } = data
 
 	return (

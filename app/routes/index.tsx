@@ -1,7 +1,7 @@
 import { LoaderFunctionArgs, redirect } from '@remix-run/node'
 import { requireUserId } from '~/utils/auth.server'
 import { prisma } from '~/utils/db.server'
-import { userHasRole } from '~/utils/user'
+import { userHasRoles } from '~/utils/user'
 
 export async function loader({ request }: LoaderFunctionArgs) {
 	const userId = await requireUserId(request)
@@ -26,7 +26,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		where: { id: userId },
 	})
 
-	const isAdmin = userHasRole(user, 'admin')
+	const isAdmin = userHasRoles(user, [
+		'admin',
+		'phpAdmin',
+		'accessRequestAdmin',
+	])
 
 	if (isAdmin) {
 		throw redirect('/dashboard')
