@@ -12,7 +12,11 @@ import { prisma } from '~/utils/db.server'
 import { requireUserWithRoles } from '~/utils/permission.server'
 
 export async function loader({ request }: LoaderFunctionArgs) {
-	await requireUserWithRoles(request, ['admin', 'phpAdmin'])
+	await requireUserWithRoles(request, [
+		'admin',
+		'phpAdmin',
+		'accessRequestAdmin',
+	])
 	const phpCount = await prisma.employee.count()
 	const incidentsCount = await prisma.incident.count()
 	const idRequestsCount = await prisma.idRequest.count()
