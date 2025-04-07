@@ -7,7 +7,11 @@ import {
 import { requireUserWithRoles } from '~/utils/permission.server'
 
 export async function loader({ request }: LoaderFunctionArgs) {
-	await requireUserWithRoles(request, ['admin', 'phpAdmin'])
+	await requireUserWithRoles(request, [
+		'admin',
+		'phpAdmin',
+		'accessRequestAdmin',
+	])
 
 	return json({})
 }
