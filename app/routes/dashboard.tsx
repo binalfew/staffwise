@@ -7,18 +7,20 @@ import {
 	UsersIcon,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
+import { GeneralErrorBoundary } from '~/components/ui/error-boundary'
 import { prisma } from '~/utils/db.server'
+import { requireUserWithRoles } from '~/utils/permission.server'
 import { useOptionalUser, userHasRoles } from '~/utils/user'
 
 export async function loader({ request }: LoaderFunctionArgs) {
-	// await requireUserWithRoles(request, [
-	// 	'admin',
-	// 	'phpAdmin',
-	// 	'accessRequestAdmin',
-	// 	'incidentAdmin',
-	// 	'idRequestAdmin',
-	// 	'carPassRequestAdmin',
-	// ])
+	await requireUserWithRoles(request, [
+		'admin',
+		'phpAdmin',
+		'accessRequestAdmin',
+		'incidentAdmin',
+		'idRequestAdmin',
+		'carPassRequestAdmin',
+	])
 	const phpCount = await prisma.employee.count()
 	const incidentsCount = await prisma.incident.count()
 	const idRequestsCount = await prisma.idRequest.count()
@@ -115,12 +117,12 @@ export default function DashboardRoute() {
 	)
 }
 
-// export function ErrorBoundary() {
-// 	return (
-// 		<GeneralErrorBoundary
-// 			statusHandlers={{
-// 				403: () => <p>You are not allowed to do that</p>,
-// 			}}
-// 		/>
-// 	)
-// }
+export function ErrorBoundary() {
+	return (
+		<GeneralErrorBoundary
+			statusHandlers={{
+				403: () => <p>You are not allowed to do that</p>,
+			}}
+		/>
+	)
+}

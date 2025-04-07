@@ -10,6 +10,7 @@ import { validateCSRF } from '~/utils/csrf.server'
 import { prisma } from '~/utils/db.server'
 import { checkHoneypot } from '~/utils/honeypot.server'
 import { invariantResponse } from '~/utils/misc'
+import { requireUserWithRoles } from '~/utils/permission.server'
 import { redirectWithToast } from '~/utils/toast.server'
 
 import { FieldError } from '~/components/Field'
@@ -23,7 +24,7 @@ export const VisitorCheckinSchema = z.object({
 })
 
 export async function action({ request, params }: ActionFunctionArgs) {
-	// await requireUserWithRoles(request, ['admin', 'accessRequestAdmin'])
+	await requireUserWithRoles(request, ['admin', 'accessRequestAdmin'])
 
 	const { visitorId, accessRequestId } = params
 	invariantResponse(visitorId, 'Visitor ID not found', { status: 404 })
@@ -46,8 +47,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
 	const endDate = new Date(accessRequest.endDate)
 	endDate.setHours(23, 59, 59, 999)
 
+	// Check if today's date is within the access request date range
+	// Using getTime() for more accurate date comparison
+	const isWithinDateRange =
+		today.getTime() >= startDate.getTime() &&
+		today.getTime() <= endDate.getTime()
+
 	invariantResponse(
-		today >= startDate && today <= endDate,
+		isWithinDateRange,
 		`Check-in is only allowed from ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()}`,
 		{ status: 403 },
 	)
@@ -93,7 +100,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-	// await requireUserWithRoles(request, ['admin', 'accessRequestAdmin'])
+	await requireUserWithRoles(request, ['admin', 'accessRequestAdmin'])
 
 	const { visitorId, accessRequestId } = params
 	invariantResponse(visitorId, 'Visitor ID not found', { status: 404 })
@@ -116,8 +123,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 	const endDate = new Date(accessRequest.endDate)
 	endDate.setHours(23, 59, 59, 999)
 
+	// Check if today's date is within the access request date range
+	// Using getTime() for more accurate date comparison
+	const isWithinDateRange =
+		today.getTime() >= startDate.getTime() &&
+		today.getTime() <= endDate.getTime()
+
 	invariantResponse(
-		today >= startDate && today <= endDate,
+		isWithinDateRange,
 		`Check-in is only allowed from ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()}`,
 		{ status: 403 },
 	)
