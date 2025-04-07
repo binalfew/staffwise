@@ -7,7 +7,6 @@ import {
 	UsersIcon,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
-import { GeneralErrorBoundary } from '~/components/ui/error-boundary'
 import { prisma } from '~/utils/db.server'
 import { useOptionalUser, userHasRoles } from '~/utils/user'
 
@@ -116,12 +115,12 @@ export default function DashboardRoute() {
 	)
 }
 
-export function ErrorBoundary() {
-	return (
-		<GeneralErrorBoundary
-			statusHandlers={{
-				403: () => <p>You are not allowed to do that</p>,
-			}}
-		/>
-	)
-}
+// export function ErrorBoundary() {
+// 	return (
+// 		<GeneralErrorBoundary
+// 			statusHandlers={{
+// 				403: () => <p>You are not allowed to do that</p>,
+// 			}}
+// 		/>
+// 	)
+// }
