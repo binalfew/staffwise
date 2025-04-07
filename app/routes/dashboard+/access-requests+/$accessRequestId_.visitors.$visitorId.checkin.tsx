@@ -10,7 +10,6 @@ import { validateCSRF } from '~/utils/csrf.server'
 import { prisma } from '~/utils/db.server'
 import { checkHoneypot } from '~/utils/honeypot.server'
 import { invariantResponse } from '~/utils/misc'
-import { requireUserWithRoles } from '~/utils/permission.server'
 import { redirectWithToast } from '~/utils/toast.server'
 
 import { FieldError } from '~/components/Field'
@@ -24,7 +23,7 @@ export const VisitorCheckinSchema = z.object({
 })
 
 export async function action({ request, params }: ActionFunctionArgs) {
-	await requireUserWithRoles(request, ['admin', 'accessRequestAdmin'])
+	// await requireUserWithRoles(request, ['admin', 'accessRequestAdmin'])
 
 	const { visitorId, accessRequestId } = params
 	invariantResponse(visitorId, 'Visitor ID not found', { status: 404 })
@@ -94,7 +93,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-	await requireUserWithRoles(request, ['admin', 'accessRequestAdmin'])
+	// await requireUserWithRoles(request, ['admin', 'accessRequestAdmin'])
 
 	const { visitorId, accessRequestId } = params
 	invariantResponse(visitorId, 'Visitor ID not found', { status: 404 })

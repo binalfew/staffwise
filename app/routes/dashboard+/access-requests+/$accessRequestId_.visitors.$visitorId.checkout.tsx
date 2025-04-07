@@ -12,7 +12,6 @@ import { validateCSRF } from '~/utils/csrf.server'
 import { prisma } from '~/utils/db.server'
 import { checkHoneypot } from '~/utils/honeypot.server'
 import { invariantResponse } from '~/utils/misc'
-import { requireUserWithRoles } from '~/utils/permission.server'
 import { redirectWithToast } from '~/utils/toast.server'
 
 export const VisitorCheckoutSchema = z.object({
@@ -20,7 +19,7 @@ export const VisitorCheckoutSchema = z.object({
 })
 
 export async function action({ request, params }: ActionFunctionArgs) {
-	await requireUserWithRoles(request, ['admin', 'accessRequestAdmin'])
+	// await requireUserWithRoles(request, ['admin', 'accessRequestAdmin'])
 
 	const { visitorId, accessRequestId } = params
 	invariantResponse(visitorId, 'Visitor ID not found', { status: 404 })
