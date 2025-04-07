@@ -245,7 +245,11 @@ function App() {
 	const theme = useTheme()
 	const user = useOptionalUser()
 	const isGlobalAdmin = userHasRole(user, 'admin')
-	const isStaffwiseAdmin = userHasRoles(user, ['admin', 'phpAdmin'])
+	const isStaffwiseAdmin = userHasRoles(user, [
+		'admin',
+		'phpAdmin',
+		'accessRequestAdmin',
+	])
 
 	return (
 		<Layout isLoggedIn={Boolean(user)} theme={theme} env={data.ENV}>
