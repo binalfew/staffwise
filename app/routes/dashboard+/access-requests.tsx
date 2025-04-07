@@ -4,10 +4,9 @@ import {
 	ErrorDisplay,
 	GeneralErrorBoundary,
 } from '~/components/ui/error-boundary'
-import { requireUserWithRoles } from '~/utils/permission.server'
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-	await requireUserWithRoles(request, ['admin', 'accessRequestAdmin'])
+	// await requireUserWithRoles(request, ['admin', 'accessRequestAdmin'])
 
 	return json({})
 }
