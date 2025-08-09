@@ -750,10 +750,10 @@ async function seed() {
 	console.log('🌱 Seeding...')
 	console.time(`🌱 Database has been seeded`)
 	await truncate()
-	await seedRolesAndPermission()
-	await seedAdminUser()
-	await seedLookups()
-	await seedEmployees()
+	// await seedRolesAndPermission()
+	// await seedAdminUser()
+	// await seedLookups()
+	// await seedEmployees()
 	console.timeEnd(`🌱 Database has been seeded`)
 }
 
