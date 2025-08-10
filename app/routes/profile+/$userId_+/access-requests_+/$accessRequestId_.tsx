@@ -184,6 +184,7 @@ export default function AccessRequestRoute() {
 									<TableHead>Organization</TableHead>
 									<TableHead>Visiting</TableHead>
 									<TableHead>Destination</TableHead>
+									<TableHead>Plate Number</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
@@ -207,6 +208,9 @@ export default function AccessRequestRoute() {
 											</TableCell>
 											<TableCell className="py-1">
 												{visitor.destination}
+											</TableCell>
+											<TableCell className="py-1">
+												{visitor.carPlateNumber || 'N/A'}
 											</TableCell>
 										</TableRow>
 									))

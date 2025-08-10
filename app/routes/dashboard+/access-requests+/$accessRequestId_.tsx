@@ -241,6 +241,7 @@ export default function AccessRequestRoute() {
 									<TableHead>Organization</TableHead>
 									<TableHead>Visiting</TableHead>
 									<TableHead>Destination</TableHead>
+									<TableHead>Plate Number</TableHead>
 									<TableHead className="w-1/6 text-right">Actions</TableHead>
 								</TableRow>
 							</TableHeader>
@@ -265,6 +266,9 @@ export default function AccessRequestRoute() {
 											</TableCell>
 											<TableCell className="py-1">
 												{visitor.destination}
+											</TableCell>
+											<TableCell className="py-1">
+												{visitor.carPlateNumber || 'N/A'}
 											</TableCell>
 											<TableCell className="py-1">
 												<div className="flex items-center justify-end gap-1">
