@@ -1,7 +1,10 @@
 import { remember } from '@epic-web/remember'
-import { PrismaClient } from '@prisma/client'
+import { faker } from '@faker-js/faker'
+import { CounterType, PrismaClient } from '@prisma/client'
 import { LoaderFunctionArgs } from '@remix-run/node'
+import bcrypt from 'bcryptjs'
 import chalk from 'chalk'
+import { UniqueEnforcer } from 'enforce-unique'
 
 const prisma = remember('prisma', () => {
 	// NOTE: if you change anything in this function you'll need to restart
@@ -530,6 +533,59 @@ export async function filterAndPaginate<
 		totalPages,
 		currentPage: page,
 	}
+}
+
+const uniqueUsernameEnforcer = new UniqueEnforcer()
+
+export function createUser() {
+	const firstName = faker.person.firstName()
+	const lastName = faker.person.lastName()
+
+	const username = uniqueUsernameEnforcer
+		.enforce(() => {
+			return (
+				faker.string.alphanumeric({ length: 2 }) +
+				'_' +
+				faker.internet.userName({
+					firstName: firstName.toLowerCase(),
+					lastName: lastName.toLowerCase(),
+				})
+			)
+		})
+		.slice(0, 20)
+		.toLowerCase()
+		.replace(/[^a-z0-9_]/g, '_')
+	return {
+		username,
+		name: `${firstName} ${lastName}`,
+		email: `${username}@example.com`,
+	}
+}
+
+export function createPassword(password: string = faker.internet.password()) {
+	return {
+		hash: bcrypt.hashSync(password, 10),
+	}
+}
+
+export async function generateSerialNumber(counterType: CounterType) {
+	const result = await prisma.$transaction(async prisma => {
+		const counterRecord = await prisma.counter.update({
+			where: { type: counterType },
+			data: {
+				lastCounter: {
+					increment: 1,
+				},
+			},
+			select: { lastCounter: true },
+		})
+
+		return counterRecord.lastCounter
+	})
+
+	// Pad the counter with leading zeros to ensure it is 10 digits long
+	const uniqueNumber = result.toString().padStart(6, '0')
+	return uniqueNumber
 }
 
 export { prisma }
