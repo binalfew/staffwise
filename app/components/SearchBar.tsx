@@ -23,7 +23,7 @@ export function SearchBar({
 	autoSubmit = false,
 	action,
 	filters,
-	showAddButton = true,
+	showAddButton = false,
 	extras,
 }: {
 	status: 'idle' | 'pending' | 'success' | 'error'
