@@ -91,23 +91,25 @@ export async function loader({ request }: LoaderFunctionArgs) {
 	const workbook = XLSX.utils.book_new()
 	const worksheet = XLSX.utils.json_to_sheet(
 		employees.map(employee => ({
-			ID: employee.auIdNumber,
-			'First Name': employee.firstName,
-			'Middle Name': employee.middleName,
-			'Family Name': employee.familyName,
-			Email: employee.email,
-			Country: employee.country.name,
-			Organ: employee.organ.name,
-			City: employee.city,
-			Subcity: employee.subcity,
-			Woreda: employee.woreda,
-			SpecificLocation: employee.location.name,
-			HouseNumber: employee.houseNumber,
-			PhoneNumber: `Home: ${employee.houseTelephoneNumber}, Mobile: ${employee.mobileTelephoneNumber}, Office: ${employee.officeTelephoneNumber}`,
-			Department: employee.department.name,
-			Location: employee.location.name,
-			Floor: employee.floor.name,
-			'Office Number': employee.officeNumber,
+			ID: employee.auIdNumber ?? '-',
+			'First Name': employee.firstName ?? '-',
+			'Middle Name': employee.middleName ?? '-',
+			'Family Name': employee.familyName ?? '-',
+			Email: employee.email ?? '-',
+			Country: employee.country.name ?? '-',
+			Organ: employee.organ.name ?? '-',
+			City: employee.city ?? '-',
+			Subcity: employee.subcity ?? '-',
+			Woreda: employee.woreda ?? '-',
+			SpecificLocation: employee.specificLocation ?? '-',
+			HouseNumber: employee.houseNumber ?? '-',
+			PhoneNumber: `Home: ${employee.houseTelephoneNumber ?? '-'}, Mobile: ${
+				employee.mobileTelephoneNumber ?? '-'
+			}, Office: ${employee.officeTelephoneNumber ?? '-'}`,
+			Department: employee.department.name ?? '-',
+			Location: employee.location.name ?? '-',
+			Floor: employee.floor.name ?? '-',
+			'Office Number': employee.officeNumber ?? '-',
 		})),
 	)
 
