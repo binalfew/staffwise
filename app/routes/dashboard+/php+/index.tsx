@@ -1,6 +1,6 @@
 import { EyeOpenIcon } from '@radix-ui/react-icons'
 import { json, LoaderFunctionArgs } from '@remix-run/node'
-import { Link, useLoaderData } from '@remix-run/react'
+import { Link, useLoaderData, useSearchParams } from '@remix-run/react'
 import { formatDistance } from 'date-fns'
 import { ArrowLeftIcon, DownloadIcon } from 'lucide-react'
 import { ErrorList } from '~/components/ErrorList'
@@ -45,6 +45,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 			firstName: true,
 			familyName: true,
 			auIdNumber: true,
+			organ: {
+				select: {
+					name: true,
+				},
+			},
 			updatedAt: true,
 		},
 		orderBy: {
@@ -56,6 +61,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		request,
 		model: prisma.employee,
 		searchFields: ['auIdNumber', 'firstName', 'middleName'],
+		filterFields: ['organId', 'departmentId', 'locationId', 'floorId'],
 		orderBy: [{ firstName: 'asc' }],
 		select: {
 			id: true,
@@ -64,7 +70,50 @@ export async function loader({ request }: LoaderFunctionArgs) {
 			familyName: true,
 			auIdNumber: true,
 			updatedAt: true,
+			organ: {
+				select: {
+					name: true,
+				},
+			},
 			profileStatus: true,
+		},
+	})
+
+	const organs = await prisma.organ.findMany({
+		select: {
+			id: true,
+			name: true,
+		},
+	})
+
+	// Get selected organ from URL params
+	const url = new URL(request.url)
+	const selectedOrganId = url.searchParams.get('organId')
+
+	// Filter departments by selected organ, or return empty if no organ selected
+	const departments = selectedOrganId
+		? await prisma.department.findMany({
+				where: {
+					organId: selectedOrganId,
+				},
+				select: {
+					id: true,
+					name: true,
+				},
+		  })
+		: []
+
+	const locations = await prisma.location.findMany({
+		select: {
+			id: true,
+			name: true,
+		},
+	})
+
+	const floors = await prisma.floor.findMany({
+		select: {
+			id: true,
+			name: true,
 		},
 	})
 
@@ -74,13 +123,29 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		recentPendingUpdates,
 		totalPages,
 		currentPage,
+		organs,
+		departments,
+		locations,
+		floors,
+		selectedOrganId,
 	} as const)
 }
 
 export default function PhpRoute() {
+	const [searchParams] = useSearchParams()
+	const organId = searchParams.get('organId')
+	const departmentId = searchParams.get('departmentId')
 	const data = useLoaderData<typeof loader>()
-	const { employees, recentPendingUpdates, totalPages, currentPage, status } =
-		data
+	const {
+		employees,
+		recentPendingUpdates,
+		totalPages,
+		currentPage,
+		status,
+		organs,
+		departments,
+		selectedOrganId,
+	} = data
 
 	return (
 		<div className="flex flex-col gap-8">
@@ -98,6 +163,7 @@ export default function PhpRoute() {
 									<TableRow>
 										<TableHead>ID</TableHead>
 										<TableHead>Name</TableHead>
+										<TableHead>Organ</TableHead>
 										<TableHead>Updated</TableHead>
 										<TableHead className="w-1/6 text-right pr-6">
 											Actions
@@ -112,6 +178,9 @@ export default function PhpRoute() {
 											</TableCell>
 											<TableCell className="py-1">
 												{employee.firstName} {employee.familyName}
+											</TableCell>
+											<TableCell className="py-1">
+												{employee.organ.name}
 											</TableCell>
 											<TableCell className="py-1">
 												{formatDistance(
@@ -144,7 +213,40 @@ export default function PhpRoute() {
 						</CardTitle>
 					</div>
 					<div className="flex items-center gap-2 ml-auto">
-						<SearchBar status={status} action={`/dashboard/php`} autoSubmit />
+						<SearchBar
+							filters={[
+								{
+									name: 'organId',
+									label: 'Organ',
+									type: 'select',
+									options: [
+										{ value: 'all', label: 'All' },
+										...organs.map(organ => ({
+											value: organ.id,
+											label: organ.name,
+										})),
+									],
+								},
+								{
+									name: 'departmentId',
+									label: 'Department',
+									type: 'select',
+									options: selectedOrganId
+										? [
+												{ value: 'all', label: 'All' },
+												...departments.map(department => ({
+													value: department.id,
+													label: department.name,
+												})),
+										  ]
+										: [],
+								},
+							]}
+							status={status}
+							action={`/dashboard/php`}
+							showAddButton={false}
+							autoSubmit
+						/>
 
 						<Button asChild size="sm" className="ml-auto gap-1">
 							<Link to={`/dashboard`}>
@@ -154,7 +256,7 @@ export default function PhpRoute() {
 						</Button>
 
 						<Button asChild size="sm" className="ml-auto gap-1">
-							<a href={getEmployeesFileSrc()}>
+							<a href={getEmployeesFileSrc(organId ?? '', departmentId ?? '')}>
 								<DownloadIcon className="h-4 w-4" />
 								Export
 							</a>
@@ -170,6 +272,7 @@ export default function PhpRoute() {
 									<TableHead>First Name</TableHead>
 									<TableHead>Middle Name</TableHead>
 									<TableHead>Family Name</TableHead>
+									<TableHead>Organ</TableHead>
 									<TableHead className="w-1/6 text-right pr-6">
 										Actions
 									</TableHead>
@@ -191,6 +294,9 @@ export default function PhpRoute() {
 												</TableCell>
 												<TableCell className="py-1">
 													{employee.familyName}
+												</TableCell>
+												<TableCell className="py-1">
+													{employee.organ.name}
 												</TableCell>
 												<TableCell className="py-1 text-right space-x-1">
 													<Button asChild size="xs">

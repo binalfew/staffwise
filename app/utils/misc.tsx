@@ -300,8 +300,8 @@ export function getEmployeeFileSrc(employeeId: string) {
 	return `/profile/resources/employees/${employeeId}`
 }
 
-export function getEmployeesFileSrc() {
-	return `/profile/resources/employees`
+export function getEmployeesFileSrc(organId: string, departmentId: string) {
+	return `/profile/resources/employees?organId=${organId}&departmentId=${departmentId}`
 }
 
 export function getUniqueSerialNumber() {

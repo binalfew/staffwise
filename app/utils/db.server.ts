@@ -1,29 +1,20 @@
-import { faker } from '@faker-js/faker'
-import { CounterType, PrismaClient } from '@prisma/client'
+import { remember } from '@epic-web/remember'
+import { PrismaClient } from '@prisma/client'
 import { LoaderFunctionArgs } from '@remix-run/node'
-import bcrypt from 'bcryptjs'
 import chalk from 'chalk'
-import { UniqueEnforcer } from 'enforce-unique'
-import { singleton } from './singleton.server'
 
-const prisma = singleton('prisma', () => {
+const prisma = remember('prisma', () => {
 	// NOTE: if you change anything in this function you'll need to restart
 	// the dev server to see your changes.
-
-	// we'll set the logThreshold to 0 so you see all the queries, but in a
-	// production app you'd probably want to fine-tune this value to something
-	// you're more comfortable with.
-	const logThreshold = 25
+	const logThreshold = 20
 
 	const client = new PrismaClient({
 		log: [
 			{ level: 'query', emit: 'event' },
 			{ level: 'error', emit: 'stdout' },
-			{ level: 'info', emit: 'stdout' },
 			{ level: 'warn', emit: 'stdout' },
 		],
 	})
-
 	client.$on('query', async e => {
 		if (e.duration < logThreshold) return
 		const color =
@@ -43,12 +34,15 @@ const prisma = singleton('prisma', () => {
 	return client
 })
 
+/**
+ * Defines the parameters for pagination and filtering.
+ */
 type PaginationAndFilterParams<
 	TWhereInput,
 	TOrderByInput,
 	TResult,
 	TSelect = any,
-	TInclude = any,
+	TInclude = undefined, // Changed default to 'undefined'
 > = {
 	request: LoaderFunctionArgs['request']
 	model: {
@@ -63,6 +57,7 @@ type PaginationAndFilterParams<
 		}) => Promise<TResult[]>
 	}
 	searchFields: Array<SearchField>
+	filterFields?: Array<FilterField>
 	where?: TWhereInput
 	orderBy: TOrderByInput[]
 	select?: TSelect
@@ -70,29 +65,84 @@ type PaginationAndFilterParams<
 }
 
 /**
+ * Interface for specifying field options, such as operator and enum flag.
+ */
+interface FieldOptions {
+	field: string
+	operator?:
+		| 'contains'
+		| 'equals'
+		| 'startsWith'
+		| 'endsWith'
+		| 'before'
+		| 'after'
+	isEnum?: boolean
+	isDate?: boolean // Add this flag to indicate date fields
+}
+
+/**
  * Represents a field or set of fields to be searched.
- * Can be a string (single field), an object (nested fields),
- * or an array of SearchFields (multiple fields).
+ * Can be a string (single field), FieldOptions (with operator and enum flag),
+ * a nested object for nested fields, or an array of SearchFields (multiple fields).
  *
- * // Single field
+ * @example
+ * // Single string field
  * const field1: SearchField = 'name'
  *
+ * // Enum field with operator
+ * const field2: SearchField = { field: 'status', operator: 'equals', isEnum: true }
+ *
  * // Nested fields
- * const field2: SearchField = { user: { profile: 'bio' } }
+ * const field3: SearchField = { user: { profile: 'bio' } }
  *
  * // Multiple fields
- * const field3: SearchField = ['title', 'description', { author: 'name' }]
+ * const field4: SearchField = ['title', 'description', { author: 'name' }]
  */
-type SearchField = string | { [key: string]: SearchField } | SearchField[]
+type SearchField =
+	| string
+	| FieldOptions
+	| { [key: string]: SearchField }
+	| SearchField[]
+
+/**
+ * Interface for specifying field options for filtering, such as operator.
+ */
+interface FilterFieldOptions {
+	field: string
+	operator?: 'equals' | 'in' | 'before' | 'after' | 'array-contains' // Added array-contains operator
+	isDate?: boolean // Add this flag to indicate date fields
+}
+
+/**
+ * Represents a field or set of fields to be used for exact filtering.
+ * Can be a string (single field), FilterFieldOptions (with operator),
+ * a nested object for nested fields, or an array of FilterFields (multiple fields).
+ *
+ * @example
+ * // Single string field
+ * const filter1: FilterField = 'status'
+ *
+ * // Field with operator
+ * const filter2: FilterField = { field: 'role', operator: 'in' }
+ *
+ * // Multiple fields
+ * const filter3: FilterField = ['status', { field: 'role', operator: 'equals' }]
+ */
+type FilterField =
+	| string
+	| FilterFieldOptions
+	| { [key: string]: FilterField } // For nested filter fields
+	| FilterField[]
 
 /**
  * Represents a search condition object.
  * Keys are strings, and values can be of any type.
  * Used to build dynamic search queries.
  *
+ * @example
  * const condition: SearchCondition = {
  *   name: { contains: 'John', mode: 'insensitive' },
- *   age: { gt: 18 }
+ *   status: { equals: 'ACTIVE' }
  * }
  */
 type SearchCondition = {
@@ -100,50 +150,166 @@ type SearchCondition = {
 }
 
 /**
- * Creates a search condition object based on the given field and search term.
+ * Type guard to check if a SearchField is FieldOptions.
  *
- * // Single field
+ * @param field - The SearchField to check.
+ * @returns True if field is FieldOptions, else false.
+ */
+function isFieldOptions(field: SearchField): field is FieldOptions {
+	return (
+		typeof field === 'object' &&
+		!Array.isArray(field) &&
+		field !== null &&
+		'field' in field &&
+		typeof (field as any).field === 'string'
+	)
+}
+
+/**
+ * Type guard to check if a SearchField is a nested field object.
+ *
+ * @param field - The SearchField to check.
+ * @returns True if field is a nested object, else false.
+ */
+function isNestedField(
+	field: SearchField,
+): field is { [key: string]: SearchField } {
+	return (
+		typeof field === 'object' &&
+		!Array.isArray(field) &&
+		field !== null &&
+		!('field' in field)
+	)
+}
+
+/**
+ * Type guard to check if a FilterField is FilterFieldOptions.
+ *
+ * @param field - The FilterField to check.
+ * @returns True if field is FilterFieldOptions, else false.
+ */
+function isFilterFieldOptions(field: FilterField): field is FilterFieldOptions {
+	return (
+		typeof field === 'object' &&
+		!Array.isArray(field) &&
+		field !== null &&
+		'field' in field &&
+		typeof (field as any).field === 'string'
+	)
+}
+
+/**
+ * Type guard to check if a FilterField is an array of FilterFields.
+ *
+ * @param field - The FilterField to check.
+ * @returns True if field is an array, else false.
+ */
+function isFilterFieldArray(field: FilterField): field is FilterField[] {
+	return Array.isArray(field)
+}
+
+/**
+ * Creates a search condition array based on the given field and search term.
+ * Adjusts the operator based on whether the field is an enum or other specifications.
+ *
+ * @param field - The SearchField to create conditions for.
+ * @param searchTerm - The term to search for.
+ * @returns An array of search condition objects.
+ *
+ * @example
+ * // String field
  * createSearchCondition('name', 'John')
- * // { name: { contains: 'John', mode: 'insensitive' } }
+ * // Returns: [{ name: { contains: 'John', mode: 'insensitive' } }]
  *
- * // Nested field
- * createSearchCondition('user.profile.bio', 'developer')
- * // { user: { profile: { bio: { contains: 'developer', mode: 'insensitive' } } } }
+ * // Enum field
+ * createSearchCondition({ field: 'status', operator: 'equals', isEnum: true }, 'ACTIVE')
+ * // Returns: [{ status: { equals: 'ACTIVE' } }]
+ *
+ * // Nested fields
+ * createSearchCondition({ user: { profile: 'bio' } }, 'developer')
+ * // Returns: [{ user: { profile: { bio: { contains: 'developer', mode: 'insensitive' } } } }]
  *
  * // Multiple fields
- * createSearchCondition(['title', 'description'], 'example')
- * // { OR: [
+ * createSearchCondition(['title', { field: 'status', operator: 'equals', isEnum: true }], 'example')
+ * // Returns:
+ * // [
  * //   { title: { contains: 'example', mode: 'insensitive' } },
- * //   { description: { contains: 'example', mode: 'insensitive' } }
- * // ] }
+ * //   { status: { equals: 'example' } }
+ * // ]
  */
-function createSearchCondition(
+export function createSearchCondition(
 	field: SearchField,
 	searchTerm: string,
-): { [key: string]: any } {
+): any[] {
 	if (typeof field === 'string') {
 		const fieldParts = field.split('.')
 		if (fieldParts.length > 1) {
-			return createNestedCondition(fieldParts, searchTerm)
+			return [createNestedCondition(fieldParts, searchTerm)]
 		} else {
-			return { [field]: { contains: searchTerm, mode: 'insensitive' } }
+			return [
+				{
+					[field]: {
+						contains: searchTerm,
+						mode: 'insensitive',
+					},
+				},
+			]
 		}
 	} else if (Array.isArray(field)) {
 		// Handle array of fields
-		return {
-			OR: field.map(subField => createSearchCondition(subField, searchTerm)),
+		return field.flatMap(subField =>
+			createSearchCondition(subField, searchTerm),
+		)
+	} else if (isFieldOptions(field)) {
+		// Handle field object with operator and isEnum
+		const { field: fieldName, operator = 'contains', isEnum, isDate } = field
+		if (isEnum || operator === 'equals') {
+			return [
+				{
+					[fieldName]: {
+						equals: searchTerm,
+					},
+				},
+			]
+		} else if (isDate) {
+			return [
+				{
+					[fieldName]: {
+						[operator]: new Date(searchTerm),
+					},
+				},
+			]
+		} else {
+			return [
+				{
+					[fieldName]: {
+						[operator]: searchTerm,
+						mode: 'insensitive',
+					},
+				},
+			]
 		}
+	} else if (isNestedField(field)) {
+		// Handle nested fields
+		return [
+			Object.entries(field).reduce((acc, [key, value]) => {
+				acc[key] = createSearchCondition(value, searchTerm)[0]
+				return acc
+			}, {} as { [key: string]: any }),
+		]
 	} else {
-		return Object.entries(field).reduce((acc, [key, value]) => {
-			acc[key] = createSearchCondition(value, searchTerm)
-			return acc
-		}, {} as { [key: string]: any })
+		throw new Error('Invalid SearchField')
 	}
 }
 
 /**
  * Creates a nested search condition object for dot-separated field paths.
  *
+ * @param fieldParts - An array of strings representing the nested field path.
+ * @param searchTerm - The term to search for.
+ * @returns A nested search condition object.
+ *
+ * @example
  * createNestedCondition(['user', 'profile', 'bio'], 'developer')
  * // Returns:
  * // {
@@ -159,7 +325,12 @@ function createNestedCondition(
 	searchTerm: string,
 ): { [key: string]: any } {
 	if (fieldParts.length === 1) {
-		return { [fieldParts[0]]: { contains: searchTerm, mode: 'insensitive' } }
+		return {
+			[fieldParts[0]]: {
+				contains: searchTerm,
+				mode: 'insensitive',
+			},
+		}
 	}
 	return {
 		[fieldParts[0]]: createNestedCondition(fieldParts.slice(1), searchTerm),
@@ -167,36 +338,138 @@ function createNestedCondition(
 }
 
 /**
- * Filters and paginates data based on search parameters and pagination settings.
+ * Creates exact match conditions based on the filterFields and query parameters.
+ * If a filter field has a value of 'all', it will not apply any filter for that field,
+ * effectively returning all values for that field.
  *
+ * @param filterFields - The fields to be used for exact filtering.
+ * @param url - The URL object containing query parameters.
+ * @returns An object representing exact match conditions.
+ *
+ * @example
+ * // Given filterFields = ['status', { field: 'role', operator: 'in' }]
+ * // And URL has ?status=ACTIVE&status=INACTIVE&role=ADMIN
+ * // Returns:
+ * // {
+ * //   status: { in: ['ACTIVE', 'INACTIVE'] },
+ * //   role: { in: ['ADMIN'] }
+ * // }
+ */
+function createFilterConditions(
+	filterFields: Array<FilterField>,
+	url: URL,
+): { [key: string]: any } {
+	const conditions: { [key: string]: any } = {}
+
+	filterFields.forEach(field => {
+		if (typeof field === 'string') {
+			const values = url.searchParams.getAll(field)
+			if (values.includes('all')) {
+				return
+			}
+			if (values.length === 1) {
+				conditions[field] = { equals: values[0] }
+			} else if (values.length > 1) {
+				conditions[field] = { in: values }
+			}
+		} else if (isFilterFieldOptions(field)) {
+			const { field: fieldName, operator = 'equals', isDate } = field
+			const values = url.searchParams.getAll(fieldName)
+			console.log(
+				`Filter field: ${fieldName}, operator: ${operator}, values:`,
+				values,
+			)
+
+			if (values.includes('all')) {
+				return
+			}
+
+			if (operator === 'array-contains') {
+				if (values.length === 1 && values[0] !== 'all') {
+					conditions[fieldName] = { contains: values[0] }
+				}
+			} else if (values.length === 1) {
+				conditions[fieldName] = {
+					[operator]: isDate ? new Date(values[0]) : values[0],
+				}
+			} else if (values.length > 1) {
+				if (operator === 'in') {
+					conditions[fieldName] = {
+						in: values.map(value => (isDate ? new Date(value) : value)),
+					}
+				} else {
+					conditions[fieldName] = {
+						OR: values.map(value => ({
+							[operator]: isDate ? new Date(value) : value,
+						})),
+					}
+				}
+			}
+		} else if (isFilterFieldArray(field)) {
+			// Recursively handle nested filter fields
+			const nestedConditions = createFilterConditions(field, url)
+			Object.assign(conditions, nestedConditions)
+		} else if (typeof field === 'object') {
+			// Handle nested filter fields
+			Object.entries(field).forEach(([key, nestedField]) => {
+				const nestedConditions = createFilterConditions([nestedField], url)
+				conditions[key] = nestedConditions
+			})
+		}
+	})
+
+	return conditions
+}
+
+/**
+ * Filters and paginates data based on search parameters, exact filters, and pagination settings.
+ *
+ * @param params - The parameters for pagination and filtering.
+ * @returns An object containing the paginated data, total pages, and current page.
+ *
+ * @example
  * const result = await filterAndPaginate({
  *   request,
  *   model: prisma.user,
- *   searchFields: ['name', 'email'],
+ *   searchFields: [
+ *     'name',
+ *     'email',
+ *     { field: 'status', operator: 'equals', isEnum: true },
+ *     { user: { profile: 'bio' } },
+ *   ],
+ *   filterFields: [
+ *     'status', // Allows multiple status values, e.g., status=ACTIVE&status=INACTIVE
+ *     { field: 'role', operator: 'in' }, // Allows multiple roles, e.g., role=ADMIN&role=USER
+ *   ],
  *   orderBy: [{ createdAt: 'desc' }],
- * });
+ * })
  */
 export async function filterAndPaginate<
 	TWhereInput,
 	TOrderByInput,
 	TResult,
 	TSelect,
-	TInclude,
+	TInclude = undefined, // Ensure TInclude defaults to 'undefined'
 >({
 	request,
 	model,
 	searchFields = [] as SearchField[],
+	filterFields = [] as FilterField[],
 	where = {} as TWhereInput,
 	orderBy = [] as TOrderByInput[],
 	select,
-	include,
+	include, // TInclude is correctly typed
 }: PaginationAndFilterParams<
 	TWhereInput,
 	TOrderByInput,
 	TResult,
 	TSelect,
 	TInclude
->) {
+>): Promise<{
+	data: TResult[]
+	totalPages: number
+	currentPage: number
+}> {
 	const url = new URL(request.url)
 	const searchTerm = url.searchParams.get('search') || ''
 	const page = parseInt(url.searchParams.get('page') || '1', 10)
@@ -204,19 +477,40 @@ export async function filterAndPaginate<
 	const pageSize =
 		pageSizeParam === 'All' ? undefined : parseInt(pageSizeParam || '10', 10)
 
+	// Build search conditions
 	let searchConditions: SearchCondition = {}
 	if (searchTerm) {
-		searchConditions = {
-			OR: searchFields.flatMap(field =>
-				createSearchCondition(field, searchTerm),
-			),
+		const conditions = searchFields.flatMap(field =>
+			createSearchCondition(field, searchTerm),
+		)
+		searchConditions = { OR: conditions }
+	}
+
+	// Build exact filter conditions
+	let filterConditions: SearchCondition = {}
+	if (filterFields.length > 0) {
+		const exactConditions = createFilterConditions(filterFields, url)
+		filterConditions = { AND: exactConditions }
+	}
+
+	// Combine all conditions
+	let combinedWhere: any = {
+		...where,
+	}
+
+	if (searchTerm && Object.keys(searchConditions).length > 0) {
+		combinedWhere = {
+			...combinedWhere,
+			...searchConditions,
 		}
 	}
 
-	const combinedWhere = {
-		...where,
-		...searchConditions,
-	} as TWhereInput & SearchCondition
+	if (filterFields.length > 0 && Object.keys(filterConditions).length > 0) {
+		combinedWhere = {
+			...combinedWhere,
+			...filterConditions,
+		}
+	}
 
 	const totalItems = await model.count({ where: combinedWhere })
 
@@ -228,7 +522,7 @@ export async function filterAndPaginate<
 		take: pageSize,
 		skip: pageSize ? (page - 1) * pageSize : undefined,
 		...(select ? { select } : {}),
-		...(include ? { include } : {}),
+		...(include ? { include } : {}), // Conditionally include 'include'
 	})
 
 	return {
@@ -236,59 +530,6 @@ export async function filterAndPaginate<
 		totalPages,
 		currentPage: page,
 	}
-}
-
-const uniqueUsernameEnforcer = new UniqueEnforcer()
-
-export function createUser() {
-	const firstName = faker.person.firstName()
-	const lastName = faker.person.lastName()
-
-	const username = uniqueUsernameEnforcer
-		.enforce(() => {
-			return (
-				faker.string.alphanumeric({ length: 2 }) +
-				'_' +
-				faker.internet.userName({
-					firstName: firstName.toLowerCase(),
-					lastName: lastName.toLowerCase(),
-				})
-			)
-		})
-		.slice(0, 20)
-		.toLowerCase()
-		.replace(/[^a-z0-9_]/g, '_')
-	return {
-		username,
-		name: `${firstName} ${lastName}`,
-		email: `${username}@example.com`,
-	}
-}
-
-export function createPassword(password: string = faker.internet.password()) {
-	return {
-		hash: bcrypt.hashSync(password, 10),
-	}
-}
-
-export async function generateSerialNumber(counterType: CounterType) {
-	const result = await prisma.$transaction(async prisma => {
-		const counterRecord = await prisma.counter.update({
-			where: { type: counterType },
-			data: {
-				lastCounter: {
-					increment: 1,
-				},
-			},
-			select: { lastCounter: true },
-		})
-
-		return counterRecord.lastCounter
-	})
-
-	// Pad the counter with leading zeros to ensure it is 10 digits long
-	const uniqueNumber = result.toString().padStart(6, '0')
-	return uniqueNumber
 }
 
 export { prisma }

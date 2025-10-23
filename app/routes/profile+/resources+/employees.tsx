@@ -1,7 +1,30 @@
+import { LoaderFunctionArgs } from '@remix-run/node'
 import * as XLSX from 'xlsx'
 import { prisma } from '~/utils/db.server'
 
-export async function loader() {
+export async function loader({ request }: LoaderFunctionArgs) {
+	const url = new URL(request.url)
+	const searchParams = url.searchParams
+
+	const conditions = []
+
+	if (
+		searchParams.get('organId') &&
+		searchParams.get('organId') !== 'all' &&
+		searchParams.get('organId') !== ''
+	) {
+		conditions.push({
+			organId: searchParams.get('organId'),
+		})
+	}
+	if (
+		searchParams.get('departmentId') &&
+		searchParams.get('departmentId') !== 'all' &&
+		searchParams.get('departmentId') !== ''
+	) {
+		conditions.push({ departmentId: searchParams.get('departmentId') })
+	}
+
 	const employees = await prisma.employee.findMany({
 		orderBy: {
 			firstName: 'asc',
@@ -39,6 +62,19 @@ export async function loader() {
 			},
 			officeNumber: true,
 		},
+		where:
+			conditions.length > 0
+				? {
+						AND: conditions.map(condition => ({
+							...(condition.organId && {
+								organId: condition.organId,
+							}),
+							...(condition.departmentId && {
+								departmentId: condition.departmentId,
+							}),
+						})),
+				  }
+				: undefined,
 	})
 
 	// Create a new workbook and worksheet
