@@ -19,7 +19,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		'accessRequestAdmin',
 		'incidentAdmin',
 		'idRequestAdmin',
-		'carPassRequestAdmin',
+		'carPassAdmin',
 	])
 	const phpCount = await prisma.employee.count()
 	const incidentsCount = await prisma.incident.count()
@@ -81,7 +81,7 @@ export default function DashboardRoute() {
 						count: carPassRequestsCount,
 						link: 'car-pass-requests',
 						color: 'bg-red-100 text-red-800',
-						roles: ['admin', 'carPassRequestAdmin'],
+						roles: ['admin', 'carPassAdmin'],
 					},
 					{
 						title: 'Access Requests',

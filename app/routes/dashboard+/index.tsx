@@ -11,6 +11,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		'admin',
 		'phpAdmin',
 		'accessRequestAdmin',
+		'incidentAdmin',
+		'idRequestAdmin',
+		'carPassAdmin',
 	])
 
 	return json({})

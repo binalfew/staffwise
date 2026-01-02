@@ -249,6 +249,9 @@ function App() {
 		'admin',
 		'phpAdmin',
 		'accessRequestAdmin',
+		'incidentAdmin',
+		'idRequestAdmin',
+		'carPassAdmin',
 	])
 
 	return (
