@@ -25,9 +25,9 @@ The business request has 14 items. Mapped against the current codebase, they fal
 | 1 | Show incident reporter to admins (+ fix `lastName` bug) | A | 1 | S | 🟨 |
 | 2 | Make Middle Name optional (Staff, Spouse, Dependant) | A | 1 | S–M | 🟨 |
 | 3 | PHP form: building/floor/office number for regional offices | A | 1 | S | 🟨 |
-| 4 | Add new incident types | C | 1 | S | ⬜ |
-| 5 | Add missing organs/offices, regional offices, specialised agencies | C | 1 | M | ⏸ data cleanup |
-| 6 | Update renamed/restructured departments; departments for regional offices | C | 1 | M | ⏸ data from business |
+| 4 | Add new incident types | C | 1 | S | ✅ |
+| 5 | Add missing organs/offices, regional offices, specialised agencies | C | 1 | M | ✅ (unclear organs left for the business) |
+| 6 | Update renamed/restructured departments; departments for regional offices | C | 1 | M | ⏸ waiting on old → new mapping (Q3) |
 | 7 | Incident status tracking, assignment and escalation | B | 2 | L | ⬜ |
 | 8 | Critical-incident notifications to admins | B | 2 | M | ⬜ |
 | 9 | Designate office system administrators | C | 3 | M–L | ⏸ design decision |
@@ -295,7 +295,7 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 - [x] Write the idempotent import script: `prisma/scripts/import-incident-types.ts`, data in `prisma/scripts/data/incident-types.json` (draft from Appendix A). It only inserts types whose name doesn't exist yet (ignoring case, spacing and dash style) and uses the name as the code, like the existing types. It's a dry run unless `--apply` is passed, and won't write to a non-local DB without `--remote`.
 - [x] **Existing types stay as they are** (owner decision, 2026-11-11). New types that duplicate an existing one are left out of the upload list: Burglary, Robbery and Vandalism (exact), Break-in (= Burglary), Road Safety Accident (RSA) (= Traffic Accident), and Harassment/Intimidation/Threat of Violence (= Intimidation). That leaves **53 types to add**. The three Near Miss types are kept, as more specific options beside the existing "Near miss incidents".
 - [x] Rehearsed on a fresh restore of the 2026-11-10 prod dump (`staffwise_rehearsal`): 53 created, and a second run created nothing.
-- [ ] Run it against production once the list is approved, and check the result in Settings.
+- [x] (2026-11-11) Owner ran it on production after a backup; a dry run afterwards reports nothing left to create.
 - [x] Sort the incident type dropdown alphabetically (all five incident forms).
 
 **Acceptance:** All approved types are selectable when reporting an incident, with no duplicates.
@@ -339,7 +339,7 @@ Data imports (organs, departments, incident types, admins) are **not** migration
   - Rehearsed on a fresh restore of the 2026-11-10 prod dump (`staffwise_rehearsal`): 49 → 57 organs; 1776 employees and 100 departments unchanged; no employee without an organ; a second run changed nothing.
   - **Merging deletes rows**, so it goes beyond the usual "insert and update only" rule for data imports. That's why it sits behind `--merge`.
 - [ ] Later, with the business (Q2): the organs left out above. They stay as they are until someone confirms them.
-- [ ] Run it against production and review the result in Settings → Organs.
+- [x] (2026-11-11) Owner ran it on production with `--merge` after a backup; a dry run afterwards reports nothing left to create, update or merge.
 - [ ] Export the current organs list first as a backup.
 
 **Acceptance:** Every confirmed AU office, organ and specialised agency can be selected in the PHP form.
@@ -556,8 +556,8 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 | 1.1 | Code only | 1 | Reporter name/email/organ in admin incident list and detail; search by reporter; newest-first ordering; fix `lastName` → `familyName` | — | — | 🟨 merged to `main` (`aa56472`), awaiting push and prod smoke test |
 | 1.2 | Migration | 2 | `middleName` optional on Employee/Dependant/Spouse; `formatFullName()` helper; update ~23 files and exports | `middle_name_optional` (DROP NOT NULL ×3) | 0.2 merged | 🟨 migrated on prod, merged to `main` (`2aebec8`), awaiting push and prod smoke test |
 | 1.3 | Migration | 3 | Free-text building/floor when an organ has no locations or floors; null-safe display and exports | `duty_station_free_text` (DROP NOT NULL ×2, ADD `buildingName`, `floorName`) | Q8 | 🟨 migrated on prod, merged to `main` (`0f1b5b6`), awaiting push and prod smoke test |
-| 1.4 | Data import (+ optional migration) | 4 | Import approved incident types; optional `category` column and grouped dropdown | `incident_type_category` (optional) | Q1 | 🟨 script, data and dropdown sort merged to `main` (`818f855`), awaiting push; prod import (`--apply --remote`) still to run |
-| 1.5 | Data import (+ optional migration) | 5, 6 | Import organs, departments and renames; at least one department per organ; optional `Organ.city`; empty-department guard in the PHP form | `organ_city` (optional) | Q2, Q3 | 🟨 organ script and data merged to `main` (`bb4c965`), awaiting push; prod import (`--apply --merge --remote`) still to run; unclear organs left as they are; empty-department guard done in `0f1b5b6`; departments not touched, waiting on Q3 mapping |
+| 1.4 | Data import (+ optional migration) | 4 | Import approved incident types; optional `category` column and grouped dropdown | `incident_type_category` (optional) | Q1 | ✅ 53 types imported on prod 2026-11-11 (`818f855`); dropdown sort ships with the next push |
+| 1.5 | Data import (+ optional migration) | 5, 6 | Import organs, departments and renames; at least one department per organ; optional `Organ.city`; empty-department guard in the PHP form | `organ_city` (optional) | Q2, Q3 | ✅ organs imported on prod 2026-11-11 (`bb4c965`): 13 new, 24 codes fixed, 5 duplicates merged; unclear organs left as they are. Departments (Item 6) ⏸ waiting on the Q3 mapping |
 | 1.6 | Code + Ops | 11 | Code: `trust proxy` and per-client rate-limit keys, raised limits, `/resources/healthcheck`. Ops: Always On / plan tier / restarts, uptime monitor, publish URL and support contact | — | Q9 (support contact only) | 🟨 code live (`5139320`), monitor set up, Always On / P0v3 confirmed; waiting on Q9 (support contact, Help link) |
 
 Suggested order: **1.1 → 1.2 → 1.3**, with 1.6 investigated in parallel. 1.4 and 1.5 start as soon as the business answers Q1–Q3.
@@ -596,6 +596,8 @@ Suggested order: **1.1 → 1.2 → 1.3**, with 1.6 investigated in parallel. 1.4
 | 2026-11-10 | 1.1 | `phase-1-incident-reporter` (`aa56472`) | — (code only) | Merged to `main`; awaiting push and prod smoke test |
 | 2026-11-11 | 1.2 | `phase-1-middle-name-optional` (`2aebec8`) | `migrate deploy` `20261110205433_middle_name_optional` ✅ | Merged to `main`; awaiting push and prod smoke test |
 | 2026-11-11 | 1.3 | `phase-1-duty-station-free-text` (`5a442cb`, `0f1b5b6`) | `migrate deploy` `20261110210815_duty_station_free_text` ✅ | Merged to `main`; awaiting push and prod smoke test. After employees save typed buildings, reverting the code would break their profile pages (old code assumes a location) |
+| 2026-11-11 | 1.4 | `phase-1-incident-types` (`818f855`) | `import-incident-types.ts --apply --remote` ✅ | 53 incident types added; existing types unchanged |
+| 2026-11-11 | 1.5 | `phase-1-organs` (`bb4c965`) | `import-organs.ts --apply --merge --remote` ✅ | 13 organs added, 24 codes fixed, 5 duplicates merged; departments not touched |
 | 2026-11-11 | 1.6 (code) | `phase-1-ops-rate-limit` (`5139320`) | — (code only) | Pushed and smoke-tested: healthcheck 200, `RateLimit-Limit: 1000`. Rate limiter fixed to key per client IP; healthcheck route. Uptime monitor and alert set up; Always On on, plan P0v3. Remaining: support contact (Q9) |
 
 ---
@@ -869,3 +871,4 @@ app/routes/settings+/officers+/index.tsx
 | 2026-11-11 | Release 1.4 prepared: import script and draft data (53 new types, duplicates of existing types removed), dropdown sort; waiting on Q1 |
 | 2026-11-11 | Release 1.5 prepared: organ import (13 new, 24 code fixes, 5 merges); unclear organs left as they are; departments not touched until the Q3 mapping |
 | 2026-11-11 | Releases 1.4 and 1.5 merged to `main`; production imports still to run by owner |
+| 2026-11-11 | Releases 1.4 and 1.5: owner ran both imports on production; dry runs afterwards report nothing left to do |
