@@ -510,6 +510,71 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 
 **Deployment note:** Pushing to `main` deploys code to production automatically, but CI does **not** migrate the database. Every schema change follows the release runbook in Section 1a: back up → `migrate deploy` (run by the owner) → merge to `main`. Never run the seed.
 
+### How the phases are delivered
+
+- Each phase is split into **releases**. A release is one branch, one review, one merge to `main`, and **at most one migration**. Small releases keep each production change easy to check and easy to roll back.
+- Release types:
+  - **Code only:** no schema change. Merging to `main` deploys it.
+  - **Migration:** follow the Section 1a runbook. The owner backs up and runs `migrate deploy` **before** the merge.
+  - **Data import:** an idempotent script in `prisma/scripts/` that only inserts and updates. It's rehearsed on the local copy, then the owner runs it on production after a backup. No code deploy is needed unless the release says otherwise.
+- Branch naming: `phase-<n>-<short-name>`, branched from the latest `main`.
+- A release counts as **done** when it's merged, deployed, smoke-tested in production, and its items are ticked in this document.
+
+### Phase 0: Database safety 🟨
+
+| Release | Type | Contents | Owner steps | Status |
+|---|---|---|---|---|
+| 0.1 | Ops | Verify Azure backups, first `pg_dump`, local Docker copy, drift check | Portal check, `pg_dump` | ✅ |
+| 0.2 | Migration (baseline) | `prisma/migrations/0_init`, CLAUDE.md workflow, this plan | `migrate resolve --applied 0_init` on prod ✅ | 🟨 branch `phase-0-db-migrations` awaiting merge |
+| 0.3 | Ops | Raise backup retention 7 → 35 days | Portal (affects the shared server) | ⬜ |
+
+**Exit criteria:** `migrate status` on production says "up to date", the baseline is merged to `main`, and local development uses the Docker copy.
+
+### Phase 1: Quick wins and reference data
+
+| Release | Type | Items | Contents | Migration | Depends on | Status |
+|---|---|---|---|---|---|---|
+| 1.1 | Code only | 1 | Reporter name/email/organ in admin incident list and detail; search by reporter; newest-first ordering; fix `lastName` → `familyName` | — | — | ⬜ |
+| 1.2 | Migration | 2 | `middleName` optional on Employee/Dependant/Spouse; `formatFullName()` helper; update ~23 files and exports | `middle_name_optional` (DROP NOT NULL ×3) | 0.2 merged | ⬜ |
+| 1.3 | Migration | 3 | Free-text building/floor when an organ has no locations or floors; null-safe display and exports | `duty_station_free_text` (DROP NOT NULL ×2, ADD `buildingName`, `floorName`) | Q8 | ⬜ |
+| 1.4 | Data import (+ optional migration) | 4 | Import approved incident types; optional `category` column and grouped dropdown | `incident_type_category` (optional) | Q1 | ⬜ |
+| 1.5 | Data import (+ optional migration) | 5, 6 | Import organs, departments and renames; at least one department per organ; optional `Organ.city`; empty-department guard in the PHP form | `organ_city` (optional) | Q2, Q3 | ⏸ |
+| 1.6 | Ops | 11 | Check Always On / plan tier / restarts; review `server.js` rate limits and `trust proxy`; add an uptime monitor; publish URL and support contact | — | Q9 | ⬜ |
+
+Suggested order: **1.1 → 1.2 → 1.3**, with 1.6 investigated in parallel. 1.4 and 1.5 start as soon as the business answers Q1–Q3.
+
+**Exit criteria:** Admins see who reported each incident. Staff, spouses and dependants can be saved without a middle name. Regional-office staff can complete the PHP form. All approved incident types, organs and departments are selectable.
+
+### Phase 2: Incident workflow
+
+| Release | Type | Items | Contents | Migration | Depends on | Status |
+|---|---|---|---|---|---|---|
+| 2.1 | Migration | 7 | `IncidentStatus` enum, `Incident.status` (default `SUBMITTED`), `IncidentStatusHistory` table, backfill of existing incidents | `incident_status` | Phase 1 done | ⬜ |
+| 2.2 | Code only | 7 | Admin: status badge and filter, change-status action, escalate action, auto `UNDER_REVIEW` on first assignment, timeline on detail page, audit log | — | 2.1 | ⬜ |
+| 2.3 | Code only | 7 | Reporter: status column, read-only detail page with reporter-visible timeline, block edit/delete after `SUBMITTED` | — | 2.2 | ⬜ |
+| 2.4 | Code only | 8 (+7) | Critical-incident email to incident admins; status-change email to the reporter; configurable trigger severities | — | Q5 | ⬜ |
+
+**Exit criteria:** Reporters can follow their incident's status. Admins can change the status and escalate, with a full history. Critical incidents email the admins within a minute.
+
+### Phase 3: Access and office admins
+
+| Release | Type | Items | Contents | Migration | Depends on | Status |
+|---|---|---|---|---|---|---|
+| 3.1 | Migration | 9 | `OrganAdmin` join table | `organ_admin` | Q4 | ⏸ |
+| 3.2 | Code only | 9 | Assign organs to users in Settings → Users; `getAdminScope()`; scope dashboard lists and detail pages by organ | — | 3.1 | ⏸ |
+| 3.3 | Code + Azure config | 10 | Multi-tenant Microsoft login (`organizations`); `ALLOWED_EMAIL_DOMAINS` env var and checks in OAuth callback and signup; login guide | — | Q7, Azure AD admin | ⏸ |
+| 3.4 | Data / ops | 9 | Onboard listed office admins (Appendix C): accounts, roles, organs, welcome/EOC email | — | 3.2, 3.3 | ⏸ |
+| 3.5 | Spike | 8 | SMS (Azure Communication Services) and Web Push: cost, coverage, effort; recommendation only | — | Q6 | ⬜ |
+
+**Exit criteria:** Each office admin can sign in (including from non-AU domains) and sees only their own office's records. HQ and EOC keep the global view.
+
+### Release log
+
+| Date | Release | Branch / commit | Prod migration run by owner | Notes |
+|---|---|---|---|---|
+| 2026-11-10 | 0.1 | — | — | Backups verified, dump taken, no drift |
+| 2026-11-10 | 0.2 | `phase-0-db-migrations` (`770ef50`) | `migrate resolve --applied 0_init` ✅ | Awaiting merge to `main` |
+
 ---
 
 ## 4. Open questions for the business
@@ -769,3 +834,4 @@ app/routes/settings+/officers+/index.tsx
 |---|---|
 | 2026-11-10 | Plan created from business request dated 14.04.2026 |
 | 2026-11-10 | Added Section 1a (database change strategy, Phase 0) |
+| 2026-11-10 | Expanded Section 3 into per-phase release breakdown and release log |
