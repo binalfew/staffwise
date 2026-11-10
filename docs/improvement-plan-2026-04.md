@@ -327,7 +327,13 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 - [ ] Clean the organ list and send it to the business for confirmation (name, code/acronym, country, city, parent department).
 - [ ] Check that every referenced country exists in `Country`.
 - [ ] (Optional) Add `city String?` to `Organ` and to the organ settings editor.
-- [ ] Write `prisma/scripts/import-organs.ts` (idempotent; reads a JSON or CSV file).
+- [x] Write `prisma/scripts/import-organs.ts` (idempotent; reads `prisma/scripts/data/organs.json`, a draft built from Appendix B **and** the current Organ table). Findings from the local copy (2026-11-11):
+  - Most Appendix B organs **already exist** (49 organs). 26 have a phone dialling code as their code, and 8 are duplicates: ACHPR (one copy named `22.<tab>African Commission…`), ACALAN, MISAHEL, RPID-FDH, League of Arab States Cairo, DRC Kinshasa liaison ("Liason"), CIEFFA (two names) and IPED (two names).
+  - What the script does: it creates 14 missing organs (Liberia, Guinea Bissau, South Sudan and Sudan liaison offices, AU-STRC, Somalia mission, AU-SARO, Geneva, AIR, AFRIPOL, MNJTF, AfCAC, Africa CDC, STATAFRIC). It updates 29 existing organs: codes become acronyms (codes are only shown in Settings) and 3 names are fixed. With `--merge`, it merges the 8 duplicates, moving 2 employees and deleting 8 empty duplicate organs. It only merges duplicates that have no departments or locations of their own. It never changes addresses or countries.
+  - 7 entries are on `hold` until confirmed: AfrAA, ATU, PAU, AU Sports Council, AMEC/AIMEC, AFRICOM, Centre for Migration.
+  - It's a dry run by default. `--apply` writes, `--merge` adds the merges, and `--remote` is required for a non-local DB. Rehearsed locally: 49 → 55 organs, 1776 employees unchanged, no employee without an organ, and a second run changed nothing.
+  - **Merging deletes rows**, so it goes beyond the usual "insert and update only" rule for data imports. That's why it sits behind `--merge`: run without it if the owner prefers.
+- [ ] Business decides (Q2): merge `AU-ACSRT` into `AUCTC` (ACSRT was renamed)? Merge `AU Permanent Representative Mission League Arab States` (has 3 departments) with `Permanent Delegation to the League of Arab States – Cairo Office`? What about `African Union Mission to Western Sahara` (New York)? Is `Unknown` (23 employees) still needed?
 - [ ] Run it against production and review the result in Settings → Organs.
 - [ ] Export the current organs list first as a backup.
 
@@ -352,7 +358,7 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 - [ ] ⏸ Get the current department list and the rename mapping from the business.
 - [ ] Rename existing departments as mapped (a script or Settings → Departments).
 - [ ] Add missing HQ departments, including WGYD.
-- [ ] Add at least one department to every organ that has none (include this in the Item 5 import).
+- [ ] ~~Add at least one department to every organ that has none.~~ **Don't, without a decision.** Since `0f1b5b6`, an organ with no departments lets its staff pick any department, and regional staff are linked to their HQ parent department (for example PANVAC staff → Rural Economy & Agriculture). Once an organ has a department of its own, the form and the server only accept that organ's departments. Its staff would then be forced to re-pick the next time they save. Ask the business (Q3) whether regional offices should have their own departments or keep using the HQ ones.
 - [ ] Optional safeguard: if the selected organ has no departments, show a clear message instead of an empty dropdown.
 
 **Acceptance:** Every organ has at least one department, and HQ departments match the current structure.
@@ -546,7 +552,7 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 | 1.2 | Migration | 2 | `middleName` optional on Employee/Dependant/Spouse; `formatFullName()` helper; update ~23 files and exports | `middle_name_optional` (DROP NOT NULL ×3) | 0.2 merged | 🟨 migrated on prod, merged to `main` (`2aebec8`), awaiting push and prod smoke test |
 | 1.3 | Migration | 3 | Free-text building/floor when an organ has no locations or floors; null-safe display and exports | `duty_station_free_text` (DROP NOT NULL ×2, ADD `buildingName`, `floorName`) | Q8 | 🟨 migrated on prod, merged to `main` (`0f1b5b6`), awaiting push and prod smoke test |
 | 1.4 | Data import (+ optional migration) | 4 | Import approved incident types; optional `category` column and grouped dropdown | `incident_type_category` (optional) | Q1 | 🟨 script, draft data and dropdown sort ready on branch `phase-1-incident-types` (not merged); waiting on Q1 |
-| 1.5 | Data import (+ optional migration) | 5, 6 | Import organs, departments and renames; at least one department per organ; optional `Organ.city`; empty-department guard in the PHP form | `organ_city` (optional) | Q2, Q3 | ⏸ |
+| 1.5 | Data import (+ optional migration) | 5, 6 | Import organs, departments and renames; at least one department per organ; optional `Organ.city`; empty-department guard in the PHP form | `organ_city` (optional) | Q2, Q3 | 🟨 organ script and draft data ready on branch `phase-1-organs` (on top of `phase-1-incident-types`, not merged); empty-department guard done in `0f1b5b6`; departments wait on Q3 |
 | 1.6 | Code + Ops | 11 | Code: `trust proxy` and per-client rate-limit keys, raised limits, `/resources/healthcheck`. Ops: Always On / plan tier / restarts, uptime monitor, publish URL and support contact | — | Q9 (support contact only) | 🟨 code live (`5139320`), monitor set up, Always On / P0v3 confirmed; waiting on Q9 (support contact, Help link) |
 
 Suggested order: **1.1 → 1.2 → 1.3**, with 1.6 investigated in parallel. 1.4 and 1.5 start as soon as the business answers Q1–Q3.
@@ -595,7 +601,7 @@ Suggested order: **1.1 → 1.2 → 1.3**, with 1.6 investigated in parallel. 1.4
 |---|---|---|
 | Q1 | Confirm the cleaned incident type list (Appendix A), especially the flagged entries. Should types be grouped by category? | Item 4 |
 | Q2 | Confirm the organ/office list (Appendix B): acronyms, countries, cities, parent department. Supply the rest of the list after "CAR". | Item 5 |
-| Q3 | Provide the current AUC department structure and the old → new name mapping. | Item 6 |
+| Q3 | Provide the current AUC department structure and the old → new name mapping. Should regional offices get their own departments, or keep using the HQ parent department? | Item 6 |
 | Q4 | Should office admins see only their own office's data (recommended) or all data? Which modules can they manage? | Item 9 |
 | Q5 | Should `major` incidents also trigger alerts, or only `critical`? Who besides incident admins should receive them (EOC mailbox)? | Item 8 |
 | Q6 | Is SMS required, or is email enough for now? Budget for SMS? | Item 8 |
@@ -856,3 +862,4 @@ app/routes/settings+/officers+/index.tsx
 | 2026-11-11 | Release 1.6: uptime monitor (`staffwise-health`) and email alert set up |
 | 2026-11-11 | Release 1.6: Always On confirmed enabled, plan P0v3; only Q9 (support contact) remains |
 | 2026-11-11 | Release 1.4 prepared: import script and draft data (53 new types, duplicates of existing types removed), dropdown sort; waiting on Q1 |
+| 2026-11-11 | Release 1.5 prepared: organ cleanup and import script with draft data; default departments put on hold (they would break the HQ-department fallback) |
