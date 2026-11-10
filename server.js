@@ -29,6 +29,11 @@ app.use(compression())
 // http://expressjs.com/en/advanced/best-practice-security.html#at-a-minimum-disable-x-powered-by-header
 app.disable('x-powered-by')
 
+// Azure App Service puts one front-end proxy in front of the app. Trust exactly
+// that hop so req.ip is the client from X-Forwarded-For, not the proxy. Without
+// this every user shares a single rate-limit bucket.
+app.set('trust proxy', 1)
+
 // handle asset requests
 if (viteDevServer) {
 	app.use(viteDevServer.middlewares)
@@ -46,17 +51,30 @@ app.use(express.static('build/client', { maxAge: '1h' }))
 
 app.use(morgan('tiny'))
 
+// Azure's X-Forwarded-For includes the client port ("1.2.3.4:5678" or
+// "[2001:db8::1]:5678"). Strip it so one client maps to one key.
+function clientIp(req) {
+	const ip = req.ip ?? req.socket.remoteAddress ?? 'unknown'
+	if (ip.startsWith('[')) return ip.slice(1, ip.indexOf(']'))
+	const parts = ip.split(':')
+	return parts.length === 2 ? parts[0] : ip
+}
+
+// Limits are per client IP. Regional offices sit behind shared NAT, so many
+// staff can share one IP; keep the GET limit generous.
 const maxMultiple = process.env.TESTING ? 10_000 : 1
 const rateLimitDefault = {
 	windowMs: 60 * 1000,
-	max: 100 * maxMultiple,
+	max: 1000 * maxMultiple,
 	standardHeaders: true,
 	legacyHeaders: false,
+	keyGenerator: clientIp,
+	skip: req => req.path === '/resources/healthcheck',
 }
 
 const strongestRateLimit = rateLimit({
 	...rateLimitDefault,
-	max: 10 * maxMultiple,
+	max: 30 * maxMultiple,
 })
 
 const strongRateLimit = rateLimit({
