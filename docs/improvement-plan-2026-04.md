@@ -22,7 +22,7 @@ The business request has 14 items. Mapped against the current codebase, they fal
 | # | Item | Group | Phase | Size | Status |
 |---|---|---|---|---|---|
 | 0 | Database change strategy: backups, local DB, Prisma Migrate baseline | Prereq | 0 | M | 🟨 |
-| 1 | Show incident reporter to admins (+ fix `lastName` bug) | A | 1 | S | ⬜ |
+| 1 | Show incident reporter to admins (+ fix `lastName` bug) | A | 1 | S | 🟨 |
 | 2 | Make Middle Name optional (Staff, Spouse, Dependant) | A | 1 | S–M | ⬜ |
 | 3 | PHP form: building/floor/office number for regional offices | A | 1 | S | ⬜ |
 | 4 | Add new incident types | C | 1 | S | ⬜ |
@@ -217,12 +217,12 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 **Recommendation:** Show reporter name, email and organ in the admin list and on the detail page. Let admins search by reporter name.
 
 **Tasks**
-- [ ] Add `employee: { select: { firstName, middleName, familyName, email, organ: { select: { name } } } }` to the list loader.
-- [ ] Add a "Reported by" column to the admin incident table.
-- [ ] Add `employee.firstName`, `employee.familyName` and `employee.email` to `searchFields`.
-- [ ] Show a reporter details block on `$incidentId_.tsx` (name, email, phone, organ, department).
-- [ ] Fix `lastName` → `familyName` at `$incidentId_.tsx:298`.
-- [ ] Order the list by newest first (`createdAt: 'desc'`) instead of `incidentNumber: 'asc'`. *(Recommended, confirm with business.)*
+- [x] Add `employee: { select: { firstName, middleName, familyName, email, organ: { select: { name } } } }` to the list loader.
+- [x] Add a "Reported by" column to the admin incident table.
+- [x] Add `employee.firstName`, `employee.familyName` and `employee.email` to `searchFields`.
+- [x] Show a reporter details block on `$incidentId_.tsx` (name, email, phone, organ, department).
+- [x] Fix `lastName` → `familyName` at `$incidentId_.tsx:298`.
+- [x] Order the list by newest first (`createdAt: 'desc'`) instead of `incidentNumber: 'asc'`. *(Recommended, confirm with business.)*
 
 **Acceptance:** An incident admin can see and search for the reporter of every incident in the list and on the detail page.
 
@@ -534,7 +534,7 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 
 | Release | Type | Items | Contents | Migration | Depends on | Status |
 |---|---|---|---|---|---|---|
-| 1.1 | Code only | 1 | Reporter name/email/organ in admin incident list and detail; search by reporter; newest-first ordering; fix `lastName` → `familyName` | — | — | ⬜ |
+| 1.1 | Code only | 1 | Reporter name/email/organ in admin incident list and detail; search by reporter; newest-first ordering; fix `lastName` → `familyName` | — | — | 🟨 branch `phase-1-incident-reporter` awaiting merge |
 | 1.2 | Migration | 2 | `middleName` optional on Employee/Dependant/Spouse; `formatFullName()` helper; update ~23 files and exports | `middle_name_optional` (DROP NOT NULL ×3) | 0.2 merged | ⬜ |
 | 1.3 | Migration | 3 | Free-text building/floor when an organ has no locations or floors; null-safe display and exports | `duty_station_free_text` (DROP NOT NULL ×2, ADD `buildingName`, `floorName`) | Q8 | ⬜ |
 | 1.4 | Data import (+ optional migration) | 4 | Import approved incident types; optional `category` column and grouped dropdown | `incident_type_category` (optional) | Q1 | ⬜ |
@@ -574,6 +574,7 @@ Suggested order: **1.1 → 1.2 → 1.3**, with 1.6 investigated in parallel. 1.4
 |---|---|---|---|---|
 | 2026-11-10 | 0.1 | — | — | Backups verified, dump taken, no drift |
 | 2026-11-10 | 0.2 | `phase-0-db-migrations` (`770ef50`) | `migrate resolve --applied 0_init` ✅ | Awaiting merge to `main` |
+| 2026-11-10 | 1.1 | `phase-1-incident-reporter` | — (code only) | Awaiting merge to `main` and prod smoke test |
 
 ---
 

@@ -31,8 +31,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
 	const { data, totalPages, currentPage } = await filterAndPaginate({
 		request,
 		model: prisma.incident,
-		searchFields: ['incidentNumber'],
-		orderBy: [{ incidentNumber: 'asc' }],
+		searchFields: [
+			'incidentNumber',
+			'employee.firstName',
+			'employee.familyName',
+			'employee.email',
+		],
+		orderBy: [{ createdAt: 'desc' }],
 		select: {
 			id: true,
 			incidentNumber: true,
@@ -42,6 +47,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
 			occuredAt: true,
 			timeOfDay: true,
 			occuredWhile: true,
+			employee: {
+				select: {
+					firstName: true,
+					middleName: true,
+					familyName: true,
+					email: true,
+					organ: { select: { name: true } },
+				},
+			},
 		},
 	})
 
@@ -92,6 +106,7 @@ export default function IncidentsRoute() {
 							<TableHeader>
 								<TableRow>
 									<TableHead>Incident Number</TableHead>
+									<TableHead>Reported By</TableHead>
 									<TableHead>Type</TableHead>
 									<TableHead>Location</TableHead>
 									<TableHead>Severity</TableHead>
@@ -109,6 +124,23 @@ export default function IncidentsRoute() {
 											<TableRow key={incident.id}>
 												<TableCell className="py-1">
 													{incident.incidentNumber}
+												</TableCell>
+												<TableCell className="py-1">
+													<div className="font-medium">
+														{[
+															incident.employee.firstName,
+															incident.employee.middleName,
+															incident.employee.familyName,
+														]
+															.filter(Boolean)
+															.join(' ')}
+													</div>
+													<div className="text-xs text-muted-foreground">
+														{incident.employee.email}
+														{incident.employee.organ?.name
+															? ` · ${incident.employee.organ.name}`
+															: ''}
+													</div>
 												</TableCell>
 												<TableCell className="py-1">
 													{incident.incidentType.name}
@@ -137,7 +169,7 @@ export default function IncidentsRoute() {
 										))
 									) : (
 										<TableRow>
-											<TableCell colSpan={5} className="text-center">
+											<TableCell colSpan={8} className="text-center">
 												<h3 className="mt-2 text-sm font-semibold text-muted-foreground">
 													No incidents found
 												</h3>
@@ -146,7 +178,7 @@ export default function IncidentsRoute() {
 									)
 								) : data.status === 'error' ? (
 									<TableRow>
-										<TableCell colSpan={4} className="text-center">
+										<TableCell colSpan={8} className="text-center">
 											<ErrorList
 												errors={['There was an error parsing the results']}
 											/>
@@ -154,7 +186,7 @@ export default function IncidentsRoute() {
 									</TableRow>
 								) : (
 									<TableRow>
-										<TableCell colSpan={4} className="text-center">
+										<TableCell colSpan={8} className="text-center">
 											Loading...
 										</TableCell>
 									</TableRow>

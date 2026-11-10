@@ -40,6 +40,18 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 		include: {
 			attachments: true,
 			incidentType: true,
+			employee: {
+				select: {
+					firstName: true,
+					middleName: true,
+					familyName: true,
+					email: true,
+					mobileTelephoneNumber: true,
+					officeTelephoneNumber: true,
+					organ: { select: { name: true } },
+					department: { select: { name: true } },
+				},
+			},
 			assignments: {
 				include: {
 					officer: {
@@ -205,6 +217,43 @@ export default function DeleteIncidentRoute() {
 				</IncidentSection>
 
 				<IncidentSection
+					title="Reported By"
+					url={`/dashboard/incidents`}
+					showActions={false}
+				>
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						{[
+							{
+								label: 'Name',
+								value: [
+									incident.employee.firstName,
+									incident.employee.middleName,
+									incident.employee.familyName,
+								]
+									.filter(Boolean)
+									.join(' '),
+							},
+							{ label: 'Email', value: incident.employee.email },
+							{
+								label: 'Mobile Phone',
+								value: incident.employee.mobileTelephoneNumber,
+							},
+							{
+								label: 'Office Phone',
+								value: incident.employee.officeTelephoneNumber,
+							},
+							{ label: 'Organ', value: incident.employee.organ?.name },
+							{
+								label: 'Department',
+								value: incident.employee.department?.name,
+							},
+						].map((item, idx) => (
+							<IncidentItem key={idx} label={item.label} value={item.value} />
+						))}
+					</div>
+				</IncidentSection>
+
+				<IncidentSection
 					title="Officers"
 					url={`/dashboard/incidents`}
 					showActions={false}
@@ -295,7 +344,15 @@ export default function DeleteIncidentRoute() {
 								<TableBody>
 									{incident.activities.map((activity: any) => (
 										<TableRow key={activity.id}>
-											<TableCell>{`${activity.officer.employee.firstName} ${activity.officer.employee.middleName} ${activity.officer.employee.lastName}`}</TableCell>
+											<TableCell>
+												{[
+													activity.officer.employee.firstName,
+													activity.officer.employee.middleName,
+													activity.officer.employee.familyName,
+												]
+													.filter(Boolean)
+													.join(' ')}
+											</TableCell>
 											<TableCell>{formatDate(activity.date)}</TableCell>
 											<TableCell>{activity.activity}</TableCell>
 										</TableRow>
