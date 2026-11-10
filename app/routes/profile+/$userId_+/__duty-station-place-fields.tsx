@@ -1,5 +1,5 @@
 import { type FieldMetadata } from '@conform-to/react'
-import { Floor, Location } from '@prisma/client'
+import { Department, Floor, Location } from '@prisma/client'
 import { useState } from 'react'
 import { z } from 'zod'
 import { Field, FieldError } from '~/components/Field'
@@ -53,6 +53,46 @@ export function refineDutyStationPlace(
 			})
 		}
 	}
+}
+
+// Most regional offices have no departments of their own yet; their staff
+// belong to an HQ parent department, so offer every department instead.
+export function DepartmentField({
+	organId,
+	departments,
+	meta,
+}: {
+	organId: string
+	departments: Array<Pick<Department, 'id' | 'name' | 'organId'>>
+	meta: FieldMetadata<string>
+}) {
+	const organDepartments = departments.filter(
+		department => department.organId === organId,
+	)
+	const showAll = !organId || organDepartments.length === 0
+	const items = showAll ? departments : organDepartments
+
+	return (
+		<Field>
+			<Label htmlFor={meta.id}>Department</Label>
+			<SelectField
+				key={organId}
+				meta={meta}
+				items={items.map(department => ({
+					name: department.name,
+					value: department.id,
+				}))}
+				placeholder="Select a department"
+			/>
+			{organId && organDepartments.length === 0 ? (
+				<p className="text-sm text-muted-foreground">
+					No departments are set up for this organ yet. Choose your parent
+					department.
+				</p>
+			) : null}
+			{meta.errors && <FieldError>{meta.errors}</FieldError>}
+		</Field>
+	)
 }
 
 export function DutyStationPlaceFields({

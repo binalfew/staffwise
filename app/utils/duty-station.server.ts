@@ -3,6 +3,7 @@ import { prisma } from './db.server'
 
 type DutyStationPlace = {
 	organId: string
+	departmentId: string
 	locationId: string | null
 	buildingName: string | null
 	floorId: string | null
@@ -13,11 +14,28 @@ type DutyStationPlace = {
  * Server-side rules for building/floor, on top of the shared Zod refine:
  * organs with configured locations must pick one of their own (no free text),
  * and locations with configured floors must pick one of their own floors.
+ * Organs with departments must pick one of their own; organs without any may
+ * pick any (HQ parent) department.
  */
 export async function validateDutyStationPlace(
 	data: DutyStationPlace,
 	ctx: z.RefinementCtx,
 ) {
+	const organDepartments = await prisma.department.findMany({
+		where: { organId: data.organId },
+		select: { id: true },
+	})
+	if (
+		organDepartments.length > 0 &&
+		!organDepartments.some(({ id }) => id === data.departmentId)
+	) {
+		ctx.addIssue({
+			path: ['departmentId'],
+			code: z.ZodIssueCode.custom,
+			message: 'Select a department for this organ',
+		})
+	}
+
 	// Missing values are already reported by refineDutyStationPlace.
 	if (!data.locationId && !data.buildingName) return
 

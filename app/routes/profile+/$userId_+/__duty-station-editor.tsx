@@ -2,7 +2,7 @@ import { getFormProps, useForm } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod'
 import { SerializeFrom } from '@remix-run/node'
 import { Form, Link, useActionData, useParams } from '@remix-run/react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { AuthenticityTokenInput } from 'remix-utils/csrf/react'
 import { HoneypotInputs } from 'remix-utils/honeypot/react'
 import { z } from 'zod'
@@ -24,6 +24,7 @@ import { Label } from '~/components/ui/label'
 import { Department, Employee, Floor, Location, Organ } from '@prisma/client'
 import { Separator } from '~/components/ui/separator'
 import {
+	DepartmentField,
 	DutyStationPlaceFields,
 	dutyStationPlaceSchema,
 	refineDutyStationPlace,
@@ -74,7 +75,6 @@ export function DutyStationEditor({
 	const params = useParams()
 	const actionData = useActionData<typeof action>()
 	const [selectedOrgan, setSelectedOrgan] = useState(profile?.organId || '')
-	const [filteredDepartments, setFilteredDepartments] = useState(departments)
 
 	const [form, fields] = useForm<
 		z.input<typeof DutyStationEditorSchema>,
@@ -92,14 +92,6 @@ export function DutyStationEditor({
 			...profile,
 		},
 	})
-
-	useEffect(() => {
-		setFilteredDepartments(
-			selectedOrgan
-				? departments.filter(department => department.organId === selectedOrgan)
-				: departments,
-		)
-	}, [selectedOrgan, departments])
 
 	return (
 		<Card className="mx-auto w-full max-w-5xl space-y-6 p-6">
@@ -136,20 +128,11 @@ export function DutyStationEditor({
 						</Field>
 					</div>
 					<div className="space-y-2">
-						<Field>
-							<Label htmlFor={fields.departmentId.id}>Department</Label>
-							<SelectField
-								meta={fields.departmentId}
-								items={filteredDepartments.map(department => ({
-									name: department.name,
-									value: department.id,
-								}))}
-								placeholder="Select a department"
-							/>
-							{fields.departmentId.errors && (
-								<FieldError>{fields.departmentId.errors}</FieldError>
-							)}
-						</Field>
+						<DepartmentField
+							organId={selectedOrgan}
+							departments={departments}
+							meta={fields.departmentId}
+						/>
 					</div>
 
 					<DutyStationPlaceFields

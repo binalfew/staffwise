@@ -34,6 +34,7 @@ import {
 import { ErrorList } from '~/components/ErrorList'
 import { Separator } from '~/components/ui/separator'
 import {
+	DepartmentField,
 	DutyStationPlaceFields,
 	dutyStationPlaceSchema,
 	refineDutyStationPlace,
@@ -144,7 +145,7 @@ export function ProfileEditor({
 	>
 	countries: Array<Pick<Country, 'id' | 'name'>>
 	organs: Array<Pick<Organ, 'id' | 'name'>>
-	departments: Array<Pick<Department, 'id' | 'name'>>
+	departments: Array<Pick<Department, 'id' | 'name' | 'organId'>>
 	locations: Array<Pick<Location, 'id' | 'name' | 'organId'>>
 	floors: Array<Pick<Floor, 'id' | 'name' | 'locationId'>>
 	user: SerializeFrom<Pick<User, 'id' | 'email' | 'username' | 'name'>>
@@ -383,20 +384,11 @@ export function ProfileEditor({
 						</Field>
 					</div>
 					<div className="space-y-2">
-						<Field>
-							<Label htmlFor={fields.departmentId.id}>Department</Label>
-							<SelectField
-								meta={fields.departmentId}
-								items={departments.map(department => ({
-									name: department.name,
-									value: department.id,
-								}))}
-								placeholder="Select a department"
-							/>
-							{fields.departmentId.errors && (
-								<FieldError>{fields.departmentId.errors}</FieldError>
-							)}
-						</Field>
+						<DepartmentField
+							organId={selectedOrgan}
+							departments={departments}
+							meta={fields.departmentId}
+						/>
 					</div>
 
 					<DutyStationPlaceFields
