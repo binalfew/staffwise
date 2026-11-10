@@ -197,7 +197,7 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 - [x] 0.2 First manual `pg_dump` taken and verified (2026-11-10 23:31, `staffwise-20261110-2331.dump`, 3.2 MB, 42 tables = 40 models + 2 join tables; no `_prisma_migrations` table yet)
 - [x] 0.3 Local Docker database `staffwise-db` (postgres:16, port 5433) restored from the dump; `.env` points at localhost (2026-11-10)
 - [x] 0.4 Drift check run: **no drift** between production (fresh dump) and `schema.prisma`
-- [ ] 0.5 Baseline created (✅ `prisma/migrations/0_init`, verified on an empty DB) — committed ✅ (branch `phase-0-db-migrations`) — marked applied on production ✅ (owner, 2026-11-10)
+- [x] 0.5 Baseline created (✅ `prisma/migrations/0_init`, verified on an empty DB) — committed and merged to `main` ✅ — marked applied on production ✅ (owner, 2026-11-10)
 - [x] `CLAUDE.md` updated with the new workflow
 - [x] `.gitignore` includes `*.dump` (safety net in case a dump ends up in the repo folder)
 
@@ -525,7 +525,7 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 | Release | Type | Contents | Owner steps | Status |
 |---|---|---|---|---|
 | 0.1 | Ops | Verify Azure backups, first `pg_dump`, local Docker copy, drift check | Portal check, `pg_dump` | ✅ |
-| 0.2 | Migration (baseline) | `prisma/migrations/0_init`, CLAUDE.md workflow, this plan | `migrate resolve --applied 0_init` on prod ✅ | 🟨 branch `phase-0-db-migrations` awaiting merge |
+| 0.2 | Migration (baseline) | `prisma/migrations/0_init`, CLAUDE.md workflow, this plan | `migrate resolve --applied 0_init` on prod ✅ | ✅ |
 | 0.3 | Ops | Raise backup retention 7 → 35 days | Portal (affects the shared server) | ⬜ |
 
 **Exit criteria:** `migrate status` on production says "up to date", the baseline is merged to `main`, and local development uses the Docker copy.
@@ -534,7 +534,7 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 
 | Release | Type | Items | Contents | Migration | Depends on | Status |
 |---|---|---|---|---|---|---|
-| 1.1 | Code only | 1 | Reporter name/email/organ in admin incident list and detail; search by reporter; newest-first ordering; fix `lastName` → `familyName` | — | — | 🟨 branch `phase-1-incident-reporter` awaiting merge |
+| 1.1 | Code only | 1 | Reporter name/email/organ in admin incident list and detail; search by reporter; newest-first ordering; fix `lastName` → `familyName` | — | — | 🟨 merged to `main` (`aa56472`), awaiting push and prod smoke test |
 | 1.2 | Migration | 2 | `middleName` optional on Employee/Dependant/Spouse; `formatFullName()` helper; update ~23 files and exports | `middle_name_optional` (DROP NOT NULL ×3) | 0.2 merged | ⬜ |
 | 1.3 | Migration | 3 | Free-text building/floor when an organ has no locations or floors; null-safe display and exports | `duty_station_free_text` (DROP NOT NULL ×2, ADD `buildingName`, `floorName`) | Q8 | ⬜ |
 | 1.4 | Data import (+ optional migration) | 4 | Import approved incident types; optional `category` column and grouped dropdown | `incident_type_category` (optional) | Q1 | ⬜ |
@@ -573,8 +573,8 @@ Suggested order: **1.1 → 1.2 → 1.3**, with 1.6 investigated in parallel. 1.4
 | Date | Release | Branch / commit | Prod migration run by owner | Notes |
 |---|---|---|---|---|
 | 2026-11-10 | 0.1 | — | — | Backups verified, dump taken, no drift |
-| 2026-11-10 | 0.2 | `phase-0-db-migrations` (`770ef50`) | `migrate resolve --applied 0_init` ✅ | Awaiting merge to `main` |
-| 2026-11-10 | 1.1 | `phase-1-incident-reporter` | — (code only) | Awaiting merge to `main` and prod smoke test |
+| 2026-11-10 | 0.2 | `phase-0-db-migrations` (`770ef50`) | `migrate resolve --applied 0_init` ✅ | Merged to `main` |
+| 2026-11-10 | 1.1 | `phase-1-incident-reporter` (`aa56472`) | — (code only) | Merged to `main`; awaiting push and prod smoke test |
 
 ---
 
@@ -836,3 +836,4 @@ app/routes/settings+/officers+/index.tsx
 | 2026-11-10 | Plan created from business request dated 14.04.2026 |
 | 2026-11-10 | Added Section 1a (database change strategy, Phase 0) |
 | 2026-11-10 | Expanded Section 3 into per-phase release breakdown and release log |
+| 2026-11-10 | Release 0.2 marked done; release 1.1 (Item 1) merged to `main` |
