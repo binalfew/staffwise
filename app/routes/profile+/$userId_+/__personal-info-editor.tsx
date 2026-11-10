@@ -28,7 +28,10 @@ export const PersonalInfoEditorSchema = z.object({
 	id: z.string().optional(),
 	firstName: z.string({ required_error: 'First Name is required' }),
 	familyName: z.string({ required_error: 'Family Name is required' }),
-	middleName: z.string({ required_error: 'Middle Name is required' }),
+	middleName: z
+		.string()
+		.optional()
+		.transform(value => value ?? null),
 	email: z.string().optional(),
 	countryId: z.string({ required_error: 'Country ID is required' }),
 	nationalPassportNumber: z.string({

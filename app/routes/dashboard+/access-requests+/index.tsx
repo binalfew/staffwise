@@ -22,7 +22,7 @@ import {
 	TableRow,
 } from '~/components/ui/table'
 import { filterAndPaginate, prisma } from '~/utils/db.server'
-import { formatDate } from '~/utils/misc'
+import { formatDate, formatFullName } from '~/utils/misc'
 import { requireUserWithRoles } from '~/utils/permission.server'
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -46,6 +46,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 				select: {
 					firstName: true,
 					middleName: true,
+					familyName: true,
 				},
 			},
 			_count: {
@@ -118,8 +119,7 @@ export default function AccessRequestsRoute() {
 													{accessRequest.requestNumber}
 												</TableCell>
 												<TableCell className="py-1">
-													{accessRequest.requestor.firstName}{' '}
-													{accessRequest.requestor.middleName}
+													{formatFullName(accessRequest.requestor)}
 												</TableCell>
 												<TableCell className="py-1">
 													{formatDate(accessRequest.createdAt)}

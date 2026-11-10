@@ -22,7 +22,7 @@ import {
 	TableRow,
 } from '~/components/ui/table'
 import { filterAndPaginate, prisma } from '~/utils/db.server'
-import { formatDate, formatTime } from '~/utils/misc'
+import { formatDate, formatFullName, formatTime } from '~/utils/misc'
 import { requireUserWithRoles } from '~/utils/permission.server'
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -127,13 +127,7 @@ export default function IncidentsRoute() {
 												</TableCell>
 												<TableCell className="py-1">
 													<div className="font-medium">
-														{[
-															incident.employee.firstName,
-															incident.employee.middleName,
-															incident.employee.familyName,
-														]
-															.filter(Boolean)
-															.join(' ')}
+														{formatFullName(incident.employee)}
 													</div>
 													<div className="text-xs text-muted-foreground">
 														{incident.employee.email}

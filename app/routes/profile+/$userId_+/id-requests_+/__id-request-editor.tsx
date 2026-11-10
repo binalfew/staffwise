@@ -23,7 +23,11 @@ import FormCard from '~/components/FormCard'
 import FormField from '~/components/FormField'
 import { Button } from '~/components/ui/button'
 import { StatusButton } from '~/components/ui/status-button'
-import { getAttachmentFileSrc, useIsPending } from '~/utils/misc'
+import {
+	formatFullName,
+	getAttachmentFileSrc,
+	useIsPending,
+} from '~/utils/misc'
 import { type action } from './__id-request-editor.server'
 
 const MAX_UPLOAD_SIZE = 1024 * 1024 * 3 // 3MB
@@ -336,7 +340,7 @@ export function IdRequestEditor({
 								type: 'select' as const,
 								errors: spouseIdRequest.spouseId.errors,
 								data: spouses?.map(spouse => ({
-									name: `${spouse.firstName} ${spouse.middleName} ${spouse.familyName}`,
+									name: formatFullName(spouse),
 									value: spouse.id,
 								})),
 							}}
@@ -353,7 +357,7 @@ export function IdRequestEditor({
 								type: 'select' as const,
 								errors: dependantIdRequest.dependantId.errors,
 								data: dependants?.map(dependant => ({
-									name: `${dependant.firstName} ${dependant.middleName} ${dependant.familyName}`,
+									name: formatFullName(dependant),
 									value: dependant.id,
 								})),
 							}}

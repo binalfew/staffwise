@@ -292,6 +292,23 @@ export const formatTime = (timeString: string | undefined): string => {
 		: ''
 }
 
+type NameParts = {
+	firstName?: string | null
+	middleName?: string | null
+	familyName?: string | null
+}
+
+export function formatFullName({
+	firstName,
+	middleName,
+	familyName,
+}: NameParts) {
+	return [firstName, middleName, familyName]
+		.map(part => part?.trim())
+		.filter(Boolean)
+		.join(' ')
+}
+
 export function getAttachmentFileSrc(attachmentId: string) {
 	return `/profile/resources/attachments/${attachmentId}`
 }

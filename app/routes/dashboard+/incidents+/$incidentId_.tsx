@@ -25,6 +25,7 @@ import { Textarea } from '~/components/ui/textarea'
 import { prisma } from '~/utils/db.server.ts'
 import {
 	formatDate,
+	formatFullName,
 	getAttachmentFileSrc,
 	invariantResponse,
 } from '~/utils/misc.tsx'
@@ -225,13 +226,7 @@ export default function DeleteIncidentRoute() {
 						{[
 							{
 								label: 'Name',
-								value: [
-									incident.employee.firstName,
-									incident.employee.middleName,
-									incident.employee.familyName,
-								]
-									.filter(Boolean)
-									.join(' '),
+								value: formatFullName(incident.employee),
 							},
 							{ label: 'Email', value: incident.employee.email },
 							{
@@ -345,13 +340,7 @@ export default function DeleteIncidentRoute() {
 									{incident.activities.map((activity: any) => (
 										<TableRow key={activity.id}>
 											<TableCell>
-												{[
-													activity.officer.employee.firstName,
-													activity.officer.employee.middleName,
-													activity.officer.employee.familyName,
-												]
-													.filter(Boolean)
-													.join(' ')}
+												{formatFullName(activity.officer.employee)}
 											</TableCell>
 											<TableCell>{formatDate(activity.date)}</TableCell>
 											<TableCell>{activity.activity}</TableCell>

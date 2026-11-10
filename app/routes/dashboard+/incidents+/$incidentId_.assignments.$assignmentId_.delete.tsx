@@ -20,7 +20,7 @@ import { Separator } from '~/components/ui/separator'
 import { validateCSRF } from '~/utils/csrf.server'
 import { prisma } from '~/utils/db.server'
 import { checkHoneypot } from '~/utils/honeypot.server'
-import { invariantResponse } from '~/utils/misc'
+import { formatFullName, invariantResponse } from '~/utils/misc'
 import { requireUserWithRoles } from '~/utils/permission.server'
 import { redirectWithToast } from '~/utils/toast.server'
 
@@ -87,6 +87,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 				select: {
 					firstName: true,
 					middleName: true,
+					familyName: true,
 				},
 			},
 		},
@@ -139,7 +140,7 @@ export default function AssignmentEditor() {
 							<SelectField
 								meta={fields.officerId}
 								items={officers.map(officer => ({
-									name: `${officer.employee.firstName} ${officer.employee.middleName}`,
+									name: formatFullName(officer.employee),
 									value: officer.id,
 								}))}
 								placeholder="Select an officer"

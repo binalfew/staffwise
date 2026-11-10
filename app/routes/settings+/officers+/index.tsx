@@ -22,12 +22,17 @@ import {
 	TableRow,
 } from '~/components/ui/table'
 import { filterAndPaginate, prisma } from '~/utils/db.server'
+import { formatFullName } from '~/utils/misc'
 
 export async function loader({ request }: LoaderFunctionArgs) {
 	const { data, totalPages, currentPage } = await filterAndPaginate({
 		request,
 		model: prisma.officer,
-		searchFields: ['employee.firstName', 'employee.middleName'],
+		searchFields: [
+			'employee.firstName',
+			'employee.middleName',
+			'employee.familyName',
+		],
 		orderBy: [{ employee: { firstName: 'asc' } }],
 		select: {
 			id: true,
@@ -40,6 +45,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 					auIdNumber: true,
 					firstName: true,
 					middleName: true,
+					familyName: true,
 					email: true,
 				},
 			},
@@ -105,7 +111,7 @@ export default function OfficersRoute() {
 													{officer.employee.auIdNumber}
 												</TableCell>
 												<TableCell className="py-1">
-													{`${officer.employee.firstName} ${officer.employee.middleName}`}
+													{formatFullName(officer.employee)}
 												</TableCell>
 												<TableCell className="py-1">
 													{officer.employee.email}

@@ -2,7 +2,7 @@ import { LoaderFunctionArgs, json } from '@remix-run/node'
 import { useLoaderData } from '@remix-run/react'
 import { requireUser } from '~/utils/auth.server'
 import { prisma } from '~/utils/db.server'
-import { invariantResponse } from '~/utils/misc'
+import { formatFullName, invariantResponse } from '~/utils/misc'
 import { AccessRequestEditor } from './__access-request-editor'
 export { action } from './__access-request-editor.server'
 
@@ -29,7 +29,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 	})
 
 	invariantResponse(employee, 'Not Found', { status: 404 })
-	const requestor = `${employee.firstName} ${employee.middleName} ${employee.familyName}, ${employee.location.name} ${employee.floor.name} ${employee.officeNumber}`
+	const requestor = `${formatFullName(employee)}, ${employee.location.name} ${
+		employee.floor.name
+	} ${employee.officeNumber}`
 
 	return json({ requestor })
 }

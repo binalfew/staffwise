@@ -16,7 +16,10 @@ export const SpouseEditorSchema = z
 		id: z.string().optional(),
 		firstName: z.string({ required_error: 'First Name is required' }),
 		familyName: z.string({ required_error: 'Family Name is required' }),
-		middleName: z.string({ required_error: 'Middle Name is required' }),
+		middleName: z
+			.string()
+			.optional()
+			.transform(value => value ?? null),
 		auIdNumber: z.string().optional(),
 		dateIssued: z.date().optional(),
 		validUntil: z.date().optional(),
