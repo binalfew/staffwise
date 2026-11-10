@@ -539,7 +539,7 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 |---|---|---|---|---|---|---|
 | 1.1 | Code only | 1 | Reporter name/email/organ in admin incident list and detail; search by reporter; newest-first ordering; fix `lastName` → `familyName` | — | — | 🟨 merged to `main` (`aa56472`), awaiting push and prod smoke test |
 | 1.2 | Migration | 2 | `middleName` optional on Employee/Dependant/Spouse; `formatFullName()` helper; update ~23 files and exports | `middle_name_optional` (DROP NOT NULL ×3) | 0.2 merged | 🟨 migrated on prod, merged to `main` (`2aebec8`), awaiting push and prod smoke test |
-| 1.3 | Migration | 3 | Free-text building/floor when an organ has no locations or floors; null-safe display and exports | `duty_station_free_text` (DROP NOT NULL ×2, ADD `buildingName`, `floorName`) | Q8 | 🟨 branch `phase-1-duty-station-free-text`, awaiting prod `migrate deploy` then merge |
+| 1.3 | Migration | 3 | Free-text building/floor when an organ has no locations or floors; null-safe display and exports | `duty_station_free_text` (DROP NOT NULL ×2, ADD `buildingName`, `floorName`) | Q8 | 🟨 migrated on prod, merged to `main` (`0f1b5b6`), awaiting push and prod smoke test |
 | 1.4 | Data import (+ optional migration) | 4 | Import approved incident types; optional `category` column and grouped dropdown | `incident_type_category` (optional) | Q1 | ⬜ |
 | 1.5 | Data import (+ optional migration) | 5, 6 | Import organs, departments and renames; at least one department per organ; optional `Organ.city`; empty-department guard in the PHP form | `organ_city` (optional) | Q2, Q3 | ⏸ |
 | 1.6 | Ops | 11 | Check Always On / plan tier / restarts; review `server.js` rate limits and `trust proxy`; add an uptime monitor; publish URL and support contact | — | Q9 | ⬜ |
@@ -579,7 +579,7 @@ Suggested order: **1.1 → 1.2 → 1.3**, with 1.6 investigated in parallel. 1.4
 | 2026-11-10 | 0.2 | `phase-0-db-migrations` (`770ef50`) | `migrate resolve --applied 0_init` ✅ | Merged to `main` |
 | 2026-11-10 | 1.1 | `phase-1-incident-reporter` (`aa56472`) | — (code only) | Merged to `main`; awaiting push and prod smoke test |
 | 2026-11-11 | 1.2 | `phase-1-middle-name-optional` (`2aebec8`) | `migrate deploy` `20261110205433_middle_name_optional` ✅ | Merged to `main`; awaiting push and prod smoke test |
-| 2026-11-11 | 1.3 | `phase-1-duty-station-free-text` | ⬜ pending: `20261110210815_duty_station_free_text` | Awaiting backup + `migrate deploy`, then merge. After employees save typed buildings, reverting the code would break their profile pages (old code assumes a location) |
+| 2026-11-11 | 1.3 | `phase-1-duty-station-free-text` (`5a442cb`, `0f1b5b6`) | `migrate deploy` `20261110210815_duty_station_free_text` ✅ | Merged to `main`; awaiting push and prod smoke test. After employees save typed buildings, reverting the code would break their profile pages (old code assumes a location) |
 
 ---
 
@@ -845,3 +845,4 @@ app/routes/settings+/officers+/index.tsx
 | 2026-11-10 | Release 1.2 (Item 2) prepared on branch; migration awaiting production deploy |
 | 2026-11-11 | Release 1.2 migration deployed on production by owner; merged to `main` |
 | 2026-11-11 | Release 1.3 (Item 3) prepared on branch; migration awaiting production deploy |
+| 2026-11-11 | Release 1.3 migration deployed on production by owner; merged to `main` (incl. department fallback) |
