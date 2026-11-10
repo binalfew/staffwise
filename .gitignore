@@ -5,3 +5,6 @@ node_modules
 .env
 /groq
 /prisma/data
+# database dumps
+*.dump
+.DS_Store
