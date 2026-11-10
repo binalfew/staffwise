@@ -1,0 +1,241 @@
+{
+	"_note": "DRAFT from plan Appendix A, awaiting business confirmation (Q1). category is not imported yet; it is kept for an optional IncidentType.category column.",
+	"types": [
+		{
+			"name": "Arrest/Detention",
+			"category": "Security / Crime"
+		},
+		{
+			"name": "Coup",
+			"category": "Security / Crime"
+		},
+		{
+			"name": "Imprisonment",
+			"category": "Security / Crime"
+		},
+		{
+			"name": "Missing",
+			"category": "Security / Crime"
+		},
+		{
+			"name": "Arson",
+			"category": "Security / Crime"
+		},
+		{
+			"name": "Facility Intrusion",
+			"category": "Security / Crime"
+		},
+		{
+			"name": "Takeover/Occupation of Offices",
+			"category": "Security / Crime"
+		},
+		{
+			"name": "Vandalism",
+			"category": "Security / Crime"
+		},
+		{
+			"name": "Harassment/Intimidation/Threat of Violence",
+			"category": "Security / Crime"
+		},
+		{
+			"name": "Hostile Surveillance/Reconnaissance",
+			"category": "Security / Crime"
+		},
+		{
+			"name": "Sexual Assault",
+			"category": "Security / Crime"
+		},
+		{
+			"name": "Sexual Exploitation and Abuse (SEA)",
+			"category": "Security / Crime"
+		},
+		{
+			"name": "Sexual Violence in Conflict",
+			"category": "Security / Crime"
+		},
+		{
+			"name": "Attempted Sexual Assault at Workplace",
+			"category": "Security / Crime"
+		},
+		{
+			"name": "Armed Incident – Incidental",
+			"category": "Security / Crime"
+		},
+		{
+			"name": "Armed Incident – Targeted",
+			"category": "Security / Crime"
+		},
+		{
+			"name": "Accusation",
+			"category": "Security / Crime"
+		},
+		{
+			"name": "Blackmail/Extortion",
+			"category": "Security / Crime"
+		},
+		{
+			"name": "Break-in",
+			"category": "Security / Crime"
+		},
+		{
+			"name": "Burglary",
+			"category": "Security / Crime"
+		},
+		{
+			"name": "Carjacking/Hijacking",
+			"category": "Security / Crime"
+		},
+		{
+			"name": "Cyber Attack",
+			"category": "Security / Crime"
+		},
+		{
+			"name": "Fraud",
+			"category": "Security / Crime"
+		},
+		{
+			"name": "Looting",
+			"category": "Security / Crime"
+		},
+		{
+			"name": "Robbery",
+			"category": "Security / Crime"
+		},
+		{
+			"name": "Theft",
+			"category": "Security / Crime"
+		},
+		{
+			"name": "Abduction/Hostage Taking",
+			"category": "Security / Crime"
+		},
+		{
+			"name": "Assault",
+			"category": "Security / Crime"
+		},
+		{
+			"name": "Accident – Aircraft",
+			"category": "Accidents / Health"
+		},
+		{
+			"name": "Accident – Other Transportation",
+			"category": "Accidents / Health"
+		},
+		{
+			"name": "Illness",
+			"category": "Accidents / Health"
+		},
+		{
+			"name": "Fire",
+			"category": "Accidents / Health"
+		},
+		{
+			"name": "Road Safety Accident (RSA)",
+			"category": "Accidents / Health"
+		},
+		{
+			"name": "Suicide",
+			"category": "Accidents / Health"
+		},
+		{
+			"name": "Earthquake",
+			"category": "Natural Hazards"
+		},
+		{
+			"name": "Flood",
+			"category": "Natural Hazards"
+		},
+		{
+			"name": "Landslide/Mudslide/Avalanche",
+			"category": "Natural Hazards"
+		},
+		{
+			"name": "Destructive Weather System",
+			"category": "Natural Hazards"
+		},
+		{
+			"name": "Tsunami",
+			"category": "Natural Hazards"
+		},
+		{
+			"name": "Volcanic Eruption",
+			"category": "Natural Hazards"
+		},
+		{
+			"name": "Explosive Remnant of War",
+			"category": "Natural Hazards"
+		},
+		{
+			"name": "Industrial Disaster",
+			"category": "Natural Hazards"
+		},
+		{
+			"name": "Fall from Height",
+			"category": "Occupational Safety & Health"
+		},
+		{
+			"name": "Struck by Object",
+			"category": "Occupational Safety & Health"
+		},
+		{
+			"name": "Caught In/Between",
+			"category": "Occupational Safety & Health"
+		},
+		{
+			"name": "Repetitive Strain Injury (RSI)",
+			"category": "Occupational Safety & Health"
+		},
+		{
+			"name": "Burns/Chemical Exposure",
+			"category": "Occupational Safety & Health"
+		},
+		{
+			"name": "Machinery Malfunction",
+			"category": "Occupational Safety & Health"
+		},
+		{
+			"name": "Electrical Incident",
+			"category": "Occupational Safety & Health"
+		},
+		{
+			"name": "Vehicle-Related Incident (Workplace)",
+			"category": "Occupational Safety & Health"
+		},
+		{
+			"name": "Slips, Trips, and Falls",
+			"category": "Occupational Safety & Health"
+		},
+		{
+			"name": "Heat/Cold Stress",
+			"category": "Occupational Safety & Health"
+		},
+		{
+			"name": "Confined Space Incident",
+			"category": "Occupational Safety & Health"
+		},
+		{
+			"name": "Noise-Induced Hearing Loss",
+			"category": "Occupational Safety & Health"
+		},
+		{
+			"name": "Occupational Illness",
+			"category": "Occupational Safety & Health"
+		},
+		{
+			"name": "Ergonomic Hazard",
+			"category": "Occupational Safety & Health"
+		},
+		{
+			"name": "Crime Near Miss",
+			"category": "Near Miss"
+		},
+		{
+			"name": "Killed/Injured/Kidnapped Near Miss",
+			"category": "Near Miss"
+		},
+		{
+			"name": "Occupational Near Miss",
+			"category": "Near Miss"
+		}
+	]
+}

@@ -80,6 +80,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 	)
 
 	const incidentTypes = await prisma.incidentType.findMany({
+		orderBy: { name: 'asc' },
 		select: { id: true, name: true },
 	})
 

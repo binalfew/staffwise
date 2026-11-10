@@ -8,6 +8,7 @@ export { action } from './__incident-editor.server'
 export async function loader({ request }: LoaderFunctionArgs) {
 	await requireUserId(request)
 	const incidentTypes = await prisma.incidentType.findMany({
+		orderBy: { name: 'asc' },
 		select: { id: true, name: true },
 	})
 	return json({

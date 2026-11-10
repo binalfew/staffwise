@@ -292,9 +292,16 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 **Tasks**
 - [ ] Business confirms the cleaned list in Appendix A (especially the flagged entries).
 - [ ] (Optional) Add `category String?` to `IncidentType`, show it in the settings editor, and group the incident form dropdown by category.
-- [ ] Write the idempotent import script (upsert by name, generate code).
+- [x] Write the idempotent import script: `prisma/scripts/import-incident-types.ts`, data in `prisma/scripts/data/incident-types.json` (draft from Appendix A). It only inserts types whose name doesn't exist yet (ignoring case, spacing and dash style) and uses the name as the code, like the existing types. It's a dry run unless `--apply` is passed, and won't write to a non-local DB without `--remote`. Rehearsed locally on 2026-11-11: 56 created, 3 already present (Burglary, Robbery, Vandalism), and a second run created nothing.
 - [ ] Run it against production once the list is approved, and check the result in Settings.
-- [ ] Sort the incident type dropdown alphabetically or by category.
+- [x] Sort the incident type dropdown alphabetically (all five incident forms).
+- [ ] Business decides what happens to the 8 existing types that aren't in the new list. The script keeps them as they are:
+  - `Traffic Accident` (14 incidents): same as `Road Safety Accident (RSA)`?
+  - `Intimidation` (0): covered by `Harassment/Intimidation/Threat of Violence`?
+  - `Sexual Harassement` (0): keep, with the spelling fixed to "Harassment"?
+  - `Near miss incidents` (1): replaced by the three Near Miss types?
+  - `Loss of document` (5), `Loss of personal belonging` (1), `Dispute with landlord/household staff/neighbor` (2), `Other` (1): keep them? They aren't in the new list but are in use.
+  - Merging means moving incidents to the new type, then removing the old one. That would be a separate, explicit step.
 
 **Acceptance:** All approved types are selectable when reporting an incident, with no duplicates.
 
@@ -543,7 +550,7 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 | 1.1 | Code only | 1 | Reporter name/email/organ in admin incident list and detail; search by reporter; newest-first ordering; fix `lastName` → `familyName` | — | — | 🟨 merged to `main` (`aa56472`), awaiting push and prod smoke test |
 | 1.2 | Migration | 2 | `middleName` optional on Employee/Dependant/Spouse; `formatFullName()` helper; update ~23 files and exports | `middle_name_optional` (DROP NOT NULL ×3) | 0.2 merged | 🟨 migrated on prod, merged to `main` (`2aebec8`), awaiting push and prod smoke test |
 | 1.3 | Migration | 3 | Free-text building/floor when an organ has no locations or floors; null-safe display and exports | `duty_station_free_text` (DROP NOT NULL ×2, ADD `buildingName`, `floorName`) | Q8 | 🟨 migrated on prod, merged to `main` (`0f1b5b6`), awaiting push and prod smoke test |
-| 1.4 | Data import (+ optional migration) | 4 | Import approved incident types; optional `category` column and grouped dropdown | `incident_type_category` (optional) | Q1 | ⬜ |
+| 1.4 | Data import (+ optional migration) | 4 | Import approved incident types; optional `category` column and grouped dropdown | `incident_type_category` (optional) | Q1 | 🟨 script, draft data and dropdown sort ready on branch `phase-1-incident-types` (not merged); waiting on Q1 |
 | 1.5 | Data import (+ optional migration) | 5, 6 | Import organs, departments and renames; at least one department per organ; optional `Organ.city`; empty-department guard in the PHP form | `organ_city` (optional) | Q2, Q3 | ⏸ |
 | 1.6 | Code + Ops | 11 | Code: `trust proxy` and per-client rate-limit keys, raised limits, `/resources/healthcheck`. Ops: Always On / plan tier / restarts, uptime monitor, publish URL and support contact | — | Q9 (support contact only) | 🟨 code live (`5139320`), monitor set up, Always On / P0v3 confirmed; waiting on Q9 (support contact, Help link) |
 
@@ -676,7 +683,7 @@ Suggested order: **1.1 → 1.2 → 1.3**, with 1.6 investigated in parallel. 1.4
 - Killed/Injured/Kidnapped Near Miss
 - Occupational Near Miss
 
-Total: 60 types. Before importing, compare against the existing types in Settings → Incident Types to avoid near-duplicates.
+Total: 59 types (the source said 60). Before importing, compare against the existing types in Settings → Incident Types to avoid near-duplicates.
 
 ---
 
@@ -853,3 +860,4 @@ app/routes/settings+/officers+/index.tsx
 | 2026-11-11 | Release 1.6: rate limiter shared one bucket across all users (no `trust proxy`); fixed on branch, healthcheck added |
 | 2026-11-11 | Release 1.6: uptime monitor (`staffwise-health`) and email alert set up |
 | 2026-11-11 | Release 1.6: Always On confirmed enabled, plan P0v3; only Q9 (support contact) remains |
+| 2026-11-11 | Release 1.4 prepared: import script and draft data, dropdown sort; waiting on Q1 |

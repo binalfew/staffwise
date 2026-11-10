@@ -16,6 +16,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
 	invariantResponse(incident, 'Not Found', { status: 404 })
 
 	const incidentTypes = await prisma.incidentType.findMany({
+		orderBy: { name: 'asc' },
 		select: { id: true, name: true },
 	})
 
