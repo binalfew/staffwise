@@ -309,6 +309,23 @@ export function formatFullName({
 		.join(' ')
 }
 
+type DutyStationParts = {
+	location?: { name: string } | null
+	buildingName?: string | null
+	floor?: { name: string } | null
+	floorName?: string | null
+}
+
+/** Picked location name, or the building typed by regional-office staff. */
+export function formatBuilding({ location, buildingName }: DutyStationParts) {
+	return location?.name ?? buildingName ?? ''
+}
+
+/** Picked floor name, or the floor typed by regional-office staff. */
+export function formatFloor({ floor, floorName }: DutyStationParts) {
+	return floor?.name ?? floorName ?? ''
+}
+
 export function getAttachmentFileSrc(attachmentId: string) {
 	return `/profile/resources/attachments/${attachmentId}`
 }

@@ -17,7 +17,12 @@ import { Label } from '~/components/ui/label'
 import { Separator } from '~/components/ui/separator'
 import { requireUser } from '~/utils/auth.server'
 import { prisma } from '~/utils/db.server'
-import { formatDate, invariantResponse } from '~/utils/misc'
+import {
+	formatBuilding,
+	formatDate,
+	formatFloor,
+	invariantResponse,
+} from '~/utils/misc'
 import { redirectWithToast } from '~/utils/toast.server'
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -331,8 +336,8 @@ export default function ProfileRoute() {
 						{[
 							{ label: 'Duty Station', value: employee.department.organ.name },
 							{ label: 'Department', value: employee.department.name },
-							{ label: 'Building', value: employee.location.name },
-							{ label: 'Floor', value: employee.floor.name },
+							{ label: 'Building', value: formatBuilding(employee) },
+							{ label: 'Floor', value: formatFloor(employee) },
 							{ label: 'Office Number', value: employee.officeNumber },
 							{ label: 'Zone', value: employee.zone },
 							{ label: 'Team', value: employee.team },

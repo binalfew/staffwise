@@ -242,10 +242,12 @@ model Employee {
   organ                  Organ      @relation(fields: [organId], references: [id])
   departmentId           String
   department             Department @relation(fields: [departmentId], references: [id])
-  locationId             String
-  location               Location   @relation(fields: [locationId], references: [id])
-  floorId                String
-  floor                  Floor      @relation(fields: [floorId], references: [id])
+  locationId             String?
+  location               Location?  @relation(fields: [locationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  buildingName           String?
+  floorId                String?
+  floor                  Floor?     @relation(fields: [floorId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  floorName              String?
   officeNumber           String
   specialConditions      String?
   medicallyTrained       Boolean?

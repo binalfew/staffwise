@@ -23,19 +23,25 @@ import { Label } from '~/components/ui/label'
 
 import { Department, Employee, Floor, Location, Organ } from '@prisma/client'
 import { Separator } from '~/components/ui/separator'
+import {
+	DutyStationPlaceFields,
+	dutyStationPlaceSchema,
+	refineDutyStationPlace,
+} from './__duty-station-place-fields'
 import { type action } from './__profile-editor.server'
 
-export const DutyStationEditorSchema = z.object({
-	id: z.string().optional(),
-	organId: z.string({ required_error: 'Organ ID is required' }),
-	departmentId: z.string({ required_error: 'Department is required' }),
-	locationId: z.string({ required_error: 'Location ID is required' }),
-	floorId: z.string({ required_error: 'Floor ID is required' }),
-	officeNumber: z.string({ required_error: 'Office Number is required' }),
-	medicallyTrained: z.boolean().optional(),
-	zone: z.string().optional(),
-	team: z.string().optional(),
-})
+export const DutyStationEditorSchema = z
+	.object({
+		id: z.string().optional(),
+		organId: z.string({ required_error: 'Organ ID is required' }),
+		departmentId: z.string({ required_error: 'Department is required' }),
+		...dutyStationPlaceSchema,
+		officeNumber: z.string({ required_error: 'Office Number is required' }),
+		medicallyTrained: z.boolean().optional(),
+		zone: z.string().optional(),
+		team: z.string().optional(),
+	})
+	.superRefine(refineDutyStationPlace)
 
 export function DutyStationEditor({
 	profile,
@@ -51,7 +57,9 @@ export function DutyStationEditor({
 			| 'organId'
 			| 'departmentId'
 			| 'locationId'
+			| 'buildingName'
 			| 'floorId'
+			| 'floorName'
 			| 'officeNumber'
 			| 'medicallyTrained'
 			| 'zone'
@@ -66,14 +74,12 @@ export function DutyStationEditor({
 	const params = useParams()
 	const actionData = useActionData<typeof action>()
 	const [selectedOrgan, setSelectedOrgan] = useState(profile?.organId || '')
-	const [selectedLocation, setSelectedLocation] = useState(
-		profile?.locationId || '',
-	)
 	const [filteredDepartments, setFilteredDepartments] = useState(departments)
-	const [filteredLocations, setFilteredLocations] = useState(locations)
-	const [filteredFloors, setFilteredFloors] = useState(floors)
 
-	const [form, fields] = useForm({
+	const [form, fields] = useForm<
+		z.input<typeof DutyStationEditorSchema>,
+		z.output<typeof DutyStationEditorSchema>
+	>({
 		id: 'update-duty-station',
 		constraint: getZodConstraint(DutyStationEditorSchema),
 		lastResult: actionData?.result,
@@ -88,37 +94,12 @@ export function DutyStationEditor({
 	})
 
 	useEffect(() => {
-		if (selectedOrgan) {
-			const newFilteredDepartments = departments.filter(
-				department => department.organId === selectedOrgan,
-			)
-			const newFilteredLocations = locations.filter(
-				location => location.organId === selectedOrgan,
-			)
-			setFilteredDepartments(newFilteredDepartments)
-			setFilteredLocations(newFilteredLocations)
-
-			// Reset selectedLocation if it's not in the new filtered locations
-			if (
-				!newFilteredLocations.some(location => location.id === selectedLocation)
-			) {
-				setSelectedLocation('')
-			}
-		} else {
-			setFilteredDepartments(departments)
-			setFilteredLocations(locations)
-		}
-	}, [selectedOrgan, departments, locations, selectedLocation])
-
-	useEffect(() => {
-		if (selectedLocation) {
-			setFilteredFloors(
-				floors.filter(floor => floor.locationId === selectedLocation),
-			)
-		} else {
-			setFilteredFloors([])
-		}
-	}, [selectedLocation, floors])
+		setFilteredDepartments(
+			selectedOrgan
+				? departments.filter(department => department.organId === selectedOrgan)
+				: departments,
+		)
+	}, [selectedOrgan, departments])
 
 	return (
 		<Card className="mx-auto w-full max-w-5xl space-y-6 p-6">
@@ -171,54 +152,12 @@ export function DutyStationEditor({
 						</Field>
 					</div>
 
-					<div className="grid grid-cols-3 gap-4">
-						<div className="space-y-2">
-							<Field>
-								<Label htmlFor={fields.locationId.id}>Location</Label>
-								<SelectField
-									meta={fields.locationId}
-									items={filteredLocations.map(location => ({
-										name: location.name,
-										value: location.id,
-									}))}
-									placeholder="Select a location"
-									onValueChange={value => setSelectedLocation(value)}
-								/>
-								{fields.locationId.errors && (
-									<FieldError>{fields.locationId.errors}</FieldError>
-								)}
-							</Field>
-						</div>
-						<div className="space-y-2">
-							<Field>
-								<Label htmlFor={fields.floorId.id}>Floor</Label>
-								<SelectField
-									meta={fields.floorId}
-									items={filteredFloors.map(floor => ({
-										name: floor.name,
-										value: floor.id,
-									}))}
-									placeholder="Select a floor"
-								/>
-								{fields.floorId.errors && (
-									<FieldError>{fields.floorId.errors}</FieldError>
-								)}
-							</Field>
-						</div>
-						<div className="space-y-2">
-							<Field>
-								<Label htmlFor={fields.officeNumber.id}>Office Number</Label>
-								<InputField
-									meta={fields.officeNumber}
-									type="text"
-									autoComplete="off"
-								/>
-								{fields.officeNumber.errors && (
-									<FieldError>{fields.officeNumber.errors}</FieldError>
-								)}
-							</Field>
-						</div>
-					</div>
+					<DutyStationPlaceFields
+						organId={selectedOrgan}
+						locations={locations}
+						floors={floors}
+						fields={fields}
+					/>
 
 					<div className="grid grid-cols-3 gap-4 items-center">
 						<div className="space-y-2">

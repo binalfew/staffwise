@@ -16,7 +16,13 @@ import {
 	TableRow,
 } from '~/components/ui/table'
 import { prisma } from '~/utils/db.server'
-import { formatDate, getEmployeeFileSrc, invariantResponse } from '~/utils/misc'
+import {
+	formatBuilding,
+	formatDate,
+	formatFloor,
+	getEmployeeFileSrc,
+	invariantResponse,
+} from '~/utils/misc'
 import { requireUserWithRoles } from '~/utils/permission.server'
 import { redirectWithToast } from '~/utils/toast.server'
 
@@ -211,8 +217,8 @@ export default function ProfileRoute() {
 						{[
 							{ label: 'Duty Station', value: employee.department.organ.name },
 							{ label: 'Department', value: employee.department.name },
-							{ label: 'Building', value: employee.location.name },
-							{ label: 'Floor', value: employee.floor.name },
+							{ label: 'Building', value: formatBuilding(employee) },
+							{ label: 'Floor', value: formatFloor(employee) },
 							{ label: 'Office Number', value: employee.officeNumber },
 							{ label: 'Zone', value: employee.zone },
 							{ label: 'Team', value: employee.team },

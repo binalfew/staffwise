@@ -2,6 +2,7 @@ import { getFormProps, useForm } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod'
 import { SerializeFrom } from '@remix-run/node'
 import { Form, Link, useActionData, useParams } from '@remix-run/react'
+import { useState } from 'react'
 import { AuthenticityTokenInput } from 'remix-utils/csrf/react'
 import { HoneypotInputs } from 'remix-utils/honeypot/react'
 import { z } from 'zod'
@@ -32,59 +33,65 @@ import {
 } from '@prisma/client'
 import { ErrorList } from '~/components/ErrorList'
 import { Separator } from '~/components/ui/separator'
+import {
+	DutyStationPlaceFields,
+	dutyStationPlaceSchema,
+	refineDutyStationPlace,
+} from './__duty-station-place-fields'
 import { type action } from './__profile-editor.server'
 
-export const ProfileEditorSchema = z.object({
-	id: z.string().optional(),
-	firstName: z.string({ required_error: 'First Name is required' }),
-	familyName: z.string({ required_error: 'Family Name is required' }),
-	middleName: z
-		.string()
-		.optional()
-		.transform(value => value ?? null),
-	email: z.string().optional(),
-	countryId: z.string({ required_error: 'Country is required' }),
-	nationalPassportNumber: z.string({
-		required_error: 'National Passport Number is required',
-	}),
-	auPassportNumber: z.string({
-		required_error: 'AU Passport Number is required',
-	}),
-	auIdNumber: z.string({ required_error: 'AU ID Number is required' }),
-	dateIssued: z.date({ required_error: 'Date Issued is required' }),
-	validUntil: z.date({ required_error: 'Valid Until is required' }),
-	dateOfBirth: z
-		.date({
-			required_error: 'Date of birth is required',
-			invalid_type_error: 'Invalid date',
-		})
-		.max(new Date(), { message: 'Date of birth cannot be in the future' }),
-	organId: z.string({ required_error: 'Organ is required' }),
-	departmentId: z.string({ required_error: 'Department is required' }),
-	locationId: z.string({ required_error: 'Location is required' }),
-	floorId: z.string({ required_error: 'Floor is required' }),
-	officeNumber: z.string({ required_error: 'Office Number is required' }),
-	specialConditions: z.string().optional(),
-	medicallyTrained: z.boolean().optional(),
-	zone: z.string().optional(),
-	team: z.string().optional(),
-	city: z.string({ required_error: 'City is required' }),
-	subcity: z.string({ required_error: 'Subcity is required' }),
-	woreda: z.string({ required_error: 'Woreda is required' }).default('N/A'),
-	street: z.string().optional(),
-	kebele: z.string().optional().default('N/A'),
-	houseNumber: z.string({ required_error: 'House Number is required' }),
-	houseTelephoneNumber: z.string().optional(),
-	mobileTelephoneNumber: z.string({
-		required_error: 'Mobile Telephone Number is required',
-	}),
-	officeTelephoneNumber: z.string().optional(),
-	specificLocation: z.string({
-		required_error: 'Specific Location is required',
-	}),
-	gpsLocation: z.string().optional(),
-	homeCountryAddress: z.string().optional(),
-})
+export const ProfileEditorSchema = z
+	.object({
+		id: z.string().optional(),
+		firstName: z.string({ required_error: 'First Name is required' }),
+		familyName: z.string({ required_error: 'Family Name is required' }),
+		middleName: z
+			.string()
+			.optional()
+			.transform(value => value ?? null),
+		email: z.string().optional(),
+		countryId: z.string({ required_error: 'Country is required' }),
+		nationalPassportNumber: z.string({
+			required_error: 'National Passport Number is required',
+		}),
+		auPassportNumber: z.string({
+			required_error: 'AU Passport Number is required',
+		}),
+		auIdNumber: z.string({ required_error: 'AU ID Number is required' }),
+		dateIssued: z.date({ required_error: 'Date Issued is required' }),
+		validUntil: z.date({ required_error: 'Valid Until is required' }),
+		dateOfBirth: z
+			.date({
+				required_error: 'Date of birth is required',
+				invalid_type_error: 'Invalid date',
+			})
+			.max(new Date(), { message: 'Date of birth cannot be in the future' }),
+		organId: z.string({ required_error: 'Organ is required' }),
+		departmentId: z.string({ required_error: 'Department is required' }),
+		...dutyStationPlaceSchema,
+		officeNumber: z.string({ required_error: 'Office Number is required' }),
+		specialConditions: z.string().optional(),
+		medicallyTrained: z.boolean().optional(),
+		zone: z.string().optional(),
+		team: z.string().optional(),
+		city: z.string({ required_error: 'City is required' }),
+		subcity: z.string({ required_error: 'Subcity is required' }),
+		woreda: z.string({ required_error: 'Woreda is required' }).default('N/A'),
+		street: z.string().optional(),
+		kebele: z.string().optional().default('N/A'),
+		houseNumber: z.string({ required_error: 'House Number is required' }),
+		houseTelephoneNumber: z.string().optional(),
+		mobileTelephoneNumber: z.string({
+			required_error: 'Mobile Telephone Number is required',
+		}),
+		officeTelephoneNumber: z.string().optional(),
+		specificLocation: z.string({
+			required_error: 'Specific Location is required',
+		}),
+		gpsLocation: z.string().optional(),
+		homeCountryAddress: z.string().optional(),
+	})
+	.superRefine(refineDutyStationPlace)
 
 export function ProfileEditor({
 	profile,
@@ -113,7 +120,9 @@ export function ProfileEditor({
 			| 'organId'
 			| 'departmentId'
 			| 'locationId'
+			| 'buildingName'
 			| 'floorId'
+			| 'floorName'
 			| 'officeNumber'
 			| 'specialConditions'
 			| 'medicallyTrained'
@@ -136,13 +145,14 @@ export function ProfileEditor({
 	countries: Array<Pick<Country, 'id' | 'name'>>
 	organs: Array<Pick<Organ, 'id' | 'name'>>
 	departments: Array<Pick<Department, 'id' | 'name'>>
-	locations: Array<Pick<Location, 'id' | 'name'>>
-	floors: Array<Pick<Floor, 'id' | 'name'>>
+	locations: Array<Pick<Location, 'id' | 'name' | 'organId'>>
+	floors: Array<Pick<Floor, 'id' | 'name' | 'locationId'>>
 	user: SerializeFrom<Pick<User, 'id' | 'email' | 'username' | 'name'>>
 	mode: 'new' | 'edit'
 }) {
 	const params = useParams()
 	const actionData = useActionData<typeof action>()
+	const [selectedOrgan, setSelectedOrgan] = useState(profile?.organId || '')
 	const [form, fields] = useForm({
 		id: 'update-profile',
 		constraint: getZodConstraint(ProfileEditorSchema),
@@ -365,6 +375,7 @@ export function ProfileEditor({
 									value: organ.id,
 								}))}
 								placeholder="Select a organ"
+								onValueChange={value => setSelectedOrgan(value)}
 							/>
 							{fields.organId.errors && (
 								<FieldError>{fields.organId.errors}</FieldError>
@@ -388,53 +399,12 @@ export function ProfileEditor({
 						</Field>
 					</div>
 
-					<div className="grid grid-cols-3 gap-4">
-						<div className="space-y-2">
-							<Field>
-								<Label htmlFor={fields.locationId.id}>Location</Label>
-								<SelectField
-									meta={fields.locationId}
-									items={locations.map(location => ({
-										name: location.name,
-										value: location.id,
-									}))}
-									placeholder="Select a location"
-								/>
-								{fields.locationId.errors && (
-									<FieldError>{fields.locationId.errors}</FieldError>
-								)}
-							</Field>
-						</div>
-						<div className="space-y-2">
-							<Field>
-								<Label htmlFor={fields.floorId.id}>Floor</Label>
-								<SelectField
-									meta={fields.floorId}
-									items={floors.map(floor => ({
-										name: floor.name,
-										value: floor.id,
-									}))}
-									placeholder="Select a floor"
-								/>
-								{fields.floorId.errors && (
-									<FieldError>{fields.floorId.errors}</FieldError>
-								)}
-							</Field>
-						</div>
-						<div className="space-y-2">
-							<Field>
-								<Label htmlFor={fields.officeNumber.id}>Office Number</Label>
-								<InputField
-									meta={fields.officeNumber}
-									type="text"
-									autoComplete="off"
-								/>
-								{fields.officeNumber.errors && (
-									<FieldError>{fields.officeNumber.errors}</FieldError>
-								)}
-							</Field>
-						</div>
-					</div>
+					<DutyStationPlaceFields
+						organId={selectedOrgan}
+						locations={locations}
+						floors={floors}
+						fields={fields}
+					/>
 
 					<div className="grid grid-cols-3 gap-4 items-center">
 						<div className="space-y-2">

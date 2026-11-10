@@ -24,7 +24,7 @@ The business request has 14 items. Mapped against the current codebase, they fal
 | 0 | Database change strategy: backups, local DB, Prisma Migrate baseline | Prereq | 0 | M | 🟨 |
 | 1 | Show incident reporter to admins (+ fix `lastName` bug) | A | 1 | S | 🟨 |
 | 2 | Make Middle Name optional (Staff, Spouse, Dependant) | A | 1 | S–M | 🟨 |
-| 3 | PHP form: building/floor/office number for regional offices | A | 1 | S | ⬜ |
+| 3 | PHP form: building/floor/office number for regional offices | A | 1 | S | 🟨 |
 | 4 | Add new incident types | C | 1 | S | ⬜ |
 | 5 | Add missing organs/offices, regional offices, specialised agencies | C | 1 | M | ⏸ data cleanup |
 | 6 | Update renamed/restructured departments; departments for regional offices | C | 1 | M | ⏸ data from business |
@@ -265,12 +265,13 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 - **B:** Create a placeholder "Main Building / Ground Floor" location and floor for every organ in the data import. This is quick, but the data is less accurate.
 
 **Tasks (Option A)**
-- [ ] Schema: `locationId String?`, `floorId String?`, plus new `buildingName String?` and `floorName String?` on `Employee`. Run `db push`.
-- [ ] Editor: if `filteredLocations` is empty, show a text input for the building instead of the select. Do the same for floors.
-- [ ] Zod: require either `locationId` or `buildingName` (`superRefine`), and either `floorId` or `floorName`.
-- [ ] Update the PHP dashboard detail, list and exports to show `location?.name ?? buildingName`.
-- [ ] Audit all `employee.location.name` and `employee.floor.name` usages for null safety.
-- [ ] Decide whether `officeNumber` stays required. *(Question for business.)*
+- [x] Schema: `locationId String?`, `floorId String?`, plus new `buildingName String?` and `floorName String?` on `Employee`. Migration `20261110210815_duty_station_free_text`; FKs pinned to `onDelete: Restrict` so Prisma doesn't recreate them as `SET NULL`.
+- [x] Editor: if `filteredLocations` is empty, show a text input for the building instead of the select. Do the same for floors. Shared `__duty-station-place-fields.tsx`, used by both the first-time profile form (`ProfileEditor`, which now also filters locations by organ) and the duty-station editor. A location with no floors also gets a typed floor.
+- [x] Zod: require either `locationId` or `buildingName` (`superRefine`), and either `floorId` or `floorName`. Server (`utils/duty-station.server.ts`) also checks the location belongs to the organ and the floor to the location, and that organs with locations can't use free text; saves either the picked IDs or the typed names, never both.
+- [x] Update the PHP dashboard detail, list and exports to show `location?.name ?? buildingName` (`formatBuilding` / `formatFloor` in `utils/misc.tsx`).
+- [x] Audit all `employee.location.name` and `employee.floor.name` usages for null safety (profile page, PHP detail, PDF + Excel exports, access-request requestor).
+- [ ] Decide whether `officeNumber` stays required. *(Question for business, Q8.)* Kept required for now; it's free text, so regional staff can fill it. Making it optional is a Zod-only change unless the column must hold NULL.
+- [ ] *(Follow-up, data)* 177 of 1,776 employees have a location belonging to another organ (65 of them in organs with no locations), from the old unfiltered first-time form. They'll be asked to correct it the next time they edit their duty station; a cleanup script could move them to `buildingName` instead.
 
 **Acceptance:** A regional-office employee whose organ has no configured buildings can submit the PHP form.
 
@@ -537,7 +538,7 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 |---|---|---|---|---|---|---|
 | 1.1 | Code only | 1 | Reporter name/email/organ in admin incident list and detail; search by reporter; newest-first ordering; fix `lastName` → `familyName` | — | — | 🟨 merged to `main` (`aa56472`), awaiting push and prod smoke test |
 | 1.2 | Migration | 2 | `middleName` optional on Employee/Dependant/Spouse; `formatFullName()` helper; update ~23 files and exports | `middle_name_optional` (DROP NOT NULL ×3) | 0.2 merged | 🟨 migrated on prod, merged to `main` (`2aebec8`), awaiting push and prod smoke test |
-| 1.3 | Migration | 3 | Free-text building/floor when an organ has no locations or floors; null-safe display and exports | `duty_station_free_text` (DROP NOT NULL ×2, ADD `buildingName`, `floorName`) | Q8 | ⬜ |
+| 1.3 | Migration | 3 | Free-text building/floor when an organ has no locations or floors; null-safe display and exports | `duty_station_free_text` (DROP NOT NULL ×2, ADD `buildingName`, `floorName`) | Q8 | 🟨 branch `phase-1-duty-station-free-text`, awaiting prod `migrate deploy` then merge |
 | 1.4 | Data import (+ optional migration) | 4 | Import approved incident types; optional `category` column and grouped dropdown | `incident_type_category` (optional) | Q1 | ⬜ |
 | 1.5 | Data import (+ optional migration) | 5, 6 | Import organs, departments and renames; at least one department per organ; optional `Organ.city`; empty-department guard in the PHP form | `organ_city` (optional) | Q2, Q3 | ⏸ |
 | 1.6 | Ops | 11 | Check Always On / plan tier / restarts; review `server.js` rate limits and `trust proxy`; add an uptime monitor; publish URL and support contact | — | Q9 | ⬜ |
@@ -577,6 +578,7 @@ Suggested order: **1.1 → 1.2 → 1.3**, with 1.6 investigated in parallel. 1.4
 | 2026-11-10 | 0.2 | `phase-0-db-migrations` (`770ef50`) | `migrate resolve --applied 0_init` ✅ | Merged to `main` |
 | 2026-11-10 | 1.1 | `phase-1-incident-reporter` (`aa56472`) | — (code only) | Merged to `main`; awaiting push and prod smoke test |
 | 2026-11-11 | 1.2 | `phase-1-middle-name-optional` (`2aebec8`) | `migrate deploy` `20261110205433_middle_name_optional` ✅ | Merged to `main`; awaiting push and prod smoke test |
+| 2026-11-11 | 1.3 | `phase-1-duty-station-free-text` | ⬜ pending: `20261110210815_duty_station_free_text` | Awaiting backup + `migrate deploy`, then merge. After employees save typed buildings, reverting the code would break their profile pages (old code assumes a location) |
 
 ---
 
@@ -841,3 +843,4 @@ app/routes/settings+/officers+/index.tsx
 | 2026-11-10 | Release 0.2 marked done; release 1.1 (Item 1) merged to `main` |
 | 2026-11-10 | Release 1.2 (Item 2) prepared on branch; migration awaiting production deploy |
 | 2026-11-11 | Release 1.2 migration deployed on production by owner; merged to `main` |
+| 2026-11-11 | Release 1.3 (Item 3) prepared on branch; migration awaiting production deploy |

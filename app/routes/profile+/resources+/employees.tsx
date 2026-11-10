@@ -1,6 +1,7 @@
 import { LoaderFunctionArgs } from '@remix-run/node'
 import * as XLSX from 'xlsx'
 import { prisma } from '~/utils/db.server'
+import { formatBuilding, formatFloor } from '~/utils/misc'
 
 export async function loader({ request }: LoaderFunctionArgs) {
 	const url = new URL(request.url)
@@ -65,11 +66,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
 					name: true,
 				},
 			},
+			buildingName: true,
 			floor: {
 				select: {
 					name: true,
 				},
 			},
+			floorName: true,
 			officeNumber: true,
 		},
 		where:
@@ -107,8 +110,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 				employee.mobileTelephoneNumber ?? '-'
 			}, Office: ${employee.officeTelephoneNumber ?? '-'}`,
 			Department: employee.department.name ?? '-',
-			Location: employee.location.name ?? '-',
-			Floor: employee.floor.name ?? '-',
+			Location: formatBuilding(employee) || '-',
+			Floor: formatFloor(employee) || '-',
 			'Office Number': employee.officeNumber ?? '-',
 		})),
 	)

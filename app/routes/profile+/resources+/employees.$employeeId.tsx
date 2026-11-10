@@ -2,7 +2,7 @@ import { type LoaderFunctionArgs } from '@remix-run/node'
 import path from 'path'
 import PDFDocument from 'pdfkit'
 import { prisma } from '~/utils/db.server'
-import { invariantResponse } from '~/utils/misc'
+import { formatBuilding, formatFloor, invariantResponse } from '~/utils/misc'
 
 export async function loader({ params }: LoaderFunctionArgs) {
 	const { employeeId } = params
@@ -26,7 +26,9 @@ export async function loader({ params }: LoaderFunctionArgs) {
 			organ: true,
 			department: true,
 			location: true,
+			buildingName: true,
 			floor: true,
+			floorName: true,
 			officeNumber: true,
 			zone: true,
 			team: true,
@@ -128,13 +130,13 @@ export async function loader({ params }: LoaderFunctionArgs) {
 	// Duty Station - Left column
 	doc.fontSize(12).fillColor(fieldLabelColor)
 	addField('Duty Station', employee.organ.name || '', 60, startY + 380)
-	addField('Building', employee.location.name || '', 60, startY + 430)
+	addField('Building', formatBuilding(employee), 60, startY + 430)
 	addField('Office Number', employee.officeNumber || '', 60, startY + 480)
 	addField('Team', employee.team || '', 60, startY + 530)
 
 	// Duty Station - Right column
 	addField('Department', employee.department.name || '', 310, startY + 380)
-	addField('Floor', employee.floor.name || '', 310, startY + 430)
+	addField('Floor', formatFloor(employee), 310, startY + 430)
 	addField('Zone', employee.zone || '', 310, startY + 480)
 	addField(
 		'Medically Trained',

@@ -6,6 +6,10 @@ import { insertAuditLog } from '~/utils/audit.server'
 import { requireUserId } from '~/utils/auth.server'
 import { validateCSRF } from '~/utils/csrf.server'
 import { prisma } from '~/utils/db.server'
+import {
+	normalizeDutyStationPlace,
+	validateDutyStationPlace,
+} from '~/utils/duty-station.server'
 import { checkHoneypot } from '~/utils/honeypot.server'
 import { invariantResponse } from '~/utils/misc'
 import { redirectWithToast } from '~/utils/toast.server'
@@ -75,6 +79,8 @@ async function updateProfile({
 				})
 				return
 			}
+
+			await validateDutyStationPlace(data, ctx)
 		}),
 		async: true,
 	})
@@ -86,7 +92,9 @@ async function updateProfile({
 		)
 	}
 
-	const { id: employeeId, ...data } = submission.value
+	const { id: employeeId, ...data } = normalizeDutyStationPlace(
+		submission.value,
+	)
 
 	await prisma.employee.upsert({
 		select: { id: true },
@@ -173,7 +181,7 @@ async function updateDutyStation({
 	formData: FormData
 }) {
 	const submission = await parseWithZod(formData, {
-		schema: DutyStationEditorSchema,
+		schema: DutyStationEditorSchema.superRefine(validateDutyStationPlace),
 		async: true,
 	})
 
@@ -184,7 +192,9 @@ async function updateDutyStation({
 		)
 	}
 
-	const { id: employeeId, ...data } = submission.value
+	const { id: employeeId, ...data } = normalizeDutyStationPlace(
+		submission.value,
+	)
 
 	await prisma.employee.update({
 		where: { id: employeeId },
