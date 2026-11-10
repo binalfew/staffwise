@@ -147,7 +147,7 @@ npx prisma migrate diff --from-empty --to-url "$PROD_DATABASE_URL" --script \
   > prisma/migrations/0_init/migration.sql
 ```
 
-1. [ ] Review `0_init/migration.sql` and commit it, along with `prisma/migrations/migration_lock.toml` (provider `postgresql`).
+1. [x] Review `0_init/migration.sql` and commit it, along with `prisma/migrations/migration_lock.toml` (provider `postgresql`).
 2. [x] Check locally: on a fresh empty local database, `npx prisma migrate deploy` must succeed, and the drift check against that database must be empty.
 3. [x] Mark the baseline as applied on production. This **only** creates and writes the `_prisma_migrations` bookkeeping table and runs none of the baseline SQL:
    ```sh
@@ -197,7 +197,7 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 - [x] 0.2 First manual `pg_dump` taken and verified (2026-11-10 23:31, `staffwise-20261110-2331.dump`, 3.2 MB, 42 tables = 40 models + 2 join tables; no `_prisma_migrations` table yet)
 - [x] 0.3 Local Docker database `staffwise-db` (postgres:16, port 5433) restored from the dump; `.env` points at localhost (2026-11-10)
 - [x] 0.4 Drift check run: **no drift** between production (fresh dump) and `schema.prisma`
-- [ ] 0.5 Baseline created (✅ `prisma/migrations/0_init`, verified on an empty DB) — commit ⬜ — marked applied on production ✅ (owner, 2026-11-10)
+- [ ] 0.5 Baseline created (✅ `prisma/migrations/0_init`, verified on an empty DB) — committed ✅ (branch `phase-0-db-migrations`) — marked applied on production ✅ (owner, 2026-11-10)
 - [x] `CLAUDE.md` updated with the new workflow
 - [x] `.gitignore` includes `*.dump` (safety net in case a dump ends up in the repo folder)
 
