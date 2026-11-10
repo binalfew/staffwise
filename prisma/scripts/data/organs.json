@@ -1,333 +1,229 @@
 {
-	"_note": "DRAFT from plan Appendix B and the current Organ table, awaiting business confirmation (Q2). name: the name to keep. match: other existing names for the same organ (merged with --merge). city: used as the address for new organs only. hold: skipped until confirmed.",
-	"organs": [
-		{
-			"name": "AU Headquarters",
-			"code": "AU-HQ",
-			"country": "Ethiopia",
-			"city": "Addis Ababa"
-		},
-		{
-			"name": "African Commission on Human and Peoples’ Rights (ACHPR)",
-			"code": "ACHPR",
-			"country": "Gambia",
-			"city": "Banjul",
-			"match": [
-				"22. African Commission on Human and Peoples’ Rights (ACHPR)"
-			]
-		},
-		{
-			"name": "African Academy of Languages (AU-ACALAN)",
-			"code": "AU-ACALAN",
-			"country": "Mali",
-			"city": "Bamako"
-		},
-		{
-			"name": "African Centre for the Study and Research on Terrorism (AU-ACSRT)",
-			"code": "AU-ACSRT",
-			"country": "Algeria",
-			"city": "Algiers",
-			"note": "ACSRT was renamed the AU Counter Terrorism Centre (AUCTC), which also exists. Merge? (asks Q2)"
-		},
-		{
-			"name": "African Energy Commission (AFREC)",
-			"code": "AFREC",
-			"country": "Algeria",
-			"city": "Algiers"
-		},
-		{
-			"name": "African Migration Observatory",
-			"code": "AMO",
-			"country": "Morocco",
-			"city": "Rabat"
-		},
-		{
-			"name": "African Observatory of Science, Technology and Innovation (AOSTI)",
-			"code": "AOSTI",
-			"country": "Equatorial Guinea",
-			"city": "Malabo"
-		},
-		{
-			"name": "African Union Center for Post-Conflict Reconstruction & Development African Union Peace Agency (AU-PCRD Center)",
-			"code": "AU-PCRD",
-			"country": "Egypt",
-			"city": "Cairo"
-		},
-		{
-			"name": "African Union Liaison Office in Central African Republic",
-			"code": "AULO-CAR",
-			"country": "Central African Republic",
-			"city": "Bangui"
-		},
-		{
-			"name": "African Union Liaison Office in Comoros",
-			"code": "AULO-Comoros",
-			"country": "Comoros",
-			"city": "Moroni"
-		},
-		{
-			"name": "African Union Liaison Office in Côte d’Ivoire",
-			"code": "AULO-CI",
-			"country": "Côte d’Ivoire",
-			"city": "Abidjan"
-		},
-		{
-			"name": "African Union Liaison Office in Kinshasa (DR Congo)",
-			"code": "AULO-DRC",
-			"country": "DR Congo",
-			"city": "Kinshasa",
-			"match": [
-				"African Union Liason Office to DRC, Kinshasa"
-			]
-		},
-		{
-			"name": "African Union Liaison Office in Libya",
-			"code": "AULO-Libya",
-			"country": "Libya",
-			"city": "Tripoli"
-		},
-		{
-			"name": "African Union Liaison Office in N’Djamena (Chad)",
-			"code": "AULO-Chad",
-			"country": "Chad",
-			"city": "N’Djamena"
-		},
-		{
-			"name": "African Union Liaison Office in Madagascar",
-			"code": "AULO-Madagascar",
-			"country": "Madagascar",
-			"city": "Antananarivo",
-			"match": [
-				"African Union Liason Office to Madagascar"
-			],
-			"note": "Source calls it the AU/SADC Liaison Office in Madagascar"
-		},
-		{
-			"name": "African Union Mission for Mali and Sahel (MISAHEL)",
-			"code": "MISAHEL",
-			"country": "Mali",
-			"city": "Bamako"
-		},
-		{
-			"name": "African Union Mission in Burundi (AMIB)",
-			"code": "AMIB",
-			"country": "Burundi",
-			"city": "Bujumbura"
-		},
-		{
-			"name": "AU Permanent Observer to the United Nations (New York Office)",
-			"code": "AU-NY",
-			"country": "United States of America",
-			"city": "New York"
-		},
-		{
-			"name": "AU Permanent Representative to the United States (Washington DC Office)",
-			"code": "AU-DC",
-			"country": "United States of America",
-			"city": "Washington, DC"
-		},
-		{
-			"name": "Permanent Delegation to the League of Arab States – Cairo Office",
-			"code": "AU-LAS",
-			"country": "Egypt",
-			"city": "Cairo",
-			"note": "'AU Permanent Representative Mission League Arab States' (has departments) looks like the same office. Merge? (asks Q2)"
-		},
-		{
-			"name": "Permanent Mission to the European Union (EU) and African, Caribbean and Pacific (ACP) states (Brussels Office)",
-			"code": "AU-Brussels",
-			"country": "Belgium",
-			"city": "Brussels"
-		},
-		{
-			"name": "Center for Historical Studies by Oral Tradition (AU-CELHTO)",
-			"code": "AU-CELHTO",
-			"country": "Niger",
-			"city": "Niamey"
-		},
-		{
-			"name": "Inter-African Phytosanitary Council (AU-IAPSC)",
-			"code": "AU-IAPSC",
-			"country": "Cameroon",
-			"city": "Yaoundé"
-		},
-		{
-			"name": "International Centre for Girls’ and Women’s Education in Africa (AU-CIEFFA)",
-			"code": "AU-CIEFFA",
-			"country": "Burkina Faso",
-			"city": "Ouagadougou",
-			"match": [
-				"International Centre for Girls’ and Women’s Education in Africa (CIEFFA)",
-				"International Center for Education and Training of Girls in Africa (AU-CIEFFA)"
-			]
-		},
-		{
-			"name": "Pan African Institute for Education for Development (AU-IPED)",
-			"code": "AU-IPED",
-			"country": "DR Congo",
-			"city": "Kinshasa",
-			"match": [
-				"Pan African Institute for Education for Development (IPED)/African Observatory for Education",
-				"Pan-African Institute for Education and Development (IPED)"
-			]
-		},
-		{
-			"name": "Pan African Postal Union",
-			"code": "PAPU",
-			"country": "Tanzania",
-			"city": "Arusha"
-		},
-		{
-			"name": "Pan African Veterinary Vaccine Centre (AU-PANVAC)",
-			"code": "AU-PANVAC",
-			"country": "Ethiopia",
-			"city": "Debre Zeyit"
-		},
-		{
-			"name": "Regional Programme for the Integrated Development of the Fouta Djallon Highlands (RPID-FDH)",
-			"code": "RPID-FDH",
-			"country": "Guinea",
-			"city": "Conakry"
-		},
-		{
-			"name": "Semi-arid, Food Grain Research and Development Coordination (AU-SAFGRAD)",
-			"code": "AU-SAFGRAD",
-			"country": "Burkina Faso",
-			"city": "Ouagadougou"
-		},
-		{
-			"name": "African Union Liaison Office in Liberia",
-			"code": "AULO-Liberia",
-			"country": "Liberia",
-			"city": "Monrovia"
-		},
-		{
-			"name": "African Union Liaison Office in Guinea Bissau",
-			"code": "AULO-Guinea-Bissau",
-			"country": "Guinea Bissau",
-			"city": "Bissau"
-		},
-		{
-			"name": "African Union Liaison Office in South Sudan",
-			"code": "AULO-South-Sudan",
-			"country": "South Sudan",
-			"city": "Juba"
-		},
-		{
-			"name": "African Union Liaison Office in Sudan",
-			"code": "AULO-Sudan",
-			"country": "Sudan",
-			"city": "Khartoum"
-		},
-		{
-			"name": "Scientific, Technical and Research Commission (AU-STRC)",
-			"code": "AU-STRC",
-			"country": "Nigeria",
-			"city": "Abuja"
-		},
-		{
-			"name": "African Union Mission in Somalia",
-			"code": "AU-Somalia",
-			"country": "Kenya",
-			"city": "Nairobi",
-			"note": "Source places it in Nairobi"
-		},
-		{
-			"name": "AU Southern Africa Regional Office (AU-SARO)",
-			"code": "AU-SARO",
-			"country": "Malawi",
-			"city": "Lilongwe"
-		},
-		{
-			"name": "AU Permanent Representative to the UN and WTO (Geneva Office)",
-			"code": "AU-Geneva",
-			"country": "Switzerland",
-			"city": "Geneva"
-		},
-		{
-			"name": "African Institute for Remittances (AIR)",
-			"code": "AU-AIR",
-			"country": "Kenya",
-			"city": "Nairobi"
-		},
-		{
-			"name": "African Union Mechanism for Police Cooperation (AFRIPOL)",
-			"code": "AFRIPOL",
-			"country": "Algeria",
-			"city": "Algiers"
-		},
-		{
-			"name": "Multinational Joint Task Force (MNJTF) N’Djamena",
-			"code": "MNJTF",
-			"country": "Chad",
-			"city": "N’Djamena"
-		},
-		{
-			"name": "African Civil Aviation Commission (AfCAC)",
-			"code": "AfCAC",
-			"country": "Senegal",
-			"city": "Dakar"
-		},
-		{
-			"name": "Africa Centres for Disease Control and Prevention (Africa CDC)",
-			"code": "Africa-CDC",
-			"country": "Ethiopia",
-			"city": "Addis Ababa"
-		},
-		{
-			"name": "African Union Institute for Statistics (STATAFRIC)",
-			"code": "STATAFRIC",
-			"country": "Tunisia",
-			"city": "Tunis"
-		},
-		{
-			"name": "African Airlines Association (AfrAA)",
-			"code": "AfrAA",
-			"country": "Kenya",
-			"city": "Nairobi",
-			"hold": "Not an AU organ; include?"
-		},
-		{
-			"name": "African Telecommunications Union (ATU)",
-			"code": "ATU",
-			"country": "Kenya",
-			"city": "Nairobi",
-			"hold": "Confirm inclusion; no admin listed"
-		},
-		{
-			"name": "Pan African University (PAU)",
-			"code": "PAU",
-			"country": "",
-			"city": "",
-			"hold": "Location not given"
-		},
-		{
-			"name": "AU Sports Council",
-			"code": "AU-Sports-Council",
-			"country": "Cameroon",
-			"city": "Yaoundé",
-			"hold": "Merged with IAPSC in the source"
-		},
-		{
-			"name": "AMEC / AIMEC",
-			"code": "AIMEC",
-			"country": "Tunisia",
-			"city": "Tunis",
-			"hold": "Confirm name ('AU SARO AIMEC Tunis' in the request)"
-		},
-		{
-			"name": "AFRICOM",
-			"code": "AFRICOM",
-			"country": "",
-			"city": "",
-			"hold": "Confirm what this refers to"
-		},
-		{
-			"name": "Centre for Migration",
-			"code": "AU-Migration-Centre",
-			"country": "Mali",
-			"city": "Bamako",
-			"hold": "Confirm full name"
-		}
-	]
+  "_note": "DRAFT from plan Appendix B and the current Organ table, awaiting business confirmation (Q2). Only unambiguous entries; anything unclear is left out and stays as it is in the database. name: the name to keep. match: other existing names for the same organ (merged with --merge). city: used as the address for new organs only.",
+  "organs": [
+    {
+      "name": "AU Headquarters",
+      "code": "AU-HQ",
+      "country": "Ethiopia",
+      "city": "Addis Ababa"
+    },
+    {
+      "name": "African Commission on Human and Peoples’ Rights (ACHPR)",
+      "code": "ACHPR",
+      "country": "Gambia",
+      "city": "Banjul",
+      "match": ["22. African Commission on Human and Peoples’ Rights (ACHPR)"]
+    },
+    {
+      "name": "African Academy of Languages (AU-ACALAN)",
+      "code": "AU-ACALAN",
+      "country": "Mali",
+      "city": "Bamako"
+    },
+    {
+      "name": "African Energy Commission (AFREC)",
+      "code": "AFREC",
+      "country": "Algeria",
+      "city": "Algiers"
+    },
+    {
+      "name": "African Migration Observatory",
+      "code": "AMO",
+      "country": "Morocco",
+      "city": "Rabat"
+    },
+    {
+      "name": "African Observatory of Science, Technology and Innovation (AOSTI)",
+      "code": "AOSTI",
+      "country": "Equatorial Guinea",
+      "city": "Malabo"
+    },
+    {
+      "name": "African Union Center for Post-Conflict Reconstruction & Development African Union Peace Agency (AU-PCRD Center)",
+      "code": "AU-PCRD",
+      "country": "Egypt",
+      "city": "Cairo"
+    },
+    {
+      "name": "African Union Liaison Office in Central African Republic",
+      "code": "AULO-CAR",
+      "country": "Central African Republic",
+      "city": "Bangui"
+    },
+    {
+      "name": "African Union Liaison Office in Comoros",
+      "code": "AULO-Comoros",
+      "country": "Comoros",
+      "city": "Moroni"
+    },
+    {
+      "name": "African Union Liaison Office in Côte d’Ivoire",
+      "code": "AULO-CI",
+      "country": "Côte d’Ivoire",
+      "city": "Abidjan"
+    },
+    {
+      "name": "African Union Liaison Office in Kinshasa (DR Congo)",
+      "code": "AULO-DRC",
+      "country": "DR Congo",
+      "city": "Kinshasa",
+      "match": ["African Union Liason Office to DRC, Kinshasa"]
+    },
+    {
+      "name": "African Union Liaison Office in Libya",
+      "code": "AULO-Libya",
+      "country": "Libya",
+      "city": "Tripoli"
+    },
+    {
+      "name": "African Union Liaison Office in N’Djamena (Chad)",
+      "code": "AULO-Chad",
+      "country": "Chad",
+      "city": "N’Djamena"
+    },
+    {
+      "name": "African Union Mission for Mali and Sahel (MISAHEL)",
+      "code": "MISAHEL",
+      "country": "Mali",
+      "city": "Bamako"
+    },
+    {
+      "name": "African Union Mission in Burundi (AMIB)",
+      "code": "AMIB",
+      "country": "Burundi",
+      "city": "Bujumbura"
+    },
+    {
+      "name": "AU Permanent Observer to the United Nations (New York Office)",
+      "code": "AU-NY",
+      "country": "United States of America",
+      "city": "New York"
+    },
+    {
+      "name": "AU Permanent Representative to the United States (Washington DC Office)",
+      "code": "AU-DC",
+      "country": "United States of America",
+      "city": "Washington, DC"
+    },
+    {
+      "name": "Permanent Mission to the European Union (EU) and African, Caribbean and Pacific (ACP) states (Brussels Office)",
+      "code": "AU-Brussels",
+      "country": "Belgium",
+      "city": "Brussels"
+    },
+    {
+      "name": "Center for Historical Studies by Oral Tradition (AU-CELHTO)",
+      "code": "AU-CELHTO",
+      "country": "Niger",
+      "city": "Niamey"
+    },
+    {
+      "name": "Inter-African Phytosanitary Council (AU-IAPSC)",
+      "code": "AU-IAPSC",
+      "country": "Cameroon",
+      "city": "Yaoundé"
+    },
+    {
+      "name": "Pan African Postal Union",
+      "code": "PAPU",
+      "country": "Tanzania",
+      "city": "Arusha"
+    },
+    {
+      "name": "Pan African Veterinary Vaccine Centre (AU-PANVAC)",
+      "code": "AU-PANVAC",
+      "country": "Ethiopia",
+      "city": "Debre Zeyit"
+    },
+    {
+      "name": "Regional Programme for the Integrated Development of the Fouta Djallon Highlands (RPID-FDH)",
+      "code": "RPID-FDH",
+      "country": "Guinea",
+      "city": "Conakry"
+    },
+    {
+      "name": "Semi-arid, Food Grain Research and Development Coordination (AU-SAFGRAD)",
+      "code": "AU-SAFGRAD",
+      "country": "Burkina Faso",
+      "city": "Ouagadougou"
+    },
+    {
+      "name": "African Union Liaison Office in Liberia",
+      "code": "AULO-Liberia",
+      "country": "Liberia",
+      "city": "Monrovia"
+    },
+    {
+      "name": "African Union Liaison Office in Guinea Bissau",
+      "code": "AULO-Guinea-Bissau",
+      "country": "Guinea Bissau",
+      "city": "Bissau"
+    },
+    {
+      "name": "African Union Liaison Office in South Sudan",
+      "code": "AULO-South-Sudan",
+      "country": "South Sudan",
+      "city": "Juba"
+    },
+    {
+      "name": "African Union Liaison Office in Sudan",
+      "code": "AULO-Sudan",
+      "country": "Sudan",
+      "city": "Khartoum"
+    },
+    {
+      "name": "Scientific, Technical and Research Commission (AU-STRC)",
+      "code": "AU-STRC",
+      "country": "Nigeria",
+      "city": "Abuja"
+    },
+    {
+      "name": "AU Southern Africa Regional Office (AU-SARO)",
+      "code": "AU-SARO",
+      "country": "Malawi",
+      "city": "Lilongwe"
+    },
+    {
+      "name": "AU Permanent Representative to the UN and WTO (Geneva Office)",
+      "code": "AU-Geneva",
+      "country": "Switzerland",
+      "city": "Geneva"
+    },
+    {
+      "name": "African Institute for Remittances (AIR)",
+      "code": "AU-AIR",
+      "country": "Kenya",
+      "city": "Nairobi"
+    },
+    {
+      "name": "African Union Mechanism for Police Cooperation (AFRIPOL)",
+      "code": "AFRIPOL",
+      "country": "Algeria",
+      "city": "Algiers"
+    },
+    {
+      "name": "Multinational Joint Task Force (MNJTF) N’Djamena",
+      "code": "MNJTF",
+      "country": "Chad",
+      "city": "N’Djamena"
+    },
+    {
+      "name": "African Civil Aviation Commission (AfCAC)",
+      "code": "AfCAC",
+      "country": "Senegal",
+      "city": "Dakar"
+    },
+    {
+      "name": "Africa Centres for Disease Control and Prevention (Africa CDC)",
+      "code": "Africa-CDC",
+      "country": "Ethiopia",
+      "city": "Addis Ababa"
+    },
+    {
+      "name": "African Union Institute for Statistics (STATAFRIC)",
+      "code": "STATAFRIC",
+      "country": "Tunisia",
+      "city": "Tunis"
+    }
+  ]
 }

@@ -12,7 +12,7 @@
 //   name and code. With --merge, the others have their employees moved to it
 //   and are then deleted. A duplicate is only merged when it has no
 //   departments or locations of its own, so no employee loses a link.
-// Entries with `hold` are skipped. Addresses and countries of existing organs
+// Unclear organs are left out of the data file on purpose. Addresses and countries of existing organs
 // are never changed; a country mismatch is reported. Departments are not
 // added: organs without departments let staff pick their HQ department.
 
@@ -26,8 +26,6 @@ type Entry = {
 	country: string
 	city: string
 	match?: string[]
-	hold?: string
-	note?: string
 }
 
 const { organs: entries } = JSON.parse(
@@ -65,10 +63,6 @@ async function main() {
 	const problems: string[] = []
 
 	for (const entry of entries) {
-		if (entry.hold) {
-			console.log(`  ~ HOLD ${entry.name}: ${entry.hold}`)
-			continue
-		}
 		const keys = new Set([entry.name, ...(entry.match ?? [])].map(normalize))
 		const found = organs
 			.filter(o => keys.has(normalize(o.name)))
@@ -118,7 +112,6 @@ async function main() {
 				`      ! country is "${keep.country.name}", list says "${entry.country}" (not changed)`,
 			)
 		}
-		if (entry.note) console.log(`      note: ${entry.note}`)
 
 		for (const dup of duplicates) {
 			const label = `"${dup.name}" [${dup.code}] (${dup._count.employees} employees)`
