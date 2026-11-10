@@ -496,7 +496,7 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 - [ ] Check the Azure portal: Always On, App Service plan tier, restarts, and the last 30 days of availability. Also check the log stream for `ERR_ERL_UNEXPECTED_X_FORWARDED_FOR` and HTTP 429s (Diagnose and solve problems → HTTP 4xx).
 - [x] Review the `server.js` rate limits. Now `trust proxy` = 1 (one Azure front-end hop), keyed per client IP with the port stripped from `X-Forwarded-For`. The limits are 1000 GET/min, 100 POST/min, and 30/min on `/signup` per IP, generous for offices behind shared NAT. If Azure Front Door or Application Gateway is ever put in front, raise `trust proxy` to match the number of hops.
 - [x] Added `GET /resources/healthcheck`, which runs `SELECT 1` against the DB and returns `200 OK`, or `500` if the DB is unreachable. The rate limiter skips it.
-- [ ] Add uptime monitoring with alerts that targets `/resources/healthcheck`: an Application Insights availability test, or the App Service **Health check** setting (Monitoring → Health check, path `/resources/healthcheck`), plus an alert rule.
+- [x] (2026-11-11) Application Insights standard availability test `staffwise-health` (App Insights `austaffwise`); alert rule `staffwise-health-austaffwise` emails action group `ag-staffwise-alerts`. Add the support mailbox to that action group once Q9 is answered. Original task: add uptime monitoring with alerts that targets `/resources/healthcheck`: an Application Insights availability test, or the App Service **Health check** setting (Monitoring → Health check, path `/resources/healthcheck`), plus an alert rule.
 - [ ] Confirm and publish the official URL, and set up a custom domain if one is planned.
 - [ ] Process side (business): name a support contact or mailbox and a response target. Add a "Help / Contact" link in the app.
 
@@ -582,7 +582,7 @@ Suggested order: **1.1 → 1.2 → 1.3**, with 1.6 investigated in parallel. 1.4
 | 2026-11-10 | 1.1 | `phase-1-incident-reporter` (`aa56472`) | — (code only) | Merged to `main`; awaiting push and prod smoke test |
 | 2026-11-11 | 1.2 | `phase-1-middle-name-optional` (`2aebec8`) | `migrate deploy` `20261110205433_middle_name_optional` ✅ | Merged to `main`; awaiting push and prod smoke test |
 | 2026-11-11 | 1.3 | `phase-1-duty-station-free-text` (`5a442cb`, `0f1b5b6`) | `migrate deploy` `20261110210815_duty_station_free_text` ✅ | Merged to `main`; awaiting push and prod smoke test. After employees save typed buildings, reverting the code would break their profile pages (old code assumes a location) |
-| 2026-11-11 | 1.6 (code) | `phase-1-ops-rate-limit` (`5139320`) | — (code only) | Pushed and smoke-tested: healthcheck 200, `RateLimit-Limit: 1000`. Rate limiter fixed to key per client IP; healthcheck route. Portal checks and monitor still to do |
+| 2026-11-11 | 1.6 (code) | `phase-1-ops-rate-limit` (`5139320`) | — (code only) | Pushed and smoke-tested: healthcheck 200, `RateLimit-Limit: 1000`. Rate limiter fixed to key per client IP; healthcheck route. Uptime monitor and alert set up; portal checks still to do |
 
 ---
 
@@ -850,3 +850,4 @@ app/routes/settings+/officers+/index.tsx
 | 2026-11-11 | Release 1.3 (Item 3) prepared on branch; migration awaiting production deploy |
 | 2026-11-11 | Release 1.3 migration deployed on production by owner; merged to `main` (incl. department fallback) |
 | 2026-11-11 | Release 1.6: rate limiter shared one bucket across all users (no `trust proxy`); fixed on branch, healthcheck added |
+| 2026-11-11 | Release 1.6: uptime monitor (`staffwise-health`) and email alert set up |
