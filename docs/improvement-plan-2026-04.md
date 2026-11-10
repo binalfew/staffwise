@@ -493,7 +493,8 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 - **Confirmed in code (2026-11-11):** `server.js` didn't set `trust proxy`. On App Service, every request reaches Node from Azure's front-end proxy, so `req.ip` was the proxy's address and **all users shared one rate-limit bucket**: 100 GET/min and 100 POST/min for the whole user base, and 10/min on `/signup`. Remix sends a GET per navigation and per data fetch, so a handful of active users could get `429 Too many requests` for everyone. This is the most likely cause of "link inactive". express-rate-limit should also have been logging `ERR_ERL_UNEXPECTED_X_FORWARDED_FOR` in the App Service log stream.
 
 **Tasks**
-- [ ] Check the Azure portal: Always On, App Service plan tier, restarts, and the last 30 days of availability. Also check the log stream for `ERR_ERL_UNEXPECTED_X_FORWARDED_FOR` and HTTP 429s (Diagnose and solve problems → HTTP 4xx).
+- [x] (2026-11-11) Always On is **enabled**; plan is **P0v3** (Premium v3, 1 vCPU / 4 GB), which is adequate. Cold starts and a too-small tier are ruled out, which leaves the shared rate-limit bucket as the main cause.
+- [ ] Optional: review restarts (Diagnose and solve problems → Web App Restarted / Web App Down) and the last 30 days of availability. Also check the log stream for `ERR_ERL_UNEXPECTED_X_FORWARDED_FOR` and HTTP 429s (Diagnose and solve problems → HTTP 4xx).
 - [x] Review the `server.js` rate limits. Now `trust proxy` = 1 (one Azure front-end hop), keyed per client IP with the port stripped from `X-Forwarded-For`. The limits are 1000 GET/min, 100 POST/min, and 30/min on `/signup` per IP, generous for offices behind shared NAT. If Azure Front Door or Application Gateway is ever put in front, raise `trust proxy` to match the number of hops.
 - [x] Added `GET /resources/healthcheck`, which runs `SELECT 1` against the DB and returns `200 OK`, or `500` if the DB is unreachable. The rate limiter skips it.
 - [x] (2026-11-11) Application Insights standard availability test `staffwise-health` (App Insights `austaffwise`); alert rule `staffwise-health-austaffwise` emails action group `ag-staffwise-alerts`. Add the support mailbox to that action group once Q9 is answered. Original task: add uptime monitoring with alerts that targets `/resources/healthcheck`: an Application Insights availability test, or the App Service **Health check** setting (Monitoring → Health check, path `/resources/healthcheck`), plus an alert rule.
@@ -544,7 +545,7 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 | 1.3 | Migration | 3 | Free-text building/floor when an organ has no locations or floors; null-safe display and exports | `duty_station_free_text` (DROP NOT NULL ×2, ADD `buildingName`, `floorName`) | Q8 | 🟨 migrated on prod, merged to `main` (`0f1b5b6`), awaiting push and prod smoke test |
 | 1.4 | Data import (+ optional migration) | 4 | Import approved incident types; optional `category` column and grouped dropdown | `incident_type_category` (optional) | Q1 | ⬜ |
 | 1.5 | Data import (+ optional migration) | 5, 6 | Import organs, departments and renames; at least one department per organ; optional `Organ.city`; empty-department guard in the PHP form | `organ_city` (optional) | Q2, Q3 | ⏸ |
-| 1.6 | Code + Ops | 11 | Code: `trust proxy` and per-client rate-limit keys, raised limits, `/resources/healthcheck`. Ops: Always On / plan tier / restarts, uptime monitor, publish URL and support contact | — | Q9 (support contact only) | 🟨 code live in prod (`5139320`), smoke-tested 2026-11-11; portal checks pending |
+| 1.6 | Code + Ops | 11 | Code: `trust proxy` and per-client rate-limit keys, raised limits, `/resources/healthcheck`. Ops: Always On / plan tier / restarts, uptime monitor, publish URL and support contact | — | Q9 (support contact only) | 🟨 code live (`5139320`), monitor set up, Always On / P0v3 confirmed; waiting on Q9 (support contact, Help link) |
 
 Suggested order: **1.1 → 1.2 → 1.3**, with 1.6 investigated in parallel. 1.4 and 1.5 start as soon as the business answers Q1–Q3.
 
@@ -582,7 +583,7 @@ Suggested order: **1.1 → 1.2 → 1.3**, with 1.6 investigated in parallel. 1.4
 | 2026-11-10 | 1.1 | `phase-1-incident-reporter` (`aa56472`) | — (code only) | Merged to `main`; awaiting push and prod smoke test |
 | 2026-11-11 | 1.2 | `phase-1-middle-name-optional` (`2aebec8`) | `migrate deploy` `20261110205433_middle_name_optional` ✅ | Merged to `main`; awaiting push and prod smoke test |
 | 2026-11-11 | 1.3 | `phase-1-duty-station-free-text` (`5a442cb`, `0f1b5b6`) | `migrate deploy` `20261110210815_duty_station_free_text` ✅ | Merged to `main`; awaiting push and prod smoke test. After employees save typed buildings, reverting the code would break their profile pages (old code assumes a location) |
-| 2026-11-11 | 1.6 (code) | `phase-1-ops-rate-limit` (`5139320`) | — (code only) | Pushed and smoke-tested: healthcheck 200, `RateLimit-Limit: 1000`. Rate limiter fixed to key per client IP; healthcheck route. Uptime monitor and alert set up; portal checks still to do |
+| 2026-11-11 | 1.6 (code) | `phase-1-ops-rate-limit` (`5139320`) | — (code only) | Pushed and smoke-tested: healthcheck 200, `RateLimit-Limit: 1000`. Rate limiter fixed to key per client IP; healthcheck route. Uptime monitor and alert set up; Always On on, plan P0v3. Remaining: support contact (Q9) |
 
 ---
 
@@ -851,3 +852,4 @@ app/routes/settings+/officers+/index.tsx
 | 2026-11-11 | Release 1.3 migration deployed on production by owner; merged to `main` (incl. department fallback) |
 | 2026-11-11 | Release 1.6: rate limiter shared one bucket across all users (no `trust proxy`); fixed on branch, healthcheck added |
 | 2026-11-11 | Release 1.6: uptime monitor (`staffwise-health`) and email alert set up |
+| 2026-11-11 | Release 1.6: Always On confirmed enabled, plan P0v3; only Q9 (support contact) remains |
