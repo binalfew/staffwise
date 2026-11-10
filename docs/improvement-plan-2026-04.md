@@ -292,16 +292,11 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 **Tasks**
 - [ ] Business confirms the cleaned list in Appendix A (especially the flagged entries).
 - [ ] (Optional) Add `category String?` to `IncidentType`, show it in the settings editor, and group the incident form dropdown by category.
-- [x] Write the idempotent import script: `prisma/scripts/import-incident-types.ts`, data in `prisma/scripts/data/incident-types.json` (draft from Appendix A). It only inserts types whose name doesn't exist yet (ignoring case, spacing and dash style) and uses the name as the code, like the existing types. It's a dry run unless `--apply` is passed, and won't write to a non-local DB without `--remote`. Rehearsed locally on 2026-11-11: 56 created, 3 already present (Burglary, Robbery, Vandalism), and a second run created nothing.
+- [x] Write the idempotent import script: `prisma/scripts/import-incident-types.ts`, data in `prisma/scripts/data/incident-types.json` (draft from Appendix A). It only inserts types whose name doesn't exist yet (ignoring case, spacing and dash style) and uses the name as the code, like the existing types. It's a dry run unless `--apply` is passed, and won't write to a non-local DB without `--remote`.
+- [x] **Existing types stay as they are** (owner decision, 2026-11-11). New types that duplicate an existing one are left out of the upload list: Burglary, Robbery and Vandalism (exact), Break-in (= Burglary), Road Safety Accident (RSA) (= Traffic Accident), and Harassment/Intimidation/Threat of Violence (= Intimidation). That leaves **53 types to add**. The three Near Miss types are kept, as more specific options beside the existing "Near miss incidents".
+- [x] Rehearsed on a fresh restore of the 2026-11-10 prod dump (`staffwise_rehearsal`): 53 created, and a second run created nothing.
 - [ ] Run it against production once the list is approved, and check the result in Settings.
 - [x] Sort the incident type dropdown alphabetically (all five incident forms).
-- [ ] Business decides what happens to the 8 existing types that aren't in the new list. The script keeps them as they are:
-  - `Traffic Accident` (14 incidents): same as `Road Safety Accident (RSA)`?
-  - `Intimidation` (0): covered by `Harassment/Intimidation/Threat of Violence`?
-  - `Sexual Harassement` (0): keep, with the spelling fixed to "Harassment"?
-  - `Near miss incidents` (1): replaced by the three Near Miss types?
-  - `Loss of document` (5), `Loss of personal belonging` (1), `Dispute with landlord/household staff/neighbor` (2), `Other` (1): keep them? They aren't in the new list but are in use.
-  - Merging means moving incidents to the new type, then removing the old one. That would be a separate, explicit step.
 
 **Acceptance:** All approved types are selectable when reporting an incident, with no duplicates.
 
@@ -860,4 +855,4 @@ app/routes/settings+/officers+/index.tsx
 | 2026-11-11 | Release 1.6: rate limiter shared one bucket across all users (no `trust proxy`); fixed on branch, healthcheck added |
 | 2026-11-11 | Release 1.6: uptime monitor (`staffwise-health`) and email alert set up |
 | 2026-11-11 | Release 1.6: Always On confirmed enabled, plan P0v3; only Q9 (support contact) remains |
-| 2026-11-11 | Release 1.4 prepared: import script and draft data, dropdown sort; waiting on Q1 |
+| 2026-11-11 | Release 1.4 prepared: import script and draft data (53 new types, duplicates of existing types removed), dropdown sort; waiting on Q1 |
