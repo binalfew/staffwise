@@ -1,7 +1,15 @@
 import { LoaderFunctionArgs, json } from '@remix-run/node'
 import { Link, useLoaderData } from '@remix-run/react'
-import { ArrowLeftIcon, EditIcon, PlusCircle, TrashIcon } from 'lucide-react'
+import { EyeOpenIcon } from '@radix-ui/react-icons'
+import {
+	ArrowLeftIcon,
+	EditIcon,
+	LockIcon,
+	PlusCircle,
+	TrashIcon,
+} from 'lucide-react'
 import { ErrorList } from '~/components/ErrorList'
+import { IncidentStatusBadge } from '~/components/IncidentStatusBadge'
 import { Paginator } from '~/components/Paginator'
 import { SearchBar } from '~/components/SearchBar'
 import { Button } from '~/components/ui/button'
@@ -50,10 +58,11 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 		where: {
 			employeeId: employee.id,
 		},
-		orderBy: [{ incidentNumber: 'asc' }],
+		orderBy: [{ createdAt: 'desc' }],
 		select: {
 			id: true,
 			incidentNumber: true,
+			status: true,
 			incidentType: { select: { name: true } },
 			severity: true,
 			location: true,
@@ -117,6 +126,7 @@ export default function IncidentsRoute() {
 									<TableHead>Location</TableHead>
 									<TableHead>Date & Time</TableHead>
 									<TableHead>Occured While</TableHead>
+									<TableHead>Status</TableHead>
 									<TableHead className="w-1/6 text-right pr-6">
 										Actions
 									</TableHead>
@@ -136,23 +146,47 @@ export default function IncidentsRoute() {
 													{formatTime(incident.timeOfDay)}
 												</TableCell>
 												<TableCell>{incident.occuredWhile}</TableCell>
-												<TableCell className="py-1 text-right space-x-1">
-													<Button asChild size="xs">
-														<Link to={`${incident.id}/edit`}>
-															<EditIcon className="h-4 w-4" />
+												<TableCell>
+													<IncidentStatusBadge status={incident.status} />
+												</TableCell>
+												<TableCell className="py-1 text-right space-x-1 whitespace-nowrap">
+													<Button asChild size="xs" title="View">
+														<Link to={`${incident.id}`}>
+															<EyeOpenIcon className="h-4 w-4" />
 														</Link>
 													</Button>
-													<Button asChild size="xs" variant="destructive">
-														<Link to={`${incident.id}/delete`}>
-															<TrashIcon className="h-4 w-4" />
-														</Link>
-													</Button>
+													{incident.status === 'SUBMITTED' ? (
+														<>
+															<Button asChild size="xs" title="Edit">
+																<Link to={`${incident.id}/edit`}>
+																	<EditIcon className="h-4 w-4" />
+																</Link>
+															</Button>
+															<Button
+																asChild
+																size="xs"
+																variant="destructive"
+																title="Delete"
+															>
+																<Link to={`${incident.id}/delete`}>
+																	<TrashIcon className="h-4 w-4" />
+																</Link>
+															</Button>
+														</>
+													) : (
+														<span
+															className="inline-flex align-middle text-muted-foreground"
+															title="Being handled: can no longer be changed"
+														>
+															<LockIcon className="h-4 w-4" />
+														</span>
+													)}
 												</TableCell>
 											</TableRow>
 										))
 									) : (
 										<TableRow>
-											<TableCell colSpan={5} className="text-center">
+											<TableCell colSpan={8} className="text-center">
 												<h3 className="mt-2 text-sm font-semibold text-muted-foreground">
 													No incidents found
 												</h3>
@@ -161,7 +195,7 @@ export default function IncidentsRoute() {
 									)
 								) : data.status === 'error' ? (
 									<TableRow>
-										<TableCell colSpan={4} className="text-center">
+										<TableCell colSpan={8} className="text-center">
 											<ErrorList
 												errors={['There was an error parsing the results']}
 											/>
@@ -169,7 +203,7 @@ export default function IncidentsRoute() {
 									</TableRow>
 								) : (
 									<TableRow>
-										<TableCell colSpan={4} className="text-center">
+										<TableCell colSpan={8} className="text-center">
 											Loading...
 										</TableCell>
 									</TableRow>

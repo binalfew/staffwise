@@ -399,9 +399,10 @@ Data imports (organs, departments, incident types, admins) are **not** migration
   - [x] Automatically move the status from `SUBMITTED` to `UNDER_REVIEW` when the first officer is assigned (assignments now also write an audit log).
   - [x] Show the status timeline on the detail page (internal remarks tagged).
 - *Reporter (profile)*
-  - [ ] Show a status column on `profile+/$userId_+/incidents.tsx`.
-  - [ ] Add a read-only incident detail page with the timeline (reporter-visible entries only).
-  - [ ] Block edit and delete when the status isn't `SUBMITTED` (both UI and server action).
+  - [x] Show a status column on `profile+/$userId_+/incidents.tsx` (now newest first; edit/delete only while `SUBMITTED`).
+  - [x] Add a read-only incident detail page (`incidents_+/$incidentId.tsx`) with the timeline. Reporters see every status change; remarks only when marked reporter-visible (filtered in the loader); admin names are not shown.
+  - [x] Block edit and delete when the status isn't `SUBMITTED` (loaders and server action, `__incident-access.server.ts`).
+  - [x] **Security fix found on the way:** the reporter edit/delete loaders had no auth and the action accepted any incident id (the `$userId_+` routes skip the `$userId.tsx` check). All reporter incident routes now check the signed-in user and incident ownership. Attachment cleanup on edit was also unscoped (matched every attachment in the DB); now limited to the incident.
 - *Notifications (shared with Item 8)*
   - [ ] Email the reporter when the status changes.
 - [x] Record every status change in the audit log (`changeIncidentStatus` in `app/utils/incident-status.server.ts`).
@@ -570,7 +571,7 @@ Suggested order: **1.1 → 1.2 → 1.3**, with 1.6 investigated in parallel. 1.4
 |---|---|---|---|---|---|---|
 | 2.1 | Migration | 7 | `IncidentStatus` enum, `Incident.status` (default `SUBMITTED`), `IncidentStatusHistory` table, backfill of existing incidents | `incident_status` | Phase 1 done | 🟨 prepared on `phase-2-incident-status`, applied locally; awaiting prod `migrate deploy` |
 | 2.2 | Code only | 7 | Admin: status badge and filter, change-status action, escalate action, auto `UNDER_REVIEW` on first assignment, timeline on detail page, audit log | — | 2.1 | 🟨 built on `phase-2-incident-status` (ships with 2.1); awaiting UI check |
-| 2.3 | Code only | 7 | Reporter: status column, read-only detail page with reporter-visible timeline, block edit/delete after `SUBMITTED` | — | 2.2 | ⬜ |
+| 2.3 | Code only | 7 | Reporter: status column, read-only detail page with reporter-visible timeline, block edit/delete after `SUBMITTED`; ownership checks on reporter routes | — | 2.2 | 🟨 built on `phase-2-incident-status` (ships with 2.1, 2.2) |
 | 2.4 | Code only | 8 (+7) | Critical-incident email to incident admins; status-change email to the reporter; configurable trigger severities | — | Q5 | ⬜ |
 
 **Exit criteria:** Reporters can follow their incident's status. Admins can change the status and escalate, with a full history. Critical incidents email the admins within a minute.
@@ -874,3 +875,4 @@ app/routes/settings+/officers+/index.tsx
 | 2026-11-11 | Releases 1.4 and 1.5: owner ran both imports on production; dry runs afterwards report nothing left to do |
 | 2026-11-11 | Release 2.1 (Item 7) prepared on branch: `incident_status` migration with backfill; awaiting production deploy |
 | 2026-11-11 | Release 2.2 (Item 7, admin side) built on the same branch; 2.1 and 2.2 ship together |
+| 2026-11-11 | Release 2.3 (Item 7, reporter side) built on the same branch; also fixes missing auth/ownership checks on reporter incident routes. Open: `/profile/resources/attachments/:id` has no auth (all request types) |

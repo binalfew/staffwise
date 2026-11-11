@@ -1,12 +1,12 @@
 import { LoaderFunctionArgs, json } from '@remix-run/node'
 import { useLoaderData } from '@remix-run/react'
-import { requireUserId } from '~/utils/auth.server'
 import { prisma } from '~/utils/db.server'
+import { requireReporter } from './__incident-access.server'
 import { IncidentEditor } from './__incident-editor'
 export { action } from './__incident-editor.server'
 
-export async function loader({ request }: LoaderFunctionArgs) {
-	await requireUserId(request)
+export async function loader({ params, request }: LoaderFunctionArgs) {
+	await requireReporter(request, params)
 	const incidentTypes = await prisma.incidentType.findMany({
 		orderBy: { name: 'asc' },
 		select: { id: true, name: true },
