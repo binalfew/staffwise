@@ -364,7 +364,7 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 - [x] Q3 answered (2026-11-11): every organ without a department structure gets an **Admin & Finance** department. In the 2026-11-11 data that is 40 of 55 organs (66 staff, currently linked to HQ departments).
 - [x] Import script `prisma/scripts/add-default-departments.ts`: adds "Admin and Finance" (same name and code style as AfCHPR's) and "Other" to each organ with no departments of its own. Idempotent, dry run by default. Rehearsed locally: 80 departments in 40 organs; a second run creates nothing.
 - [x] Existing staff (65 in those organs, linked to HQ departments) move to their own organ's **Other** (owner, 2026-11-11). The script does this in the same transaction; they can change it on their duty-station form.
-- [ ] Owner runs it on production after a backup: `npx tsx prisma/scripts/add-default-departments.ts --apply --remote`.
+- [x] (2026-11-11) Owner ran it on production after a backup: `npx tsx prisma/scripts/add-default-departments.ts --apply --remote`.
 - [ ] ⏸ Get the current HQ department list and the rename mapping from the business.
 - [ ] Rename existing departments as mapped (a script or Settings → Departments).
 - [ ] Add missing HQ departments, including WGYD.
@@ -565,7 +565,7 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 | 1.4 | Data import (+ optional migration) | 4 | Import approved incident types; optional `category` column and grouped dropdown | `incident_type_category` (optional) | Q1 | ✅ 53 types imported on prod 2026-11-11 (`818f855`); dropdown sort pushed 2026-11-11 |
 | 1.5 | Data import (+ optional migration) | 5, 6 | Import organs, departments and renames; at least one department per organ; optional `Organ.city`; empty-department guard in the PHP form | `organ_city` (optional) | Q2, Q3 | ✅ organs imported on prod 2026-11-11 (`bb4c965`): 13 new, 24 codes fixed, 5 duplicates merged; unclear organs left as they are. Departments (Item 6) ⏸ waiting on the Q3 mapping |
 | 1.6 | Code + Ops | 11 | Code: `trust proxy` and per-client rate-limit keys, raised limits, `/resources/healthcheck`. Ops: Always On / plan tier / restarts, uptime monitor, publish URL and support contact | — | Q9 (support contact only) | 🟨 code live (`5139320`), monitor set up, Always On / P0v3 confirmed; waiting on Q9 (support contact, Help link) |
-| 1.7 | Data import | 6 | "Admin and Finance" and "Other" departments for every organ with no departments; their staff default to "Other" (`add-default-departments.ts`) | — | Q3 ✅ | 🟨 script ready, rehearsed locally (40 organs, 80 departments, 65 staff moved to Other; rerun changes nothing); awaiting prod run by owner |
+| 1.7 | Data import | 6 | "Admin and Finance" and "Other" departments for every organ with no departments; their staff default to "Other" (`add-default-departments.ts`) | — | Q3 ✅ | ✅ run on prod by owner 2026-11-11 (`f5f9fde`); rehearsed locally first (40 organs, 80 departments, 65 staff moved to Other) |
 
 Suggested order: **1.1 → 1.2 → 1.3**, with 1.6 investigated in parallel. 1.4 and 1.5 start as soon as the business answers Q1–Q3.
 
@@ -605,6 +605,7 @@ Suggested order: **1.1 → 1.2 → 1.3**, with 1.6 investigated in parallel. 1.4
 | 2026-11-11 | 1.3 | `phase-1-duty-station-free-text` (`5a442cb`, `0f1b5b6`) | `migrate deploy` `20261110210815_duty_station_free_text` ✅ | Merged to `main`; awaiting push and prod smoke test. After employees save typed buildings, reverting the code would break their profile pages (old code assumes a location) |
 | 2026-11-11 | 1.4 | `phase-1-incident-types` (`818f855`) | `import-incident-types.ts --apply --remote` ✅ | 53 incident types added; existing types unchanged |
 | 2026-11-11 | 1.5 | `phase-1-organs` (`bb4c965`) | `import-organs.ts --apply --merge --remote` ✅ | 13 organs added, 24 codes fixed, 5 duplicates merged; departments not touched |
+| 2026-11-11 | 1.7 | `phase-1-default-departments` (`7650a5d`, `f5f9fde`) | `add-default-departments.ts --apply --remote` ✅ | "Admin and Finance" and "Other" for organs without departments; their staff moved to "Other". Pushed |
 | 2026-11-11 | 2.1–2.3 | `phase-2-incident-status` (`4a65d3d`) | `migrate deploy` `20261111050600_incident_status` ✅ | Pushed and smoke-tested. Includes the reporter-route auth fix |
 | 2026-11-11 | 2.4 | `phase-2-incident-emails` (`c8dd310`) | — (code only) | Pushed and smoke-tested, together with the email sender fix (`11c191d`) |
 | 2026-11-11 | 1.6 (code) | `phase-1-ops-rate-limit` (`5139320`) | — (code only) | Pushed and smoke-tested: healthcheck 200, `RateLimit-Limit: 1000`. Rate limiter fixed to key per client IP; healthcheck route. Uptime monitor and alert set up; Always On on, plan P0v3. Remaining: support contact (Q9) |
@@ -895,3 +896,4 @@ app/routes/settings+/officers+/index.tsx
 | 2026-11-11 | Business answered Q3 (Admin & Finance for offices without departments), Q4 (office admins scoped to own office), Q6 (no SMS), Q7 (personal emails allowed, no allowlist), Q8 (office number optional) |
 | 2026-11-11 | Q3 follow-up: offices without departments also get "Other"; existing staff not moved. Q4 follow-up: office admins manage incidents only. Release 1.7 script prepared |
 | 2026-11-11 | Release 1.7: existing staff in those organs default to "Other" (owner) |
+| 2026-11-11 | Release 1.7 run on production by owner and pushed |
