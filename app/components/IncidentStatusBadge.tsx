@@ -1,4 +1,4 @@
-import { IncidentStatus } from '@prisma/client'
+import { type IncidentStatus } from '@prisma/client'
 import {
 	incidentStatusBadgeClasses,
 	incidentStatusLabels,

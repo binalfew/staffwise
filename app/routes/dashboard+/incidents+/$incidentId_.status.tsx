@@ -1,6 +1,5 @@
 import { getFormProps, useForm } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod'
-import { IncidentStatus } from '@prisma/client'
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from '@remix-run/node'
 import {
 	Form,
@@ -20,19 +19,19 @@ import { Separator } from '~/components/ui/separator'
 import { validateCSRF } from '~/utils/csrf.server'
 import { prisma } from '~/utils/db.server'
 import { checkHoneypot } from '~/utils/honeypot.server'
-import { incidentStatusLabels } from '~/utils/incident-status'
+import { incidentStatusLabels, incidentStatuses } from '~/utils/incident-status'
 import { changeIncidentStatus } from '~/utils/incident-status.server'
 import { invariantResponse } from '~/utils/misc'
 import { requireUserWithRoles } from '~/utils/permission.server'
 import { redirectWithToast } from '~/utils/toast.server'
 
 // Escalation needs an officer, so it goes through the escalate route instead.
-const selectableStatuses = Object.values(IncidentStatus).filter(
+const selectableStatuses = incidentStatuses.filter(
 	status => status !== 'ESCALATED',
 )
 
 const StatusSchema = z.object({
-	status: z.nativeEnum(IncidentStatus).refine(s => s !== 'ESCALATED', {
+	status: z.enum(incidentStatuses).refine(s => s !== 'ESCALATED', {
 		message: 'Use Escalate to escalate an incident',
 	}),
 	remarks: z.string().trim().max(2000).optional(),

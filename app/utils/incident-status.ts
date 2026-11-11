@@ -1,6 +1,16 @@
-import { IncidentStatus } from '@prisma/client'
+import { type IncidentStatus } from '@prisma/client'
 
-export const incidentStatuses = Object.values(IncidentStatus)
+// Listed here rather than read from the Prisma enum: @prisma/client has no
+// runtime enum values in the browser bundle. Keep in sync with schema.prisma;
+// the `satisfies` check fails to compile if a value isn't a valid status.
+export const incidentStatuses = [
+	'SUBMITTED',
+	'UNDER_REVIEW',
+	'IN_PROGRESS',
+	'ESCALATED',
+	'RESOLVED',
+	'CLOSED',
+] as const satisfies readonly IncidentStatus[]
 
 export const incidentStatusLabels: Record<IncidentStatus, string> = {
 	SUBMITTED: 'Submitted',
@@ -22,6 +32,7 @@ export const incidentStatusBadgeClasses: Record<IncidentStatus, string> = {
 
 export function isIncidentStatus(value: unknown): value is IncidentStatus {
 	return (
-		typeof value === 'string' && (incidentStatuses as string[]).includes(value)
+		typeof value === 'string' &&
+		(incidentStatuses as readonly string[]).includes(value)
 	)
 }
