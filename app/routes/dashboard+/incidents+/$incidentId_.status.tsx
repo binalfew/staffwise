@@ -20,6 +20,7 @@ import { validateCSRF } from '~/utils/csrf.server'
 import { prisma } from '~/utils/db.server'
 import { checkHoneypot } from '~/utils/honeypot.server'
 import { incidentStatusLabels, incidentStatuses } from '~/utils/incident-status'
+import { sendIncidentStatusEmail } from '~/utils/incident-notifications.server'
 import { changeIncidentStatus } from '~/utils/incident-status.server'
 import { invariantResponse } from '~/utils/misc'
 import { requireUserWithRoles } from '~/utils/permission.server'
@@ -83,13 +84,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 	const { status, remarks, isVisibleToReporter } = submission.value
 
-	await changeIncidentStatus({
+	const { history } = await changeIncidentStatus({
 		incidentId: incident.id,
 		toStatus: status,
 		userId: user.id,
 		remarks,
 		isVisibleToReporter,
 	})
+	void sendIncidentStatusEmail(history.id, request)
 
 	return redirectWithToast(`/dashboard/incidents/${incident.id}`, {
 		type: 'success',

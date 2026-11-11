@@ -24,6 +24,7 @@ import { Button } from '~/components/ui/button'
 import { validateCSRF } from '~/utils/csrf.server'
 import { prisma } from '~/utils/db.server'
 import { checkHoneypot } from '~/utils/honeypot.server'
+import { sendIncidentStatusEmail } from '~/utils/incident-notifications.server'
 import { changeIncidentStatus } from '~/utils/incident-status.server'
 import { formatFullName, invariantResponse } from '~/utils/misc'
 import { requireUserWithRoles } from '~/utils/permission.server'
@@ -72,7 +73,7 @@ export async function action({ request }: ActionFunctionArgs) {
 		...assignment,
 		incidentId: incident.id,
 	}
-	await prisma.$transaction(async tx => {
+	const statusHistoryId = await prisma.$transaction(async tx => {
 		const saved = await tx.incidentAssignment.upsert({
 			select: { id: true },
 			where: { id: assignmentId ?? '__new_assignment__' },
@@ -94,7 +95,7 @@ export async function action({ request }: ActionFunctionArgs) {
 		})
 		// The first officer assigned means someone is looking at the incident.
 		if (!assignmentId && incident.status === 'SUBMITTED') {
-			await changeIncidentStatus(
+			const { history } = await changeIncidentStatus(
 				{
 					incidentId: incident.id,
 					toStatus: 'UNDER_REVIEW',
@@ -104,8 +105,11 @@ export async function action({ request }: ActionFunctionArgs) {
 				},
 				tx,
 			)
+			return history.id
 		}
+		return null
 	})
+	if (statusHistoryId) void sendIncidentStatusEmail(statusHistoryId, request)
 
 	return redirectWithToast(`/dashboard/incidents/${incident.id}`, {
 		type: 'success',

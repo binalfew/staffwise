@@ -10,6 +10,10 @@ import {
 	deleteFileIfExists,
 	uploadFile,
 } from '~/utils/storage.server'
+import {
+	isAlertSeverity,
+	sendCriticalIncidentAlert,
+} from '~/utils/incident-notifications.server'
 import { redirectWithToast } from '~/utils/toast.server'
 import {
 	attachmentHasFile,
@@ -130,8 +134,15 @@ export async function action({ params, request }: ActionFunctionArgs) {
 		...incidentDetails
 	} = submission.value
 
+	// Alert on new critical incidents, and when an edit raises one to critical.
+	let wasAlertSeverity = false
 	if (incidentId) {
 		await requireEditableIncident(request, params, incidentId)
+		const previous = await prisma.incident.findUnique({
+			where: { id: incidentId },
+			select: { severity: true },
+		})
+		wasAlertSeverity = isAlertSeverity(previous?.severity)
 	}
 
 	const data = {
@@ -219,6 +230,10 @@ export async function action({ params, request }: ActionFunctionArgs) {
 			id: incidentId,
 		},
 	})
+
+	if (!wasAlertSeverity && isAlertSeverity(data.severity)) {
+		void sendCriticalIncidentAlert(incident.id, request)
+	}
 
 	return redirectWithToast(`/profile/${user.id}/incidents`, {
 		type: 'success',
