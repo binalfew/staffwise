@@ -22,15 +22,15 @@ The business request has 14 items. Mapped against the current codebase, they fal
 | # | Item | Group | Phase | Size | Status |
 |---|---|---|---|---|---|
 | 0 | Database change strategy: backups, local DB, Prisma Migrate baseline | Prereq | 0 | M | 🟨 |
-| 1 | Show incident reporter to admins (+ fix `lastName` bug) | A | 1 | S | 🟨 |
-| 2 | Make Middle Name optional (Staff, Spouse, Dependant) | A | 1 | S–M | 🟨 |
-| 3 | PHP form: building/floor/office number for regional offices | A | 1 | S | 🟨 |
+| 1 | Show incident reporter to admins (+ fix `lastName` bug) | A | 1 | S | ✅ |
+| 2 | Make Middle Name optional (Staff, Spouse, Dependant) | A | 1 | S–M | ✅ (placeholder cleanup needs business OK) |
+| 3 | PHP form: building/floor/office number for regional offices | A | 1 | S | ✅ |
 | 4 | Add new incident types | C | 1 | S | ✅ |
 | 5 | Add missing organs/offices, regional offices, specialised agencies | C | 1 | M | ✅ (unclear organs left for the business) |
 | 6 | Update renamed/restructured departments; departments for regional offices | C | 1 | M | 🟨 regional offices done (1.7); HQ renames wait on the mapping (Q3) |
 | 7 | Incident status tracking, assignment and escalation | B | 2 | L | ✅ |
 | 8 | Critical-incident notifications to admins | B | 2 | M | ✅ email (SMS/Push spike in 3.5) |
-| 9 | Designate office system administrators | C | 3 | M–L | ⏸ design decision |
+| 9 | Designate office system administrators | C | 3 | M–L | 🟨 scoping live (3.1–3.2); onboarding (3.4) pending |
 | 10 | Support staff with non-AU email domains | D | 3 | M | ⏸ Azure AD admin |
 | 11 | "Staffwise link inactive" / no response | D | 1 (investigate) | S | 🟨 |
 
@@ -566,9 +566,9 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 
 | Release | Type | Items | Contents | Migration | Depends on | Status |
 |---|---|---|---|---|---|---|
-| 1.1 | Code only | 1 | Reporter name/email/organ in admin incident list and detail; search by reporter; newest-first ordering; fix `lastName` → `familyName` | — | — | 🟨 merged to `main` (`aa56472`), awaiting push and prod smoke test |
-| 1.2 | Migration | 2 | `middleName` optional on Employee/Dependant/Spouse; `formatFullName()` helper; update ~23 files and exports | `middle_name_optional` (DROP NOT NULL ×3) | 0.2 merged | 🟨 migrated on prod, merged to `main` (`2aebec8`), awaiting push and prod smoke test |
-| 1.3 | Migration | 3 | Free-text building/floor when an organ has no locations or floors; null-safe display and exports | `duty_station_free_text` (DROP NOT NULL ×2, ADD `buildingName`, `floorName`) | Q8 | 🟨 migrated on prod, merged to `main` (`0f1b5b6`), awaiting push and prod smoke test |
+| 1.1 | Code only | 1 | Reporter name/email/organ in admin incident list and detail; search by reporter; newest-first ordering; fix `lastName` → `familyName` | — | — | ✅ pushed and smoke-tested 2026-11-11 (`aa56472`) |
+| 1.2 | Migration | 2 | `middleName` optional on Employee/Dependant/Spouse; `formatFullName()` helper; update ~23 files and exports | `middle_name_optional` (DROP NOT NULL ×3) | 0.2 merged | ✅ migrated on prod, pushed and smoke-tested 2026-11-11 (`2aebec8`) |
+| 1.3 | Migration | 3 | Free-text building/floor when an organ has no locations or floors; null-safe display and exports | `duty_station_free_text` (DROP NOT NULL ×2, ADD `buildingName`, `floorName`) | Q8 | ✅ migrated on prod, pushed and smoke-tested 2026-11-11 (`0f1b5b6`) |
 | 1.4 | Data import (+ optional migration) | 4 | Import approved incident types; optional `category` column and grouped dropdown | `incident_type_category` (optional) | Q1 | ✅ 53 types imported on prod 2026-11-11 (`818f855`); dropdown sort pushed 2026-11-11 |
 | 1.5 | Data import (+ optional migration) | 5, 6 | Import organs, departments and renames; at least one department per organ; optional `Organ.city`; empty-department guard in the PHP form | `organ_city` (optional) | Q2, Q3 | ✅ organs imported on prod 2026-11-11 (`bb4c965`): 13 new, 24 codes fixed, 5 duplicates merged; unclear organs left as they are. Departments (Item 6) ⏸ waiting on the Q3 mapping |
 | 1.6 | Code + Ops | 11 | Code: `trust proxy` and per-client rate-limit keys, raised limits, `/resources/healthcheck`. Ops: Always On / plan tier / restarts, uptime monitor, publish URL and support contact | — | Q9 (support contact only) | 🟨 code live (`5139320`), monitor set up, Always On / P0v3 confirmed; waiting on Q9 (support contact, Help link) |
@@ -594,8 +594,8 @@ Suggested order: **1.1 → 1.2 → 1.3**, with 1.6 investigated in parallel. 1.4
 
 | Release | Type | Items | Contents | Migration | Depends on | Status |
 |---|---|---|---|---|---|---|
-| 3.1 | Migration | 9 | `OrganAdmin` join table | `organ_admin` | Q4 ✅ | 🟨 migrated on prod, merged to `main` (with 3.2 and the Settings auth fix), awaiting push and prod smoke test |
-| 3.2 | Code only | 9 | Assign organs to users in Settings → Users; `getIncidentScope()`; scope the incident dashboard list and detail pages by organ (incidents only, Q4) | — | 3.1 | 🟨 merged to `main` with 3.1, awaiting push and prod smoke test |
+| 3.1 | Migration | 9 | `OrganAdmin` join table | `organ_admin` | Q4 ✅ | ✅ migrated on prod, pushed and smoke-tested 2026-11-11 (`ce1e54c`, with 3.2 and the Settings auth fix) |
+| 3.2 | Code only | 9 | Assign organs to users in Settings → Users; `getIncidentScope()`; scope the incident dashboard list and detail pages by organ (incidents only, Q4) | — | 3.1 | ✅ pushed and smoke-tested 2026-11-11 (`ce1e54c`, with 3.1) |
 | 3.3 | Code + Azure config | 10 | Multi-tenant Microsoft login (`organizations`); `ALLOWED_EMAIL_DOMAINS` env var and checks in OAuth callback and signup; login guide | — | Q7, Azure AD admin | ⏸ |
 | 3.4 | Data / ops | 9 | Onboard listed office admins (Appendix C): accounts, roles, organs, welcome/EOC email | — | 3.2, 3.3 | ⏸ |
 | 3.5 | Spike | 8 | SMS (Azure Communication Services) and Web Push: cost, coverage, effort; recommendation only | — | Q6 | ⏹ dropped for now (Q6: no SMS) |
@@ -608,15 +608,15 @@ Suggested order: **1.1 → 1.2 → 1.3**, with 1.6 investigated in parallel. 1.4
 |---|---|---|---|---|
 | 2026-11-10 | 0.1 | — | — | Backups verified, dump taken, no drift |
 | 2026-11-10 | 0.2 | `phase-0-db-migrations` (`770ef50`) | `migrate resolve --applied 0_init` ✅ | Merged to `main` |
-| 2026-11-10 | 1.1 | `phase-1-incident-reporter` (`aa56472`) | — (code only) | Merged to `main`; awaiting push and prod smoke test |
-| 2026-11-11 | 1.2 | `phase-1-middle-name-optional` (`2aebec8`) | `migrate deploy` `20261110205433_middle_name_optional` ✅ | Merged to `main`; awaiting push and prod smoke test |
-| 2026-11-11 | 1.3 | `phase-1-duty-station-free-text` (`5a442cb`, `0f1b5b6`) | `migrate deploy` `20261110210815_duty_station_free_text` ✅ | Merged to `main`; awaiting push and prod smoke test. After employees save typed buildings, reverting the code would break their profile pages (old code assumes a location) |
+| 2026-11-10 | 1.1 | `phase-1-incident-reporter` (`aa56472`) | — (code only) | Pushed and smoke-tested 2026-11-11 |
+| 2026-11-11 | 1.2 | `phase-1-middle-name-optional` (`2aebec8`) | `migrate deploy` `20261110205433_middle_name_optional` ✅ | Pushed and smoke-tested 2026-11-11 |
+| 2026-11-11 | 1.3 | `phase-1-duty-station-free-text` (`5a442cb`, `0f1b5b6`) | `migrate deploy` `20261110210815_duty_station_free_text` ✅ | Pushed and smoke-tested 2026-11-11. After employees save typed buildings, reverting the code would break their profile pages (old code assumes a location) |
 | 2026-11-11 | 1.4 | `phase-1-incident-types` (`818f855`) | `import-incident-types.ts --apply --remote` ✅ | 53 incident types added; existing types unchanged |
 | 2026-11-11 | 1.5 | `phase-1-organs` (`bb4c965`) | `import-organs.ts --apply --merge --remote` ✅ | 13 organs added, 24 codes fixed, 5 duplicates merged; departments not touched |
 | 2026-11-11 | 1.7 | `phase-1-default-departments` (`7650a5d`, `f5f9fde`) | `add-default-departments.ts --apply --remote` ✅ | "Admin and Finance" and "Other" for organs without departments; their staff moved to "Other". Pushed |
 | 2026-11-11 | 1.8 | `phase-1-office-number-optional` (`25bed68`) | `migrate deploy` `20261111081530_office_number_optional` ✅ | Pushed and smoke-tested |
 | 2026-11-11 | Organs (second list) | `phase-3-office-incident-admins` | `import-organs.ts`, `add-default-departments.ts`, `merge-las-office.ts` `--apply --remote` ✅ | 7 new organs with Admin and Finance + Other; League of Arab States records merged into `AU-LAS` |
-| 2026-11-11 | 3.1–3.2 + Settings auth fix | `phase-3-office-incident-admins` | `migrate deploy` `20261111083653_organ_admin` ✅ | Merged to `main`; awaiting push and prod smoke test. Also carries the 7 new organs and the LAS merge script, both already run on prod |
+| 2026-11-11 | 3.1–3.2 + Settings auth fix | `phase-3-office-incident-admins` | `migrate deploy` `20261111083653_organ_admin` ✅ | Pushed and smoke-tested 2026-11-11. Also carries the 7 new organs and the LAS merge script, both already run on prod |
 | 2026-11-11 | 2.1–2.3 | `phase-2-incident-status` (`4a65d3d`) | `migrate deploy` `20261111050600_incident_status` ✅ | Pushed and smoke-tested. Includes the reporter-route auth fix |
 | 2026-11-11 | 2.4 | `phase-2-incident-emails` (`c8dd310`) | — (code only) | Pushed and smoke-tested, together with the email sender fix (`11c191d`) |
 | 2026-11-11 | 1.6 (code) | `phase-1-ops-rate-limit` (`5139320`) | — (code only) | Pushed and smoke-tested: healthcheck 200, `RateLimit-Limit: 1000`. Rate limiter fixed to key per client IP; healthcheck route. Uptime monitor and alert set up; Always On on, plan P0v3. Remaining: support contact (Q9) |
@@ -917,3 +917,4 @@ app/routes/settings+/officers+/index.tsx
 | 2026-11-11 | `organ_admin` migration deployed on production by owner. Second organ list: 7 new organs added to `organs.json`; LAS duplicate pending |
 | 2026-11-11 | LAS merge script rehearsed on a fresh production dump (production has 3 LAS records, not 2 as in the local copy). Note: a run of local scripts briefly read production because `.env` had the production URL active; nothing was written (scripts refuse writes without `--remote`) |
 | 2026-11-11 | LAS merge run on production by owner |
+| 2026-11-11 | Releases 1.1, 1.2, 1.3 and 3.1–3.2 (with the Settings auth fix) smoke-tested on production by owner; Items 1–3 done, Item 9 waits only on onboarding (3.4) |
