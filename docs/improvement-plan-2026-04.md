@@ -404,7 +404,7 @@ Data imports (organs, departments, incident types, admins) are **not** migration
   - [x] Block edit and delete when the status isn't `SUBMITTED` (loaders and server action, `__incident-access.server.ts`).
   - [x] **Security fix found on the way:** the reporter edit/delete loaders had no auth and the action accepted any incident id (the `$userId_+` routes skip the `$userId.tsx` check). All reporter incident routes now check the signed-in user and incident ownership. Attachment cleanup on edit was also unscoped (matched every attachment in the DB); now limited to the incident.
 - *Notifications (shared with Item 8)*
-  - [ ] Email the reporter when the status changes.
+  - [x] Email the reporter when the status changes (release 2.4).
 - [x] Record every status change in the audit log (`changeIncidentStatus` in `app/utils/incident-status.server.ts`).
 
 **Acceptance:** Reporters can see where their incident stands at any time. Admins can change the status, escalate, and see the full history.
@@ -569,7 +569,7 @@ Suggested order: **1.1 → 1.2 → 1.3**, with 1.6 investigated in parallel. 1.4
 
 | Release | Type | Items | Contents | Migration | Depends on | Status |
 |---|---|---|---|---|---|---|
-| 2.1 | Migration | 7 | `IncidentStatus` enum, `Incident.status` (default `SUBMITTED`), `IncidentStatusHistory` table, backfill of existing incidents | `incident_status` | Phase 1 done | 🟨 ✅ migrated on prod, pushed and smoke-tested 2026-11-11 (`4a65d3d`) |
+| 2.1 | Migration | 7 | `IncidentStatus` enum, `Incident.status` (default `SUBMITTED`), `IncidentStatusHistory` table, backfill of existing incidents | `incident_status` | Phase 1 done | ✅ migrated on prod, pushed and smoke-tested 2026-11-11 (`4a65d3d`) |
 | 2.2 | Code only | 7 | Admin: status badge and filter, change-status action, escalate action, auto `UNDER_REVIEW` on first assignment, timeline on detail page, audit log | — | 2.1 | ✅ pushed and smoke-tested 2026-11-11 (`4a65d3d`) |
 | 2.3 | Code only | 7 | Reporter: status column, read-only detail page with reporter-visible timeline, block edit/delete after `SUBMITTED`; ownership checks on reporter routes | — | 2.2 | ✅ pushed and smoke-tested 2026-11-11 (`4a65d3d`) |
 | 2.4 | Code only | 8 (+7) | Critical-incident email to incident admins; status-change email to the reporter; configurable trigger severities | — | Q5 ✅ | 🟨 merged to `main` (`c8dd310`), awaiting push and prod smoke test |
