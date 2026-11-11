@@ -271,7 +271,8 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 - [x] Update the PHP dashboard detail, list and exports to show `location?.name ?? buildingName` (`formatBuilding` / `formatFloor` in `utils/misc.tsx`).
 - [x] Audit all `employee.location.name` and `employee.floor.name` usages for null safety (profile page, PHP detail, PDF + Excel exports, access-request requestor).
 - [x] Department dead end (found in local testing): 34 of 49 organs have no departments, so the filtered dropdown was empty. When an organ has none, both forms now list all departments with a hint to pick the parent department (what existing regional staff already did). Server requires organs that do have departments to pick one of their own. Real per-organ departments still come in 1.5.
-- [ ] Decide whether `officeNumber` stays required. *(Question for business, Q8.)* Kept required for now; it's free text, so regional staff can fill it. Making it optional is a Zod-only change unless the column must hold NULL.
+- [x] Decide whether `officeNumber` stays required: **not mandatory** (Q8, 2026-11-11).
+- [ ] Make `officeNumber` optional: `DROP NOT NULL` migration, Zod `optional()`, null-safe display and exports.
 - [ ] *(Follow-up, data)* 177 of 1,776 employees have a location belonging to another organ (65 of them in organs with no locations), from the old unfiltered first-time form. They'll be asked to correct it the next time they edit their duty station; a cleanup script could move them to `buildingName` instead.
 
 **Acceptance:** A regional-office employee whose organ has no configured buildings can submit the PHP form.
@@ -360,7 +361,10 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 - Add WGYD (Women, Gender and Youth Directorate) under the AU Commission.
 
 **Tasks**
-- [ ] ⏸ Get the current department list and the rename mapping from the business.
+- [x] Q3 answered (2026-11-11): every organ without a department structure gets an **Admin & Finance** department. In the 2026-11-11 data that is 40 of 55 organs (66 staff, currently linked to HQ departments).
+- [ ] Import script: add "Admin and Finance" (matching the existing HQ department's name and code) to each organ with no departments; idempotent, dry run by default.
+- [ ] Decide what happens to the 66 existing staff in those organs: move them to their organ's new department, or let them re-pick on their next edit.
+- [ ] ⏸ Get the current HQ department list and the rename mapping from the business.
 - [ ] Rename existing departments as mapped (a script or Settings → Departments).
 - [ ] Add missing HQ departments, including WGYD.
 - [ ] **Departments are not touched for now** (owner decision, 2026-11-11). The owner will get the old → new mapping from the business (Q3). Note for then: since `0f1b5b6`, an organ with no departments lets its staff pick any department, and regional staff are linked to their HQ parent department (for example PANVAC → Rural Economy & Agriculture). Giving such an organ its own department would force its staff to re-pick, so ask whether regional offices should get their own departments.
@@ -454,7 +458,8 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 - **Option B (recommended):** Office-scoped admins. Add a link between `User` and `Organ` (for example `User.adminOrgans Organ[]`, or an `OrganAdmin` join table). Dashboard loaders then filter incidents, PHP profiles and requests by the admin's organs. HQ and EOC roles keep the global view.
 
 **Tasks (Option B)**
-- [ ] ⏸ Business confirms the scoping model and which roles office admins get (incidents only, or PHP, ID and access requests too).
+- [x] Scoping model confirmed (Q4, 2026-11-11): office admins see only their own office's data (Option B).
+- [ ] ⏸ Which modules office admins manage (incidents only, or PHP, ID, car pass and access requests too).
 - [ ] Schema: add an `OrganAdmin` (userId, organId) join table.
 - [ ] Settings → Users: let an admin assign organs to a user.
 - [ ] Add a `getAdminScope(user)` helper in `permission.server.ts` that returns `null` (global) or a list of organ IDs.
@@ -479,13 +484,12 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 **Recommendation**
 - **Short term:** Ask these users to sign up with email and password, with email verification. Publish short instructions.
 - **Medium term:** Change the Azure app registration to multi-tenant (`organizations`). Set `tenantId` to `organizations` and restrict sign-in in the callback to an approved-domain list (environment variable `ALLOWED_EMAIL_DOMAINS`, added to the `env.server.ts` schema).
-- Personal Gmail addresses: decide whether to allow them at all, or only for named admins.
+- Personal Gmail addresses: decide whether to allow them at all, or only for named admins. **Decided (Q7, 2026-11-11): allowed.** Some offices can't use any organisational domain, so there is no domain allowlist. Email and password signup (with verification) is the route for personal addresses; PHP approval by `phpAdmin` stays the check on who is real staff.
 
 **Tasks**
 - [ ] ⏸ Azure AD admin agrees to make the app registration multi-tenant.
 - [ ] Make the Microsoft `tenantId` configurable (for example `AZURE_TENANT_ID=organizations`).
-- [ ] Add an `ALLOWED_EMAIL_DOMAINS` env var and add it to `app/utils/env.server.ts` (server-only, not returned from `getEnv()`).
-- [ ] Enforce the domain allowlist in the OAuth callback and in signup.
+- [ ] ~~Add an `ALLOWED_EMAIL_DOMAINS` env var~~ and ~~enforce a domain allowlist~~: dropped, personal emails are allowed (Q7).
 - [ ] Test with an account from each external domain.
 - [ ] Write a user-facing login guide for non-AU-domain staff.
 
@@ -584,7 +588,7 @@ Suggested order: **1.1 → 1.2 → 1.3**, with 1.6 investigated in parallel. 1.4
 | 3.2 | Code only | 9 | Assign organs to users in Settings → Users; `getAdminScope()`; scope dashboard lists and detail pages by organ | — | 3.1 | ⏸ |
 | 3.3 | Code + Azure config | 10 | Multi-tenant Microsoft login (`organizations`); `ALLOWED_EMAIL_DOMAINS` env var and checks in OAuth callback and signup; login guide | — | Q7, Azure AD admin | ⏸ |
 | 3.4 | Data / ops | 9 | Onboard listed office admins (Appendix C): accounts, roles, organs, welcome/EOC email | — | 3.2, 3.3 | ⏸ |
-| 3.5 | Spike | 8 | SMS (Azure Communication Services) and Web Push: cost, coverage, effort; recommendation only | — | Q6 | ⬜ |
+| 3.5 | Spike | 8 | SMS (Azure Communication Services) and Web Push: cost, coverage, effort; recommendation only | — | Q6 | ⏹ dropped for now (Q6: no SMS) |
 
 **Exit criteria:** Each office admin can sign in (including from non-AU domains) and sees only their own office's records. HQ and EOC keep the global view.
 
@@ -611,12 +615,12 @@ Suggested order: **1.1 → 1.2 → 1.3**, with 1.6 investigated in parallel. 1.4
 |---|---|---|
 | Q1 | Confirm the cleaned incident type list (Appendix A), especially the flagged entries. Should types be grouped by category? | Item 4 |
 | Q2 | Confirm the organ/office list (Appendix B): acronyms, countries, cities, parent department. Supply the rest of the list after "CAR". | Item 5 |
-| Q3 | Provide the current AUC department structure and the old → new name mapping. Should regional offices get their own departments, or keep using the HQ parent department? | Item 6 |
-| Q4 | Should office admins see only their own office's data (recommended) or all data? Which modules can they manage? | Item 9 |
+| Q3 | Provide the current AUC department structure and the old → new name mapping. Should regional offices get their own departments, or keep using the HQ parent department? **Answered 2026-11-11:** Yes, regional offices get their own departments where they have a structure. An office with no department structure gets an **Admin & Finance** department (usually the case). HQ rename mapping still to come. | Item 6 |
+| Q4 | Should office admins see only their own office's data (recommended) or all data? Which modules can they manage? **Answered 2026-11-11:** Office admins see **only their own office's** data. (Which modules they manage is still open.) | Item 9 |
 | Q5 | Should `major` incidents also trigger alerts, or only `critical`? Who besides incident admins should receive them (EOC mailbox)? **Answered 2026-11-11: only `critical`; `incidentAdmin` users only.** | Item 8 |
-| Q6 | Is SMS required, or is email enough for now? Budget for SMS? | Item 8 |
-| Q7 | Which external domains are approved? Are Gmail accounts allowed? | Item 10 |
-| Q8 | Should office number remain mandatory for regional offices? | Item 3 |
+| Q6 | Is SMS required, or is email enough for now? Budget for SMS? **Answered 2026-11-11:** **No SMS for now**; email is enough. | Item 8 |
+| Q7 | Which external domains are approved? Are Gmail accounts allowed? **Answered 2026-11-11:** Some offices can't use africanunion.org or their own domain, so users may sign in with **personal email addresses**. No domain allowlist. | Item 10 |
+| Q8 | Should office number remain mandatory for regional offices? **Answered 2026-11-11:** Office number is **not mandatory**. | Item 3 |
 | Q9 | Who is the support contact for staff, and what response time is expected? | Item 11 |
 
 ---
@@ -886,3 +890,4 @@ app/routes/settings+/officers+/index.tsx
 | 2026-11-11 | Release 2.4 and the email sender fix pushed and smoke-tested in production; Phase 2 done |
 | 2026-11-11 | Security fix (`fix-attachment-auth`): `/profile/resources/attachments/:id`, `/profile/resources/employees/:id` (personal-info PDF) and `/profile/resources/employees` (Excel of all staff) had no auth. Now: sign-in required; attachments and PDFs only for the owner or the matching admin roles (others get 404); bulk export `admin`/`phpAdmin` only; `cache-control: private, no-store`. Code only |
 | 2026-11-11 | Attachment/export auth fix pushed and smoke-tested in production (`83840f3`) |
+| 2026-11-11 | Business answered Q3 (Admin & Finance for offices without departments), Q4 (office admins scoped to own office), Q6 (no SMS), Q7 (personal emails allowed, no allowlist), Q8 (office number optional) |
