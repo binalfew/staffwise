@@ -882,3 +882,4 @@ app/routes/settings+/officers+/index.tsx
 | 2026-11-11 | Releases 2.1–2.3 pushed and smoke-tested in production |
 | 2026-11-11 | Q5 answered (critical only, incidentAdmin only); release 2.4 built on `phase-2-incident-emails` |
 | 2026-11-11 | Release 2.4 merged to `main` |
+| 2026-11-11 | Email fix: Azure rejected every email ("sender domain has not been linked": hardcoded `…azurecomm.net` sender). Sender changed to `DoNotReply@apps.africanunion.org` (overridable with optional `EMAIL_SENDER_ADDRESS`). Signup, password reset, PHP and incident emails were all failing silently; likely part of Item 11 |

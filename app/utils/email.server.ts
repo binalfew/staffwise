@@ -10,7 +10,7 @@ export async function sendEmail(options: {
 	const POLLER_WAIT_TIME = 10
 	const message = {
 		senderAddress:
-			'DoNotReply@149e17cc-e142-4d9f-960a-67c1e13cc0db.azurecomm.net',
+			process.env.EMAIL_SENDER_ADDRESS || 'DoNotReply@apps.africanunion.org',
 		recipients: {
 			to: [{ address: to }],
 		},
