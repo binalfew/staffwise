@@ -362,8 +362,9 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 
 **Tasks**
 - [x] Q3 answered (2026-11-11): every organ without a department structure gets an **Admin & Finance** department. In the 2026-11-11 data that is 40 of 55 organs (66 staff, currently linked to HQ departments).
-- [ ] Import script: add "Admin and Finance" (matching the existing HQ department's name and code) to each organ with no departments; idempotent, dry run by default.
-- [ ] Decide what happens to the 66 existing staff in those organs: move them to their organ's new department, or let them re-pick on their next edit.
+- [x] Import script `prisma/scripts/add-default-departments.ts`: adds "Admin and Finance" (same name and code style as AfCHPR's) and "Other" to each organ with no departments of its own. Idempotent, dry run by default. Rehearsed locally: 80 departments in 40 organs; a second run creates nothing.
+- [x] Existing staff (65 in those organs, linked to HQ departments) are **not moved** (owner, 2026-11-11). The duty-station form asks them to pick one of their organ's departments the next time they edit.
+- [ ] Owner runs it on production after a backup: `npx tsx prisma/scripts/add-default-departments.ts --apply --remote`.
 - [ ] ⏸ Get the current HQ department list and the rename mapping from the business.
 - [ ] Rename existing departments as mapped (a script or Settings → Departments).
 - [ ] Add missing HQ departments, including WGYD.
@@ -459,7 +460,7 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 
 **Tasks (Option B)**
 - [x] Scoping model confirmed (Q4, 2026-11-11): office admins see only their own office's data (Option B).
-- [ ] ⏸ Which modules office admins manage (incidents only, or PHP, ID, car pass and access requests too).
+- [x] Office admins manage **incidents only** (Q4, 2026-11-11). PHP, ID, car pass and access requests stay with the global admins.
 - [ ] Schema: add an `OrganAdmin` (userId, organId) join table.
 - [ ] Settings → Users: let an admin assign organs to a user.
 - [ ] Add a `getAdminScope(user)` helper in `permission.server.ts` that returns `null` (global) or a list of organ IDs.
@@ -564,6 +565,7 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 | 1.4 | Data import (+ optional migration) | 4 | Import approved incident types; optional `category` column and grouped dropdown | `incident_type_category` (optional) | Q1 | ✅ 53 types imported on prod 2026-11-11 (`818f855`); dropdown sort pushed 2026-11-11 |
 | 1.5 | Data import (+ optional migration) | 5, 6 | Import organs, departments and renames; at least one department per organ; optional `Organ.city`; empty-department guard in the PHP form | `organ_city` (optional) | Q2, Q3 | ✅ organs imported on prod 2026-11-11 (`bb4c965`): 13 new, 24 codes fixed, 5 duplicates merged; unclear organs left as they are. Departments (Item 6) ⏸ waiting on the Q3 mapping |
 | 1.6 | Code + Ops | 11 | Code: `trust proxy` and per-client rate-limit keys, raised limits, `/resources/healthcheck`. Ops: Always On / plan tier / restarts, uptime monitor, publish URL and support contact | — | Q9 (support contact only) | 🟨 code live (`5139320`), monitor set up, Always On / P0v3 confirmed; waiting on Q9 (support contact, Help link) |
+| 1.7 | Data import | 6 | "Admin and Finance" and "Other" departments for every organ with no departments (`add-default-departments.ts`) | — | Q3 ✅ | 🟨 script ready, rehearsed locally (40 organs, 80 departments; rerun creates nothing); awaiting prod run by owner |
 
 Suggested order: **1.1 → 1.2 → 1.3**, with 1.6 investigated in parallel. 1.4 and 1.5 start as soon as the business answers Q1–Q3.
 
@@ -584,8 +586,8 @@ Suggested order: **1.1 → 1.2 → 1.3**, with 1.6 investigated in parallel. 1.4
 
 | Release | Type | Items | Contents | Migration | Depends on | Status |
 |---|---|---|---|---|---|---|
-| 3.1 | Migration | 9 | `OrganAdmin` join table | `organ_admin` | Q4 | ⏸ |
-| 3.2 | Code only | 9 | Assign organs to users in Settings → Users; `getAdminScope()`; scope dashboard lists and detail pages by organ | — | 3.1 | ⏸ |
+| 3.1 | Migration | 9 | `OrganAdmin` join table | `organ_admin` | Q4 ✅ | ⬜ ready to start |
+| 3.2 | Code only | 9 | Assign organs to users in Settings → Users; `getAdminScope()`; scope the incident dashboard list and detail pages by organ (incidents only, Q4) | — | 3.1 | ⏸ |
 | 3.3 | Code + Azure config | 10 | Multi-tenant Microsoft login (`organizations`); `ALLOWED_EMAIL_DOMAINS` env var and checks in OAuth callback and signup; login guide | — | Q7, Azure AD admin | ⏸ |
 | 3.4 | Data / ops | 9 | Onboard listed office admins (Appendix C): accounts, roles, organs, welcome/EOC email | — | 3.2, 3.3 | ⏸ |
 | 3.5 | Spike | 8 | SMS (Azure Communication Services) and Web Push: cost, coverage, effort; recommendation only | — | Q6 | ⏹ dropped for now (Q6: no SMS) |
@@ -615,8 +617,8 @@ Suggested order: **1.1 → 1.2 → 1.3**, with 1.6 investigated in parallel. 1.4
 |---|---|---|
 | Q1 | Confirm the cleaned incident type list (Appendix A), especially the flagged entries. Should types be grouped by category? | Item 4 |
 | Q2 | Confirm the organ/office list (Appendix B): acronyms, countries, cities, parent department. Supply the rest of the list after "CAR". | Item 5 |
-| Q3 | Provide the current AUC department structure and the old → new name mapping. Should regional offices get their own departments, or keep using the HQ parent department? **Answered 2026-11-11:** Yes, regional offices get their own departments where they have a structure. An office with no department structure gets an **Admin & Finance** department (usually the case). HQ rename mapping still to come. | Item 6 |
-| Q4 | Should office admins see only their own office's data (recommended) or all data? Which modules can they manage? **Answered 2026-11-11:** Office admins see **only their own office's** data. (Which modules they manage is still open.) | Item 9 |
+| Q3 | Provide the current AUC department structure and the old → new name mapping. Should regional offices get their own departments, or keep using the HQ parent department? **Answered 2026-11-11:** Yes, regional offices get their own departments where they have a structure. An office with no department structure gets an **Admin & Finance** department (usually the case), plus an **Other** option. Existing staff are not moved. HQ rename mapping still to come. | Item 6 |
+| Q4 | Should office admins see only their own office's data (recommended) or all data? Which modules can they manage? **Answered 2026-11-11:** Office admins see **only their own office's** data, and manage **incidents only**. | Item 9 |
 | Q5 | Should `major` incidents also trigger alerts, or only `critical`? Who besides incident admins should receive them (EOC mailbox)? **Answered 2026-11-11: only `critical`; `incidentAdmin` users only.** | Item 8 |
 | Q6 | Is SMS required, or is email enough for now? Budget for SMS? **Answered 2026-11-11:** **No SMS for now**; email is enough. | Item 8 |
 | Q7 | Which external domains are approved? Are Gmail accounts allowed? **Answered 2026-11-11:** Some offices can't use africanunion.org or their own domain, so users may sign in with **personal email addresses**. No domain allowlist. | Item 10 |
@@ -891,3 +893,4 @@ app/routes/settings+/officers+/index.tsx
 | 2026-11-11 | Security fix (`fix-attachment-auth`): `/profile/resources/attachments/:id`, `/profile/resources/employees/:id` (personal-info PDF) and `/profile/resources/employees` (Excel of all staff) had no auth. Now: sign-in required; attachments and PDFs only for the owner or the matching admin roles (others get 404); bulk export `admin`/`phpAdmin` only; `cache-control: private, no-store`. Code only |
 | 2026-11-11 | Attachment/export auth fix pushed and smoke-tested in production (`83840f3`) |
 | 2026-11-11 | Business answered Q3 (Admin & Finance for offices without departments), Q4 (office admins scoped to own office), Q6 (no SMS), Q7 (personal emails allowed, no allowlist), Q8 (office number optional) |
+| 2026-11-11 | Q3 follow-up: offices without departments also get "Other"; existing staff not moved. Q4 follow-up: office admins manage incidents only. Release 1.7 script prepared |
