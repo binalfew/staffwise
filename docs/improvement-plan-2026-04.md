@@ -566,7 +566,7 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 | 1.5 | Data import (+ optional migration) | 5, 6 | Import organs, departments and renames; at least one department per organ; optional `Organ.city`; empty-department guard in the PHP form | `organ_city` (optional) | Q2, Q3 | ✅ organs imported on prod 2026-11-11 (`bb4c965`): 13 new, 24 codes fixed, 5 duplicates merged; unclear organs left as they are. Departments (Item 6) ⏸ waiting on the Q3 mapping |
 | 1.6 | Code + Ops | 11 | Code: `trust proxy` and per-client rate-limit keys, raised limits, `/resources/healthcheck`. Ops: Always On / plan tier / restarts, uptime monitor, publish URL and support contact | — | Q9 (support contact only) | 🟨 code live (`5139320`), monitor set up, Always On / P0v3 confirmed; waiting on Q9 (support contact, Help link) |
 | 1.7 | Data import | 6 | "Admin and Finance" and "Other" departments for every organ with no departments; their staff default to "Other" (`add-default-departments.ts`) | — | Q3 ✅ | ✅ run on prod by owner 2026-11-11 (`f5f9fde`); rehearsed locally first (40 organs, 80 departments, 65 staff moved to Other) |
-| 1.8 | Migration | 3 | Office number optional (Q8) | `office_number_optional` (DROP NOT NULL ×1) | Q8 ✅ | 🟨 built on `phase-1-office-number-optional`; awaiting prod `migrate deploy`, then merge and push |
+| 1.8 | Migration | 3 | Office number optional (Q8) | `office_number_optional` (DROP NOT NULL ×1) | Q8 ✅ | 🟨 migrated on prod, merged to `main`, awaiting push and prod smoke test |
 
 Suggested order: **1.1 → 1.2 → 1.3**, with 1.6 investigated in parallel. 1.4 and 1.5 start as soon as the business answers Q1–Q3.
 
@@ -607,6 +607,7 @@ Suggested order: **1.1 → 1.2 → 1.3**, with 1.6 investigated in parallel. 1.4
 | 2026-11-11 | 1.4 | `phase-1-incident-types` (`818f855`) | `import-incident-types.ts --apply --remote` ✅ | 53 incident types added; existing types unchanged |
 | 2026-11-11 | 1.5 | `phase-1-organs` (`bb4c965`) | `import-organs.ts --apply --merge --remote` ✅ | 13 organs added, 24 codes fixed, 5 duplicates merged; departments not touched |
 | 2026-11-11 | 1.7 | `phase-1-default-departments` (`7650a5d`, `f5f9fde`) | `add-default-departments.ts --apply --remote` ✅ | "Admin and Finance" and "Other" for organs without departments; their staff moved to "Other". Pushed |
+| 2026-11-11 | 1.8 | `phase-1-office-number-optional` (`25bed68`) | `migrate deploy` `20261111081530_office_number_optional` ✅ | Merged to `main`; awaiting push and prod smoke test |
 | 2026-11-11 | 2.1–2.3 | `phase-2-incident-status` (`4a65d3d`) | `migrate deploy` `20261111050600_incident_status` ✅ | Pushed and smoke-tested. Includes the reporter-route auth fix |
 | 2026-11-11 | 2.4 | `phase-2-incident-emails` (`c8dd310`) | — (code only) | Pushed and smoke-tested, together with the email sender fix (`11c191d`) |
 | 2026-11-11 | 1.6 (code) | `phase-1-ops-rate-limit` (`5139320`) | — (code only) | Pushed and smoke-tested: healthcheck 200, `RateLimit-Limit: 1000`. Rate limiter fixed to key per client IP; healthcheck route. Uptime monitor and alert set up; Always On on, plan P0v3. Remaining: support contact (Q9) |
@@ -899,3 +900,4 @@ app/routes/settings+/officers+/index.tsx
 | 2026-11-11 | Release 1.7: existing staff in those organs default to "Other" (owner) |
 | 2026-11-11 | Release 1.7 run on production by owner and pushed |
 | 2026-11-11 | Release 1.8 (office number optional) built; migration awaiting production deploy |
+| 2026-11-11 | Release 1.8 migration deployed on production by owner; merged to `main` |
