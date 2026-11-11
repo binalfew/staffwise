@@ -342,8 +342,8 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 - [ ] Later, with the business (Q2): the organs left out above. They stay as they are until someone confirms them.
 - [x] (2026-11-11) Owner ran it on production with `--merge` after a backup; a dry run afterwards reports nothing left to create, update or merge.
 - [x] (2026-11-11) Second list from the business: 7 new organs added to `organs.json` (AfSA Cairo, PANSTAT Yamoussoukro, ACERWC Maseru, ACBF Harare, AFCONE Pretoria, AMA Kigali, AfHA Kampala). Rehearsed locally with `add-default-departments.ts`, which gives each one "Admin and Finance" and "Other".
-- [ ] Owner runs `import-organs.ts --apply --remote`, then `add-default-departments.ts --apply --remote`, after a backup.
-- [ ] League of Arab States office: two records exist (`AU-LAS`, and `+20` with its own Administration/Finance/HR departments). Merge waiting on owner.
+- [x] Owner ran `import-organs.ts` and `add-default-departments.ts` on production (fresh dump 2026-11-11 11:57: all 7 present with their two departments; both scripts report nothing to do).
+- [ ] League of Arab States office: production has three records: `+20` "AU Permanent Representative Mission League Arab States" (1 staff, Administration/Finance/HR, 1 location), and two "Permanent Delegation … – Cairo Office" (`+20`, 0 staff; `20`, 1 staff), each with only the default departments. `prisma/scripts/merge-las-office.ts` keeps the first, renames it `AU-LAS` "AU Permanent Representative to the League of Arab States", adds "Other", moves the duplicates' staff there and deletes both duplicates (owner, 2026-11-11). Rehearsed on a fresh prod dump (`staffwise_rehearsal`): organs 64 → 62, staff unchanged at 1,776, departments 198 → 195; rerun changes nothing. Awaiting prod run by owner.
 - [ ] Export the current organs list first as a backup.
 
 **Acceptance:** Every confirmed AU office, organ and specialised agency can be selected in the PHP form.
@@ -913,3 +913,4 @@ app/routes/settings+/officers+/index.tsx
 | 2026-11-11 | Settings auth fix moved off `main` (not pushed yet) onto `phase-3-office-incident-admins`, to ship with 3.1–3.2 (owner) |
 | 2026-11-11 | Releases 3.1–3.2 (office-scoped incident admins) built on `phase-3-office-incident-admins`; `organ_admin` migration awaiting production deploy |
 | 2026-11-11 | `organ_admin` migration deployed on production by owner. Second organ list: 7 new organs added to `organs.json`; LAS duplicate pending |
+| 2026-11-11 | LAS merge script rehearsed on a fresh production dump (production has 3 LAS records, not 2 as in the local copy). Note: a run of local scripts briefly read production because `.env` had the production URL active; nothing was written (scripts refuse writes without `--remote`) |

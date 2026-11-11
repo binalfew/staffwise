@@ -5,9 +5,10 @@
 //   ... --apply --remote                                  # write (prod, after a backup)
 //
 // Keeps the "+20" record, which has the office's own departments, renames it
-// and gives it an "Other" department. Staff of the "AU-LAS" duplicate move to
-// that "Other"; the duplicate's departments and the duplicate itself are then
-// deleted. Running it again changes nothing.
+// and gives it an "Other" department. Staff of every "Cairo Office" duplicate
+// (production has two, coded +20 and 20) move to that "Other"; the duplicates'
+// departments and the duplicates themselves are then deleted. Running it
+// again changes nothing.
 
 import { PrismaClient } from '@prisma/client'
 import { apply, checkTarget, normalize } from './lib'
@@ -48,13 +49,11 @@ async function main() {
 	if (keeps.length !== 1) {
 		throw new Error(`Expected 1 organ to keep, found ${keeps.length}`)
 	}
-	if (dups.length > 1) {
-		throw new Error(`Expected at most 1 duplicate, found ${dups.length}`)
-	}
 	const keep = keeps[0]
-	const dup = dups[0]
-	if (dup && dup._count.locations > 0) {
-		throw new Error(`${dup.code} has locations; merge them by hand first`)
+	for (const dup of dups) {
+		if (dup._count.locations > 0) {
+			throw new Error(`${dup.code} has locations; merge them by hand first`)
+		}
 	}
 
 	const rename = keep.name !== TARGET.name || keep.code !== TARGET.code
@@ -77,17 +76,18 @@ async function main() {
 			? `  already has "${STAFF_DEPARTMENT}"`
 			: `  + department "${STAFF_DEPARTMENT}"`,
 	)
-	console.log(
-		dup
-			? `Duplicate: ${dup.code} "${dup.name}" (${
-					dup._count.employees
-			  } staff → "${STAFF_DEPARTMENT}"; delete departments ${dup.departments
-					.map(d => d.name)
-					.join(', ')}; delete organ)`
-			: 'Duplicate: none left',
-	)
+	if (dups.length === 0) console.log('Duplicates: none left')
+	for (const dup of dups) {
+		console.log(
+			`Duplicate: ${dup.code} "${dup.name}" [${dup.id}] (${
+				dup._count.employees
+			} staff → "${STAFF_DEPARTMENT}"; delete departments ${dup.departments
+				.map(d => d.name)
+				.join(', ')}; delete organ)`,
+		)
+	}
 
-	if (!apply || (!rename && hasOther && !dup)) return
+	if (!apply || (!rename && hasOther && dups.length === 0)) return
 
 	await prisma.$transaction(async tx => {
 		if (rename) {
@@ -105,35 +105,35 @@ async function main() {
 				},
 				select: { id: true, name: true },
 			}))
-		if (!dup) return
-
-		const moved = await tx.employee.updateMany({
-			where: { organId: dup.id },
-			data: { organId: keep.id, departmentId: other.id },
-		})
-		// Staff of other organs can't point at the duplicate's departments
-		// (the forms don't allow it), but check before deleting.
-		const stillLinked = await tx.employee.count({
-			where: { department: { organId: dup.id } },
-		})
-		if (stillLinked > 0) {
-			throw new Error(
-				`${stillLinked} employees still use ${dup.code} departments`,
+		for (const dup of dups) {
+			const moved = await tx.employee.updateMany({
+				where: { organId: dup.id },
+				data: { organId: keep.id, departmentId: other.id },
+			})
+			// Staff of other organs can't point at the duplicate's departments
+			// (the forms don't allow it), but check before deleting.
+			const stillLinked = await tx.employee.count({
+				where: { department: { organId: dup.id } },
+			})
+			if (stillLinked > 0) {
+				throw new Error(
+					`${stillLinked} employees still use ${dup.code} departments`,
+				)
+			}
+			const admins = await tx.organAdmin.findMany({
+				where: { organId: dup.id },
+				select: { userId: true },
+			})
+			await tx.organAdmin.createMany({
+				data: admins.map(({ userId }) => ({ userId, organId: keep.id })),
+				skipDuplicates: true,
+			})
+			await tx.department.deleteMany({ where: { organId: dup.id } })
+			await tx.organ.delete({ where: { id: dup.id } })
+			console.log(
+				`Moved ${moved.count} staff, ${admins.length} office admins; deleted ${dup.code} [${dup.id}].`,
 			)
 		}
-		const admins = await tx.organAdmin.findMany({
-			where: { organId: dup.id },
-			select: { userId: true },
-		})
-		await tx.organAdmin.createMany({
-			data: admins.map(({ userId }) => ({ userId, organId: keep.id })),
-			skipDuplicates: true,
-		})
-		await tx.department.deleteMany({ where: { organId: dup.id } })
-		await tx.organ.delete({ where: { id: dup.id } })
-		console.log(
-			`\nMoved ${moved.count} staff, ${admins.length} office admins; deleted ${dup.code}.`,
-		)
 	})
 	console.log('Done.')
 }
