@@ -6,7 +6,10 @@ import { validateCSRF } from '~/utils/csrf.server'
 import { generateSerialNumber, prisma } from '~/utils/db.server'
 import { checkHoneypot } from '~/utils/honeypot.server'
 import { invariantResponse } from '~/utils/misc'
-import { requireUserWithRoles } from '~/utils/permission.server'
+import {
+	requireEmployeeInScope,
+	requireIncidentAdmin,
+} from '~/utils/incident-scope.server'
 import {
 	deleteDirectory,
 	deleteFileIfExists,
@@ -23,7 +26,7 @@ import {
 } from './__incident-editor'
 
 export async function action({ params, request }: ActionFunctionArgs) {
-	const user = await requireUserWithRoles(request, ['admin', 'incidentAdmin'])
+	const { user, scope, scopeWhere } = await requireIncidentAdmin(request)
 	const formData = await request.formData()
 	checkHoneypot(formData)
 	await validateCSRF(formData, request.headers)
@@ -40,8 +43,13 @@ export async function action({ params, request }: ActionFunctionArgs) {
 				{ status: submission.status === 'error' ? 400 : 200 },
 			)
 		}
+		const inScope = await prisma.incident.findFirst({
+			where: { id: submission.value.id, ...scopeWhere },
+			select: { id: true },
+		})
+		invariantResponse(inScope, 'Incident not found', { status: 404 })
 		const incident = await prisma.incident.delete({
-			where: { id: submission.value.id },
+			where: { id: inScope.id },
 			select: { incidentNumber: true },
 		})
 
@@ -73,7 +81,7 @@ export async function action({ params, request }: ActionFunctionArgs) {
 		const { id: assignmentId, incidentNumber, ...assignment } = submission.value
 
 		const incident = await prisma.incident.findFirst({
-			where: { incidentNumber },
+			where: { incidentNumber, ...scopeWhere },
 			select: { id: true },
 		})
 
@@ -87,7 +95,10 @@ export async function action({ params, request }: ActionFunctionArgs) {
 		}
 		await prisma.incidentAssignment.upsert({
 			select: { id: true },
-			where: { id: assignmentId ?? '__new_assignment__' },
+			where: {
+				id: assignmentId ?? '__new_assignment__',
+				incidentId: incident.id,
+			},
 			create: {
 				...data,
 			},
@@ -166,12 +177,13 @@ export async function action({ params, request }: ActionFunctionArgs) {
 				mode: 'insensitive',
 			},
 		},
-		select: { id: true, auIdNumber: true },
+		select: { id: true, auIdNumber: true, organId: true },
 	})
 
 	invariantResponse(employee, 'Employee not found', {
 		status: 404,
 	})
+	requireEmployeeInScope(scope, employee)
 
 	const {
 		id: incidentId,
@@ -180,6 +192,14 @@ export async function action({ params, request }: ActionFunctionArgs) {
 		newAttachments,
 		...incidentDetails
 	} = submission.value
+
+	if (incidentId) {
+		const existing = await prisma.incident.findFirst({
+			where: { id: incidentId, ...scopeWhere },
+			select: { id: true },
+		})
+		invariantResponse(existing, 'Incident not found', { status: 404 })
+	}
 
 	const data = {
 		...incidentDetails,

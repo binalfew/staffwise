@@ -27,7 +27,7 @@ import { checkHoneypot } from '~/utils/honeypot.server'
 import { sendIncidentStatusEmail } from '~/utils/incident-notifications.server'
 import { changeIncidentStatus } from '~/utils/incident-status.server'
 import { formatFullName, invariantResponse } from '~/utils/misc'
-import { requireUserWithRoles } from '~/utils/permission.server'
+import { requireIncidentAdmin } from '~/utils/incident-scope.server'
 import { redirectWithToast } from '~/utils/toast.server'
 
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
@@ -41,7 +41,7 @@ export const AssignmentSchema = z.object({
 })
 
 export async function action({ request }: ActionFunctionArgs) {
-	const user = await requireUserWithRoles(request, ['admin', 'incidentAdmin'])
+	const { user, scopeWhere } = await requireIncidentAdmin(request)
 	const formData = await request.formData()
 	checkHoneypot(formData)
 	await validateCSRF(formData, request.headers)
@@ -61,7 +61,7 @@ export async function action({ request }: ActionFunctionArgs) {
 	const { id: assignmentId, incidentNumber, ...assignment } = submission.value
 
 	const incident = await prisma.incident.findFirst({
-		where: { incidentNumber },
+		where: { incidentNumber, ...scopeWhere },
 		select: { id: true, status: true },
 	})
 
@@ -76,7 +76,11 @@ export async function action({ request }: ActionFunctionArgs) {
 	const statusHistoryId = await prisma.$transaction(async tx => {
 		const saved = await tx.incidentAssignment.upsert({
 			select: { id: true },
-			where: { id: assignmentId ?? '__new_assignment__' },
+			// An existing assignment must belong to this incident.
+			where: {
+				id: assignmentId ?? '__new_assignment__',
+				incidentId: incident.id,
+			},
 			create: data,
 			update: data,
 		})
@@ -119,13 +123,14 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-	await requireUserWithRoles(request, ['admin', 'incidentAdmin'])
+	const { scopeWhere } = await requireIncidentAdmin(request)
 
 	const { incidentId } = params
 
-	const incident = await prisma.incident.findUnique({
+	const incident = await prisma.incident.findFirst({
 		where: {
 			id: incidentId,
+			...scopeWhere,
 		},
 	})
 

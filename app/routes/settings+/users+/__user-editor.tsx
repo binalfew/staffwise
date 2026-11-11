@@ -1,6 +1,6 @@
 import { getFormProps, useForm } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod'
-import { Role, User } from '@prisma/client'
+import { Organ, Role, User } from '@prisma/client'
 import { SerializeFrom } from '@remix-run/node'
 import { Form, Link, useActionData } from '@remix-run/react'
 import { AuthenticityTokenInput } from 'remix-utils/csrf/react'
@@ -29,6 +29,7 @@ export const UserEditorSchema = z.object({
 	roles: z
 		.array(z.string())
 		.min(1, { message: 'At least one role is required' }),
+	organs: z.array(z.string()).default([]),
 })
 
 export const UserDeleteSchema = z.object({
@@ -38,15 +39,18 @@ export const UserDeleteSchema = z.object({
 export function UserEditor({
 	user,
 	roles,
+	organs = [],
 	title,
 	intent,
 }: {
 	user?: SerializeFrom<
 		Pick<User, 'id' | 'name' | 'email' | 'username'> & {
 			roles?: Array<Pick<Role, 'id' | 'name'>>
+			adminOrgans?: Array<{ organId: string }>
 		}
 	>
 	roles: Array<Pick<Role, 'id' | 'name'>>
+	organs?: Array<Pick<Organ, 'id' | 'name'>>
 	title: string
 	intent?: 'add' | 'edit' | 'delete'
 }) {
@@ -65,6 +69,7 @@ export function UserEditor({
 		defaultValue: {
 			...user,
 			roles: user?.roles?.map(role => role.id) ?? [],
+			organs: user?.adminOrgans?.map(({ organId }) => organId) ?? [],
 		},
 	})
 
@@ -139,6 +144,32 @@ export function UserEditor({
 								<FieldError>{fields.roles.errors}</FieldError>
 							)}
 						</Field>
+
+						{organs.length > 0 && (
+							<Field>
+								<fieldset>
+									<legend>Incident admin offices</legend>
+								</fieldset>
+								<p className="text-sm text-muted-foreground">
+									For users with the incidentAdmin role. Leave all unticked to
+									see incidents from every office; tick offices to limit the
+									user to incidents reported by staff of those offices. Users
+									with the admin role always see everything.
+								</p>
+								<div className="grid max-h-64 gap-2 overflow-y-auto rounded-md border p-3">
+									<CheckboxGroupField
+										meta={fields.organs}
+										items={organs.map(organ => ({
+											name: organ.name,
+											value: organ.id,
+										}))}
+									/>
+								</div>
+								{fields.organs.errors && (
+									<FieldError>{fields.organs.errors}</FieldError>
+								)}
+							</Field>
+						)}
 					</Form>
 				</CardContent>
 				<CardFooter className="border-t px-6 py-4">

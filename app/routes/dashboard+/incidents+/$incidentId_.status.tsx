@@ -23,7 +23,7 @@ import { incidentStatusLabels, incidentStatuses } from '~/utils/incident-status'
 import { sendIncidentStatusEmail } from '~/utils/incident-notifications.server'
 import { changeIncidentStatus } from '~/utils/incident-status.server'
 import { invariantResponse } from '~/utils/misc'
-import { requireUserWithRoles } from '~/utils/permission.server'
+import { requireIncidentAdmin } from '~/utils/incident-scope.server'
 import { redirectWithToast } from '~/utils/toast.server'
 
 // Escalation needs an officer, so it goes through the escalate route instead.
@@ -40,10 +40,10 @@ const StatusSchema = z.object({
 })
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-	await requireUserWithRoles(request, ['admin', 'incidentAdmin'])
+	const { scopeWhere } = await requireIncidentAdmin(request)
 
-	const incident = await prisma.incident.findUnique({
-		where: { id: params.incidentId },
+	const incident = await prisma.incident.findFirst({
+		where: { id: params.incidentId, ...scopeWhere },
 		select: { id: true, status: true },
 	})
 	invariantResponse(incident, 'Incident not found', { status: 404 })
@@ -52,13 +52,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-	const user = await requireUserWithRoles(request, ['admin', 'incidentAdmin'])
+	const { user, scopeWhere } = await requireIncidentAdmin(request)
 	const formData = await request.formData()
 	checkHoneypot(formData)
 	await validateCSRF(formData, request.headers)
 
-	const incident = await prisma.incident.findUnique({
-		where: { id: params.incidentId },
+	const incident = await prisma.incident.findFirst({
+		where: { id: params.incidentId, ...scopeWhere },
 		select: { id: true, status: true },
 	})
 	invariantResponse(incident, 'Incident not found', { status: 404 })

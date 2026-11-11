@@ -21,7 +21,7 @@ import { validateCSRF } from '~/utils/csrf.server'
 import { prisma } from '~/utils/db.server'
 import { checkHoneypot } from '~/utils/honeypot.server'
 import { formatFullName, invariantResponse } from '~/utils/misc'
-import { requireUserWithRoles } from '~/utils/permission.server'
+import { requireIncidentAdmin } from '~/utils/incident-scope.server'
 import { redirectWithToast } from '~/utils/toast.server'
 
 export const AssignmentDeleteSchema = z.object({
@@ -32,7 +32,7 @@ export const AssignmentDeleteSchema = z.object({
 
 export async function action({ request, params }: ActionFunctionArgs) {
 	const { incidentId } = params
-	await requireUserWithRoles(request, ['admin', 'incidentAdmin'])
+	const { scopeWhere } = await requireIncidentAdmin(request)
 	const formData = await request.formData()
 	checkHoneypot(formData)
 	await validateCSRF(formData, request.headers)
@@ -51,11 +51,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 	const { id } = submission.value
 
-	await prisma.incidentAssignment.delete({
-		where: {
-			id,
-		},
+	const { count } = await prisma.incidentAssignment.deleteMany({
+		where: { id, incidentId, incident: scopeWhere },
 	})
+	invariantResponse(count > 0, 'Assignment not found', { status: 404 })
 
 	return redirectWithToast(`/dashboard/incidents/${incidentId}`, {
 		type: 'success',
@@ -65,13 +64,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-	await requireUserWithRoles(request, ['admin', 'incidentAdmin'])
+	const { scopeWhere } = await requireIncidentAdmin(request)
 
 	const { assignmentId } = params
 
 	const assignment = await prisma.incidentAssignment.findUnique({
 		where: {
 			id: assignmentId,
+			incidentId: params.incidentId,
+			incident: scopeWhere,
 		},
 	})
 

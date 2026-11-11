@@ -9,11 +9,15 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
 import { GeneralErrorBoundary } from '~/components/ui/error-boundary'
 import { prisma } from '~/utils/db.server'
+import {
+	getIncidentScope,
+	incidentScopeWhere,
+} from '~/utils/incident-scope.server'
 import { requireUserWithRoles } from '~/utils/permission.server'
 import { useOptionalUser, userHasRoles } from '~/utils/user'
 
 export async function loader({ request }: LoaderFunctionArgs) {
-	await requireUserWithRoles(request, [
+	const user = await requireUserWithRoles(request, [
 		'admin',
 		'phpAdmin',
 		'accessRequestAdmin',
@@ -22,7 +26,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		'carPassAdmin',
 	])
 	const phpCount = await prisma.employee.count()
-	const incidentsCount = await prisma.incident.count()
+	const incidentsCount = await prisma.incident.count({
+		where: incidentScopeWhere(await getIncidentScope(user.id)),
+	})
 	const idRequestsCount = await prisma.idRequest.count()
 	const carPassRequestsCount = await prisma.carPassRequest.count()
 	const accessRequestsCount = await prisma.accessRequest.count()

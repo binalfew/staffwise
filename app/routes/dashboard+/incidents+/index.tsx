@@ -29,10 +29,10 @@ import {
 	isIncidentStatus,
 } from '~/utils/incident-status'
 import { formatDate, formatFullName, formatTime } from '~/utils/misc'
-import { requireUserWithRoles } from '~/utils/permission.server'
+import { requireIncidentAdmin } from '~/utils/incident-scope.server'
 
 export async function loader({ request }: LoaderFunctionArgs) {
-	await requireUserWithRoles(request, ['admin', 'incidentAdmin'])
+	const { scopeWhere } = await requireIncidentAdmin(request)
 
 	const statusParam = new URL(request.url).searchParams.get('status')
 	const statusFilter = isIncidentStatus(statusParam) ? statusParam : undefined
@@ -46,7 +46,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 			'employee.familyName',
 			'employee.email',
 		],
-		where: statusFilter ? { status: statusFilter } : {},
+		where: { ...scopeWhere, ...(statusFilter ? { status: statusFilter } : {}) },
 		orderBy: [{ createdAt: 'desc' }],
 		select: {
 			id: true,

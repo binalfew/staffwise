@@ -6,12 +6,16 @@ export { action } from './__user-editor.server'
 
 export async function loader() {
 	const roles = await prisma.role.findMany()
+	const organs = await prisma.organ.findMany({
+		select: { id: true, name: true },
+		orderBy: { name: 'asc' },
+	})
 
-	return json({ roles })
+	return json({ roles, organs })
 }
 
 export default function AddRoleRoute() {
-	const { roles } = useLoaderData<typeof loader>()
+	const { roles, organs } = useLoaderData<typeof loader>()
 
-	return <UserEditor title="Add User" roles={roles} />
+	return <UserEditor title="Add User" roles={roles} organs={organs} />
 }

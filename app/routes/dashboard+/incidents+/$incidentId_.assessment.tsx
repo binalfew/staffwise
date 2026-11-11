@@ -16,7 +16,7 @@ import { validateCSRF } from '~/utils/csrf.server'
 import { prisma } from '~/utils/db.server'
 import { checkHoneypot } from '~/utils/honeypot.server'
 import { invariantResponse } from '~/utils/misc'
-import { requireUserWithRoles } from '~/utils/permission.server'
+import { requireIncidentAdmin } from '~/utils/incident-scope.server'
 import { redirectWithToast } from '~/utils/toast.server'
 
 import FormField from '~/components/FormField'
@@ -38,7 +38,7 @@ export const AssessmentSchema = z.object({
 })
 
 export async function action({ request }: ActionFunctionArgs) {
-	await requireUserWithRoles(request, ['admin', 'incidentAdmin'])
+	const { scopeWhere } = await requireIncidentAdmin(request)
 	const formData = await request.formData()
 	checkHoneypot(formData)
 	await validateCSRF(formData, request.headers)
@@ -58,7 +58,7 @@ export async function action({ request }: ActionFunctionArgs) {
 	const { id: assessmentId, ...assessment } = submission.value
 
 	const incident = await prisma.incident.findFirst({
-		where: { id: assessment.incidentId },
+		where: { id: assessment.incidentId, ...scopeWhere },
 		select: { id: true },
 	})
 
@@ -89,13 +89,14 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-	await requireUserWithRoles(request, ['admin', 'incidentAdmin'])
+	const { scopeWhere } = await requireIncidentAdmin(request)
 
 	const { incidentId } = params
 
-	const incident = await prisma.incident.findUnique({
+	const incident = await prisma.incident.findFirst({
 		where: {
 			id: incidentId,
+			...scopeWhere,
 		},
 		include: {
 			assessment: true,
