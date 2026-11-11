@@ -10,6 +10,8 @@ const schema = z.object({
 	AZURE_CLIENT_SECRET: z.string(),
 	AZURE_TENANT_ID: z.string(),
 	EMAIL_CONNECTION_STRING: z.string(),
+	// Must be a domain linked to the Communication Services resource.
+	EMAIL_SENDER_ADDRESS: z.string().email().optional(),
 	AZURE_STORAGE_CONNECTION_STRING: z.string(),
 })
 
