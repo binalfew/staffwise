@@ -37,7 +37,10 @@ export const DutyStationEditorSchema = z
 		organId: z.string({ required_error: 'Organ ID is required' }),
 		departmentId: z.string({ required_error: 'Department is required' }),
 		...dutyStationPlaceSchema,
-		officeNumber: z.string({ required_error: 'Office Number is required' }),
+		officeNumber: z
+			.string()
+			.optional()
+			.transform(value => value ?? null),
 		medicallyTrained: z.boolean().optional(),
 		zone: z.string().optional(),
 		team: z.string().optional(),

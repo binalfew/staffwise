@@ -272,7 +272,7 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 - [x] Audit all `employee.location.name` and `employee.floor.name` usages for null safety (profile page, PHP detail, PDF + Excel exports, access-request requestor).
 - [x] Department dead end (found in local testing): 34 of 49 organs have no departments, so the filtered dropdown was empty. When an organ has none, both forms now list all departments with a hint to pick the parent department (what existing regional staff already did). Server requires organs that do have departments to pick one of their own. Real per-organ departments still come in 1.5.
 - [x] Decide whether `officeNumber` stays required: **not mandatory** (Q8, 2026-11-11).
-- [ ] Make `officeNumber` optional: `DROP NOT NULL` migration, Zod `optional()`, null-safe display and exports.
+- [x] Make `officeNumber` optional (release 1.8): migration `20261111081530_office_number_optional` (`DROP NOT NULL`), Zod `optional()` → `null` in both forms. Display and exports were already null-safe (profile page, PHP detail, PDF `|| ''`, Excel `?? '-'`, access-request requestor). Tested locally: saving an empty office number stores `NULL` and every page and export still loads.
 - [ ] *(Follow-up, data)* 177 of 1,776 employees have a location belonging to another organ (65 of them in organs with no locations), from the old unfiltered first-time form. They'll be asked to correct it the next time they edit their duty station; a cleanup script could move them to `buildingName` instead.
 
 **Acceptance:** A regional-office employee whose organ has no configured buildings can submit the PHP form.
@@ -566,6 +566,7 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 | 1.5 | Data import (+ optional migration) | 5, 6 | Import organs, departments and renames; at least one department per organ; optional `Organ.city`; empty-department guard in the PHP form | `organ_city` (optional) | Q2, Q3 | ✅ organs imported on prod 2026-11-11 (`bb4c965`): 13 new, 24 codes fixed, 5 duplicates merged; unclear organs left as they are. Departments (Item 6) ⏸ waiting on the Q3 mapping |
 | 1.6 | Code + Ops | 11 | Code: `trust proxy` and per-client rate-limit keys, raised limits, `/resources/healthcheck`. Ops: Always On / plan tier / restarts, uptime monitor, publish URL and support contact | — | Q9 (support contact only) | 🟨 code live (`5139320`), monitor set up, Always On / P0v3 confirmed; waiting on Q9 (support contact, Help link) |
 | 1.7 | Data import | 6 | "Admin and Finance" and "Other" departments for every organ with no departments; their staff default to "Other" (`add-default-departments.ts`) | — | Q3 ✅ | ✅ run on prod by owner 2026-11-11 (`f5f9fde`); rehearsed locally first (40 organs, 80 departments, 65 staff moved to Other) |
+| 1.8 | Migration | 3 | Office number optional (Q8) | `office_number_optional` (DROP NOT NULL ×1) | Q8 ✅ | 🟨 built on `phase-1-office-number-optional`; awaiting prod `migrate deploy`, then merge and push |
 
 Suggested order: **1.1 → 1.2 → 1.3**, with 1.6 investigated in parallel. 1.4 and 1.5 start as soon as the business answers Q1–Q3.
 
@@ -897,3 +898,4 @@ app/routes/settings+/officers+/index.tsx
 | 2026-11-11 | Q3 follow-up: offices without departments also get "Other"; existing staff not moved. Q4 follow-up: office admins manage incidents only. Release 1.7 script prepared |
 | 2026-11-11 | Release 1.7: existing staff in those organs default to "Other" (owner) |
 | 2026-11-11 | Release 1.7 run on production by owner and pushed |
+| 2026-11-11 | Release 1.8 (office number optional) built; migration awaiting production deploy |
