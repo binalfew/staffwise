@@ -341,6 +341,9 @@ Data imports (organs, departments, incident types, admins) are **not** migration
   - **Merging deletes rows**, so it goes beyond the usual "insert and update only" rule for data imports. That's why it sits behind `--merge`.
 - [ ] Later, with the business (Q2): the organs left out above. They stay as they are until someone confirms them.
 - [x] (2026-11-11) Owner ran it on production with `--merge` after a backup; a dry run afterwards reports nothing left to create, update or merge.
+- [x] (2026-11-11) Second list from the business: 7 new organs added to `organs.json` (AfSA Cairo, PANSTAT Yamoussoukro, ACERWC Maseru, ACBF Harare, AFCONE Pretoria, AMA Kigali, AfHA Kampala). Rehearsed locally with `add-default-departments.ts`, which gives each one "Admin and Finance" and "Other".
+- [ ] Owner runs `import-organs.ts --apply --remote`, then `add-default-departments.ts --apply --remote`, after a backup.
+- [ ] League of Arab States office: two records exist (`AU-LAS`, and `+20` with its own Administration/Finance/HR departments). Merge waiting on owner.
 - [ ] Export the current organs list first as a backup.
 
 **Acceptance:** Every confirmed AU office, organ and specialised agency can be selected in the PHP form.
@@ -591,7 +594,7 @@ Suggested order: **1.1 → 1.2 → 1.3**, with 1.6 investigated in parallel. 1.4
 
 | Release | Type | Items | Contents | Migration | Depends on | Status |
 |---|---|---|---|---|---|---|
-| 3.1 | Migration | 9 | `OrganAdmin` join table | `organ_admin` | Q4 ✅ | 🟨 built on `phase-3-office-incident-admins` (with 3.2 and the Settings auth fix); awaiting prod `migrate deploy`, then merge and push |
+| 3.1 | Migration | 9 | `OrganAdmin` join table | `organ_admin` | Q4 ✅ | 🟨 migrated on prod; built on `phase-3-office-incident-admins` (with 3.2 and the Settings auth fix); awaiting merge and push |
 | 3.2 | Code only | 9 | Assign organs to users in Settings → Users; `getIncidentScope()`; scope the incident dashboard list and detail pages by organ (incidents only, Q4) | — | 3.1 | 🟨 built with 3.1, tested locally; ships with 3.1 |
 | 3.3 | Code + Azure config | 10 | Multi-tenant Microsoft login (`organizations`); `ALLOWED_EMAIL_DOMAINS` env var and checks in OAuth callback and signup; login guide | — | Q7, Azure AD admin | ⏸ |
 | 3.4 | Data / ops | 9 | Onboard listed office admins (Appendix C): accounts, roles, organs, welcome/EOC email | — | 3.2, 3.3 | ⏸ |
@@ -909,3 +912,4 @@ app/routes/settings+/officers+/index.tsx
 | 2026-11-11 | Security fix (`fix-settings-action-auth`): all 11 Settings actions (users, roles, permissions, organs, departments, locations, floors, countries, officers, relationships, incident types) had no auth. The `settings.tsx` admin check is a loader and doesn't run for actions, so anyone, even signed out, could create, edit or delete these records (confirmed locally). Each action now calls `requireUserWithRole(request, 'admin')`. Dashboard and profile actions already check auth. Code only; awaiting push and prod smoke test |
 | 2026-11-11 | Settings auth fix moved off `main` (not pushed yet) onto `phase-3-office-incident-admins`, to ship with 3.1–3.2 (owner) |
 | 2026-11-11 | Releases 3.1–3.2 (office-scoped incident admins) built on `phase-3-office-incident-admins`; `organ_admin` migration awaiting production deploy |
+| 2026-11-11 | `organ_admin` migration deployed on production by owner. Second organ list: 7 new organs added to `organs.json`; LAS duplicate pending |

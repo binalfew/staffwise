@@ -224,6 +224,49 @@
       "code": "STATAFRIC",
       "country": "Tunisia",
       "city": "Tunis"
+    },
+    {
+      "name": "African Space Agency (AfSA)",
+      "code": "AfSA",
+      "country": "Egypt",
+      "city": "Cairo"
+    },
+    {
+      "name": "Pan-African Statistics Training Centre (PANSTAT)",
+      "code": "PANSTAT",
+      "country": "Côte d’Ivoire",
+      "city": "Yamoussoukro",
+      "match": ["PAN STAT training Center"]
+    },
+    {
+      "name": "African Committee of Experts on the Rights and Welfare of the Child (ACERWC)",
+      "code": "ACERWC",
+      "country": "Lesotho",
+      "city": "Maseru"
+    },
+    {
+      "name": "African Capacity Building Foundation (ACBF)",
+      "code": "ACBF",
+      "country": "Zimbabwe",
+      "city": "Harare"
+    },
+    {
+      "name": "African Commission on Nuclear Energy (AFCONE)",
+      "code": "AFCONE",
+      "country": "South African",
+      "city": "Pretoria"
+    },
+    {
+      "name": "African Medicines Agency (AMA)",
+      "code": "AMA",
+      "country": "Rwanda",
+      "city": "Kigali"
+    },
+    {
+      "name": "African Humanitarian Agency (AfHA)",
+      "code": "AfHA",
+      "country": "Uganda",
+      "city": "Kampala"
     }
   ]
 }
