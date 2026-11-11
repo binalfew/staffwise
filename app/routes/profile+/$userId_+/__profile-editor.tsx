@@ -70,7 +70,10 @@ export const ProfileEditorSchema = z
 		organId: z.string({ required_error: 'Organ is required' }),
 		departmentId: z.string({ required_error: 'Department is required' }),
 		...dutyStationPlaceSchema,
-		officeNumber: z.string({ required_error: 'Office Number is required' }),
+		officeNumber: z
+			.string()
+			.optional()
+			.transform(value => value ?? null),
 		specialConditions: z.string().optional(),
 		medicallyTrained: z.boolean().optional(),
 		zone: z.string().optional(),

@@ -259,7 +259,7 @@ model Employee {
   floorId                String?
   floor                  Floor?     @relation(fields: [floorId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   floorName              String?
-  officeNumber           String
+  officeNumber           String?
   specialConditions      String?
   medicallyTrained       Boolean?
   zone                   String?
