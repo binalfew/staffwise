@@ -594,8 +594,8 @@ Suggested order: **1.1 → 1.2 → 1.3**, with 1.6 investigated in parallel. 1.4
 
 | Release | Type | Items | Contents | Migration | Depends on | Status |
 |---|---|---|---|---|---|---|
-| 3.1 | Migration | 9 | `OrganAdmin` join table | `organ_admin` | Q4 ✅ | 🟨 migrated on prod; built on `phase-3-office-incident-admins` (with 3.2 and the Settings auth fix); awaiting merge and push |
-| 3.2 | Code only | 9 | Assign organs to users in Settings → Users; `getIncidentScope()`; scope the incident dashboard list and detail pages by organ (incidents only, Q4) | — | 3.1 | 🟨 built with 3.1, tested locally; ships with 3.1 |
+| 3.1 | Migration | 9 | `OrganAdmin` join table | `organ_admin` | Q4 ✅ | 🟨 migrated on prod, merged to `main` (with 3.2 and the Settings auth fix), awaiting push and prod smoke test |
+| 3.2 | Code only | 9 | Assign organs to users in Settings → Users; `getIncidentScope()`; scope the incident dashboard list and detail pages by organ (incidents only, Q4) | — | 3.1 | 🟨 merged to `main` with 3.1, awaiting push and prod smoke test |
 | 3.3 | Code + Azure config | 10 | Multi-tenant Microsoft login (`organizations`); `ALLOWED_EMAIL_DOMAINS` env var and checks in OAuth callback and signup; login guide | — | Q7, Azure AD admin | ⏸ |
 | 3.4 | Data / ops | 9 | Onboard listed office admins (Appendix C): accounts, roles, organs, welcome/EOC email | — | 3.2, 3.3 | ⏸ |
 | 3.5 | Spike | 8 | SMS (Azure Communication Services) and Web Push: cost, coverage, effort; recommendation only | — | Q6 | ⏹ dropped for now (Q6: no SMS) |
@@ -615,6 +615,7 @@ Suggested order: **1.1 → 1.2 → 1.3**, with 1.6 investigated in parallel. 1.4
 | 2026-11-11 | 1.5 | `phase-1-organs` (`bb4c965`) | `import-organs.ts --apply --merge --remote` ✅ | 13 organs added, 24 codes fixed, 5 duplicates merged; departments not touched |
 | 2026-11-11 | 1.7 | `phase-1-default-departments` (`7650a5d`, `f5f9fde`) | `add-default-departments.ts --apply --remote` ✅ | "Admin and Finance" and "Other" for organs without departments; their staff moved to "Other". Pushed |
 | 2026-11-11 | 1.8 | `phase-1-office-number-optional` (`25bed68`) | `migrate deploy` `20261111081530_office_number_optional` ✅ | Pushed and smoke-tested |
+| 2026-11-11 | 3.1–3.2 + Settings auth fix | `phase-3-office-incident-admins` | `migrate deploy` `20261111083653_organ_admin` ✅ | Merged to `main`; awaiting push and prod smoke test. Also carries the 7 new organs (already imported on prod) and the LAS merge script (not yet run on prod) |
 | 2026-11-11 | 2.1–2.3 | `phase-2-incident-status` (`4a65d3d`) | `migrate deploy` `20261111050600_incident_status` ✅ | Pushed and smoke-tested. Includes the reporter-route auth fix |
 | 2026-11-11 | 2.4 | `phase-2-incident-emails` (`c8dd310`) | — (code only) | Pushed and smoke-tested, together with the email sender fix (`11c191d`) |
 | 2026-11-11 | 1.6 (code) | `phase-1-ops-rate-limit` (`5139320`) | — (code only) | Pushed and smoke-tested: healthcheck 200, `RateLimit-Limit: 1000`. Rate limiter fixed to key per client IP; healthcheck route. Uptime monitor and alert set up; Always On on, plan P0v3. Remaining: support contact (Q9) |
