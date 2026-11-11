@@ -27,7 +27,7 @@ The business request has 14 items. Mapped against the current codebase, they fal
 | 3 | PHP form: building/floor/office number for regional offices | A | 1 | S | 🟨 |
 | 4 | Add new incident types | C | 1 | S | ✅ |
 | 5 | Add missing organs/offices, regional offices, specialised agencies | C | 1 | M | ✅ (unclear organs left for the business) |
-| 6 | Update renamed/restructured departments; departments for regional offices | C | 1 | M | ⏸ waiting on old → new mapping (Q3) |
+| 6 | Update renamed/restructured departments; departments for regional offices | C | 1 | M | 🟨 regional offices done (1.7); HQ renames wait on the mapping (Q3) |
 | 7 | Incident status tracking, assignment and escalation | B | 2 | L | ✅ |
 | 8 | Critical-incident notifications to admins | B | 2 | M | ✅ email (SMS/Push spike in 3.5) |
 | 9 | Designate office system administrators | C | 3 | M–L | ⏸ design decision |
