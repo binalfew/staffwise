@@ -3,6 +3,7 @@ import { ActionFunctionArgs, json } from '@remix-run/node'
 import { z } from 'zod'
 import { validateCSRF } from '~/utils/csrf.server'
 import { prisma } from '~/utils/db.server'
+import { requireUserWithRole } from '~/utils/permission.server'
 import { checkHoneypot } from '~/utils/honeypot.server'
 import { redirectWithToast } from '~/utils/toast.server'
 import {
@@ -11,6 +12,8 @@ import {
 } from './__department-editor'
 
 export async function action({ request }: ActionFunctionArgs) {
+	// The settings layout's loader doesn't run for actions, so check here too.
+	await requireUserWithRole(request, 'admin')
 	const formData = await request.formData()
 	checkHoneypot(formData)
 	await validateCSRF(formData, request.headers)

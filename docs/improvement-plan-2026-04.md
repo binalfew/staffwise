@@ -902,3 +902,4 @@ app/routes/settings+/officers+/index.tsx
 | 2026-11-11 | Release 1.8 (office number optional) built; migration awaiting production deploy |
 | 2026-11-11 | Release 1.8 migration deployed on production by owner; merged to `main` |
 | 2026-11-11 | Release 1.8 pushed and smoke-tested in production |
+| 2026-11-11 | Security fix (`fix-settings-action-auth`): all 11 Settings actions (users, roles, permissions, organs, departments, locations, floors, countries, officers, relationships, incident types) had no auth. The `settings.tsx` admin check is a loader and doesn't run for actions, so anyone, even signed out, could create, edit or delete these records (confirmed locally). Each action now calls `requireUserWithRole(request, 'admin')`. Dashboard and profile actions already check auth. Code only; awaiting push and prod smoke test |
