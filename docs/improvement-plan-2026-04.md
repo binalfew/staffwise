@@ -363,7 +363,7 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 **Tasks**
 - [x] Q3 answered (2026-11-11): every organ without a department structure gets an **Admin & Finance** department. In the 2026-11-11 data that is 40 of 55 organs (66 staff, currently linked to HQ departments).
 - [x] Import script `prisma/scripts/add-default-departments.ts`: adds "Admin and Finance" (same name and code style as AfCHPR's) and "Other" to each organ with no departments of its own. Idempotent, dry run by default. Rehearsed locally: 80 departments in 40 organs; a second run creates nothing.
-- [x] Existing staff (65 in those organs, linked to HQ departments) are **not moved** (owner, 2026-11-11). The duty-station form asks them to pick one of their organ's departments the next time they edit.
+- [x] Existing staff (65 in those organs, linked to HQ departments) are **not moved** (default chosen because with two options a bulk move would guess wrong for some; owner to confirm). The duty-station form asks them to pick one of their organ's departments the next time they edit.
 - [ ] Owner runs it on production after a backup: `npx tsx prisma/scripts/add-default-departments.ts --apply --remote`.
 - [ ] ⏸ Get the current HQ department list and the rename mapping from the business.
 - [ ] Rename existing departments as mapped (a script or Settings → Departments).
