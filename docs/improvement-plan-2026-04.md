@@ -28,7 +28,7 @@ The business request has 14 items. Mapped against the current codebase, they fal
 | 4 | Add new incident types | C | 1 | S | ✅ |
 | 5 | Add missing organs/offices, regional offices, specialised agencies | C | 1 | M | ✅ (unclear organs left for the business) |
 | 6 | Update renamed/restructured departments; departments for regional offices | C | 1 | M | ⏸ waiting on old → new mapping (Q3) |
-| 7 | Incident status tracking, assignment and escalation | B | 2 | L | ⬜ |
+| 7 | Incident status tracking, assignment and escalation | B | 2 | L | 🟨 |
 | 8 | Critical-incident notifications to admins | B | 2 | M | ⬜ |
 | 9 | Designate office system administrators | C | 3 | M–L | ⏸ design decision |
 | 10 | Support staff with non-AU email domains | D | 3 | M | ⏸ Azure AD admin |
@@ -389,9 +389,9 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 
 **Tasks**
 - *Schema*
-  - [ ] Add `enum IncidentStatus` and `Incident.status IncidentStatus @default(SUBMITTED)`.
-  - [ ] Add `model IncidentStatusHistory { id, incidentId, fromStatus?, toStatus, changedById (User), remarks?, isVisibleToReporter Boolean, createdAt }`.
-  - [ ] Backfill existing incidents: all become `SUBMITTED`, or derive the status from the assessment if one exists.
+  - [x] Add `enum IncidentStatus` and `Incident.status IncidentStatus @default(SUBMITTED)`.
+  - [x] Add `model IncidentStatusHistory { id, incidentId, fromStatus?, toStatus, changedById (User, nullable for system changes), remarks?, isVisibleToReporter Boolean, createdAt }`.
+  - [x] Backfill existing incidents: `SUBMITTED` by default; incidents with an assessment become `UNDER_REVIEW` (Open) or `CLOSED` (Closed), with a hidden system history row.
 - *Admin (dashboard)*
   - [ ] Show a status badge and status filter on `dashboard+/incidents+/index.tsx`, using `filterFields`.
   - [ ] Add a "Change status" action on `$incidentId_.tsx` (select, remarks, reporter-visible toggle), following the action conventions (honeypot, CSRF, Zod, audit log, toast).
@@ -568,7 +568,7 @@ Suggested order: **1.1 → 1.2 → 1.3**, with 1.6 investigated in parallel. 1.4
 
 | Release | Type | Items | Contents | Migration | Depends on | Status |
 |---|---|---|---|---|---|---|
-| 2.1 | Migration | 7 | `IncidentStatus` enum, `Incident.status` (default `SUBMITTED`), `IncidentStatusHistory` table, backfill of existing incidents | `incident_status` | Phase 1 done | ⬜ |
+| 2.1 | Migration | 7 | `IncidentStatus` enum, `Incident.status` (default `SUBMITTED`), `IncidentStatusHistory` table, backfill of existing incidents | `incident_status` | Phase 1 done | 🟨 prepared on `phase-2-incident-status`, applied locally; awaiting prod `migrate deploy` |
 | 2.2 | Code only | 7 | Admin: status badge and filter, change-status action, escalate action, auto `UNDER_REVIEW` on first assignment, timeline on detail page, audit log | — | 2.1 | ⬜ |
 | 2.3 | Code only | 7 | Reporter: status column, read-only detail page with reporter-visible timeline, block edit/delete after `SUBMITTED` | — | 2.2 | ⬜ |
 | 2.4 | Code only | 8 (+7) | Critical-incident email to incident admins; status-change email to the reporter; configurable trigger severities | — | Q5 | ⬜ |
@@ -872,3 +872,4 @@ app/routes/settings+/officers+/index.tsx
 | 2026-11-11 | Release 1.5 prepared: organ import (13 new, 24 code fixes, 5 merges); unclear organs left as they are; departments not touched until the Q3 mapping |
 | 2026-11-11 | Releases 1.4 and 1.5 merged to `main`; production imports still to run by owner |
 | 2026-11-11 | Releases 1.4 and 1.5: owner ran both imports on production; dry runs afterwards report nothing left to do |
+| 2026-11-11 | Release 2.1 (Item 7) prepared on branch: `incident_status` migration with backfill; awaiting production deploy |
