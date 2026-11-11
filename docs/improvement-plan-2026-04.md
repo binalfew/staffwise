@@ -28,8 +28,8 @@ The business request has 14 items. Mapped against the current codebase, they fal
 | 4 | Add new incident types | C | 1 | S | ✅ |
 | 5 | Add missing organs/offices, regional offices, specialised agencies | C | 1 | M | ✅ (unclear organs left for the business) |
 | 6 | Update renamed/restructured departments; departments for regional offices | C | 1 | M | ⏸ waiting on old → new mapping (Q3) |
-| 7 | Incident status tracking, assignment and escalation | B | 2 | L | ✅ (reporter status email ships with 2.4) |
-| 8 | Critical-incident notifications to admins | B | 2 | M | 🟨 |
+| 7 | Incident status tracking, assignment and escalation | B | 2 | L | ✅ |
+| 8 | Critical-incident notifications to admins | B | 2 | M | ✅ email (SMS/Push spike in 3.5) |
 | 9 | Designate office system administrators | C | 3 | M–L | ⏸ design decision |
 | 10 | Support staff with non-AU email domains | D | 3 | M | ⏸ Azure AD admin |
 | 11 | "Staffwise link inactive" / no response | D | 1 (investigate) | S | 🟨 |
@@ -572,7 +572,7 @@ Suggested order: **1.1 → 1.2 → 1.3**, with 1.6 investigated in parallel. 1.4
 | 2.1 | Migration | 7 | `IncidentStatus` enum, `Incident.status` (default `SUBMITTED`), `IncidentStatusHistory` table, backfill of existing incidents | `incident_status` | Phase 1 done | ✅ migrated on prod, pushed and smoke-tested 2026-11-11 (`4a65d3d`) |
 | 2.2 | Code only | 7 | Admin: status badge and filter, change-status action, escalate action, auto `UNDER_REVIEW` on first assignment, timeline on detail page, audit log | — | 2.1 | ✅ pushed and smoke-tested 2026-11-11 (`4a65d3d`) |
 | 2.3 | Code only | 7 | Reporter: status column, read-only detail page with reporter-visible timeline, block edit/delete after `SUBMITTED`; ownership checks on reporter routes | — | 2.2 | ✅ pushed and smoke-tested 2026-11-11 (`4a65d3d`) |
-| 2.4 | Code only | 8 (+7) | Critical-incident email to incident admins; status-change email to the reporter; configurable trigger severities | — | Q5 ✅ | 🟨 merged to `main` (`c8dd310`), awaiting push and prod smoke test |
+| 2.4 | Code only | 8 (+7) | Critical-incident email to incident admins; status-change email to the reporter; configurable trigger severities | — | Q5 ✅ | ✅ pushed and smoke-tested 2026-11-11 (`c8dd310`, sender fix `11c191d`) |
 
 **Exit criteria:** Reporters can follow their incident's status. Admins can change the status and escalate, with a full history. Critical incidents email the admins within a minute.
 
@@ -600,7 +600,7 @@ Suggested order: **1.1 → 1.2 → 1.3**, with 1.6 investigated in parallel. 1.4
 | 2026-11-11 | 1.4 | `phase-1-incident-types` (`818f855`) | `import-incident-types.ts --apply --remote` ✅ | 53 incident types added; existing types unchanged |
 | 2026-11-11 | 1.5 | `phase-1-organs` (`bb4c965`) | `import-organs.ts --apply --merge --remote` ✅ | 13 organs added, 24 codes fixed, 5 duplicates merged; departments not touched |
 | 2026-11-11 | 2.1–2.3 | `phase-2-incident-status` (`4a65d3d`) | `migrate deploy` `20261111050600_incident_status` ✅ | Pushed and smoke-tested. Includes the reporter-route auth fix |
-| 2026-11-11 | 2.4 | `phase-2-incident-emails` (`c8dd310`) | — (code only) | Merged to `main`; awaiting push and prod smoke test (warn the incident admins before a test critical incident) |
+| 2026-11-11 | 2.4 | `phase-2-incident-emails` (`c8dd310`) | — (code only) | Pushed and smoke-tested, together with the email sender fix (`11c191d`) |
 | 2026-11-11 | 1.6 (code) | `phase-1-ops-rate-limit` (`5139320`) | — (code only) | Pushed and smoke-tested: healthcheck 200, `RateLimit-Limit: 1000`. Rate limiter fixed to key per client IP; healthcheck route. Uptime monitor and alert set up; Always On on, plan P0v3. Remaining: support contact (Q9) |
 
 ---
@@ -883,3 +883,4 @@ app/routes/settings+/officers+/index.tsx
 | 2026-11-11 | Q5 answered (critical only, incidentAdmin only); release 2.4 built on `phase-2-incident-emails` |
 | 2026-11-11 | Release 2.4 merged to `main` |
 | 2026-11-11 | Email fix: Azure rejected every email ("sender domain has not been linked": hardcoded `…azurecomm.net` sender). Sender changed to `DoNotReply@apps.africanunion.org` (overridable with optional `EMAIL_SENDER_ADDRESS`). Signup, password reset, PHP and incident emails were all failing silently; likely part of Item 11 |
+| 2026-11-11 | Release 2.4 and the email sender fix pushed and smoke-tested in production; Phase 2 done |
