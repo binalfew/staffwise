@@ -21,18 +21,18 @@ The business request has 14 items. Mapped against the current codebase, they fal
 
 | # | Item | Group | Phase | Size | Status |
 |---|---|---|---|---|---|
-| 0 | Database change strategy: backups, local DB, Prisma Migrate baseline | Prereq | 0 | M | 🟨 |
+| 0 | Database change strategy: backups, local DB, Prisma Migrate baseline | Prereq | 0 | M | ✅ |
 | 1 | Show incident reporter to admins (+ fix `lastName` bug) | A | 1 | S | ✅ |
 | 2 | Make Middle Name optional (Staff, Spouse, Dependant) | A | 1 | S–M | ✅ (placeholder cleanup needs business OK) |
 | 3 | PHP form: building/floor/office number for regional offices | A | 1 | S | ✅ |
 | 4 | Add new incident types | C | 1 | S | ✅ |
-| 5 | Add missing organs/offices, regional offices, specialised agencies | C | 1 | M | ✅ (unclear organs left for the business) |
-| 6 | Update renamed/restructured departments; departments for regional offices | C | 1 | M | 🟨 regional offices done (1.7); HQ renames wait on the mapping (Q3) |
+| 5 | Add missing organs/offices, regional offices, specialised agencies | C | 1 | M | ✅ |
+| 6 | Update renamed/restructured departments; departments for regional offices | C | 1 | M | ✅ regional offices done (1.7); HQ mapping closed by owner |
 | 7 | Incident status tracking, assignment and escalation | B | 2 | L | ✅ |
 | 8 | Critical-incident notifications to admins | B | 2 | M | ✅ email (SMS/Push spike in 3.5) |
 | 9 | Designate office system administrators | C | 3 | M–L | 🟨 scoping live (3.1–3.2); onboarding (3.4) pending |
 | 10 | Support staff with non-AU email domains | D | 3 | M | ⏸ Azure AD admin |
-| 11 | "Staffwise link inactive" / no response | D | 1 (investigate) | S | 🟨 |
+| 11 | "Staffwise link inactive" / no response | D | 1 (investigate) | S | ✅ |
 
 Sizes: **S** ≤ 1 day · **M** 1–3 days · **L** 3+ days (rough estimates, excluding UAT).
 
@@ -78,10 +78,10 @@ Azure portal → **Azure Database for PostgreSQL flexible servers** → `audbs` 
 Still to check: geo-redundant backup.
 
 Record:
-- [x] Backup retention period (days): 7. **Recommend increasing to 35**: use the slider on the Backup and restore page, then **Save**.
+- [x] Backup retention period (days): 7. **Recommend increasing to 35**: use the slider on the Backup and restore page, then **Save**. Raised to 35 by owner (2026-11-11).
 - [ ] Geo-redundant backup: Enabled/Disabled. This can only be set when the server is created; record it anyway.
 - [x] "Earliest restore point" shown on the Backup and restore page: 2026-11-04 09:04 UTC (rolling 7-day window).
-- [ ] Before each production migration, click **Backup** (on-demand) on this page in addition to the `pg_dump` in Step 0.2.
+- [x] Before each production migration, click **Backup** (on-demand) on this page in addition to the `pg_dump` in Step 0.2. *(Closed by owner, 2026-11-11.)*
 - [x] Server PostgreSQL version: 16.15. Local `pg_dump` 17.9 can dump a 16 server.
 - [ ] (Optional) Practice a point-in-time restore into a **new** server, for example `audbs-restore-test`. A restore never overwrites the source server. Delete the test server afterwards to stop the cost.
 
@@ -193,7 +193,7 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 
 ### Phase 0 checklist
 
-- [x] 0.1 Backups verified (7 days; raising to 35 recommended, pending owner)
+- [x] 0.1 Backups verified (7 days, raised to 35 by owner 2026-11-11)
 - [x] 0.2 First manual `pg_dump` taken and verified (2026-11-10 23:31, `staffwise-20261110-2331.dump`, 3.2 MB, 42 tables = 40 models + 2 join tables; no `_prisma_migrations` table yet)
 - [x] 0.3 Local Docker database `staffwise-db` (postgres:16, port 5433) restored from the dump; `.env` points at localhost (2026-11-10)
 - [x] 0.4 Drift check run: **no drift** between production (fresh dump) and `schema.prisma`
@@ -291,7 +291,7 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 **Recommendation:** Load the list with an idempotent import script (`prisma/scripts/import-incident-types.ts`) that creates only types whose name doesn't exist yet. **The seed must not be used** (it wipes roles and permissions). You could also add a `category` field (Security, Safety & Health, Natural Hazard, Occupational, Near Miss) to make the dropdown easier to scan. *(Optional, confirm with business.)*
 
 **Tasks**
-- [ ] Business confirms the cleaned list in Appendix A (especially the flagged entries).
+- [x] Business confirms the cleaned list in Appendix A (especially the flagged entries). *(Closed by owner, 2026-11-11.)*
 - [ ] (Optional) Add `category String?` to `IncidentType`, show it in the settings editor, and group the incident form dropdown by category.
 - [x] Write the idempotent import script: `prisma/scripts/import-incident-types.ts`, data in `prisma/scripts/data/incident-types.json` (draft from Appendix A). It only inserts types whose name doesn't exist yet (ignoring case, spacing and dash style) and uses the name as the code, like the existing types. It's a dry run unless `--apply` is passed, and won't write to a non-local DB without `--remote`.
 - [x] **Existing types stay as they are** (owner decision, 2026-11-11). New types that duplicate an existing one are left out of the upload list: Burglary, Robbery and Vandalism (exact), Break-in (= Burglary), Road Safety Accident (RSA) (= Traffic Accident), and Harassment/Intimidation/Threat of Violence (= Intimidation). That leaves **53 types to add**. The three Near Miss types are kept, as more specific options beside the existing "Near miss incidents".
@@ -325,7 +325,7 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 3. Import with an idempotent script that matches existing organs by name or code and never deletes anything.
 
 **Tasks**
-- [ ] Clean the organ list and send it to the business for confirmation (name, code/acronym, country, city, parent department).
+- [x] Clean the organ list and send it to the business for confirmation (name, code/acronym, country, city, parent department). *(Closed by owner, 2026-11-11.)*
 - [ ] Check that every referenced country exists in `Country`.
 - [ ] (Optional) Add `city String?` to `Organ` and to the organ settings editor.
 - [x] Write `prisma/scripts/import-organs.ts` (idempotent; reads `prisma/scripts/data/organs.json`, a draft built from Appendix B **and** the current Organ table).
@@ -339,7 +339,7 @@ Data imports (organs, departments, incident types, admins) are **not** migration
   - It's a dry run by default. `--apply` writes, `--merge` adds the merges, and `--remote` is required for a non-local DB.
   - Rehearsed on a fresh restore of the 2026-11-10 prod dump (`staffwise_rehearsal`): 49 → 57 organs; 1776 employees and 100 departments unchanged; no employee without an organ; a second run changed nothing.
   - **Merging deletes rows**, so it goes beyond the usual "insert and update only" rule for data imports. That's why it sits behind `--merge`.
-- [ ] Later, with the business (Q2): the organs left out above. They stay as they are until someone confirms them.
+- [x] Later, with the business (Q2): the organs left out above. They stay as they are until someone confirms them. *(Closed by owner, 2026-11-11.)*
 - [x] (2026-11-11) Owner ran it on production with `--merge` after a backup; a dry run afterwards reports nothing left to create, update or merge.
 - [x] (2026-11-11) Second list from the business: 7 new organs added to `organs.json` (AfSA Cairo, PANSTAT Yamoussoukro, ACERWC Maseru, ACBF Harare, AFCONE Pretoria, AMA Kigali, AfHA Kampala). Rehearsed locally with `add-default-departments.ts`, which gives each one "Admin and Finance" and "Other".
 - [x] Owner ran `import-organs.ts` and `add-default-departments.ts` on production (fresh dump 2026-11-11 11:57: all 7 present with their two departments; both scripts report nothing to do).
@@ -368,10 +368,10 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 - [x] Import script `prisma/scripts/add-default-departments.ts`: adds "Admin and Finance" (same name and code style as AfCHPR's) and "Other" to each organ with no departments of its own. Idempotent, dry run by default. Rehearsed locally: 80 departments in 40 organs; a second run creates nothing.
 - [x] Existing staff (65 in those organs, linked to HQ departments) move to their own organ's **Other** (owner, 2026-11-11). The script does this in the same transaction; they can change it on their duty-station form.
 - [x] (2026-11-11) Owner ran it on production after a backup: `npx tsx prisma/scripts/add-default-departments.ts --apply --remote`.
-- [ ] ⏸ Get the current HQ department list and the rename mapping from the business.
-- [ ] Rename existing departments as mapped (a script or Settings → Departments).
-- [ ] Add missing HQ departments, including WGYD.
-- [ ] **Departments are not touched for now** (owner decision, 2026-11-11). The owner will get the old → new mapping from the business (Q3). Note for then: since `0f1b5b6`, an organ with no departments lets its staff pick any department, and regional staff are linked to their HQ parent department (for example PANVAC → Rural Economy & Agriculture). Giving such an organ its own department would force its staff to re-pick, so ask whether regional offices should get their own departments.
+- [x] ⏸ Get the current HQ department list and the rename mapping from the business. *(Closed by owner, 2026-11-11.)*
+- [x] Rename existing departments as mapped (a script or Settings → Departments). *(Closed by owner, 2026-11-11.)*
+- [x] Add missing HQ departments, including WGYD. *(Closed by owner, 2026-11-11.)*
+- [x] *(Closed by owner, 2026-11-11.)* **Departments are not touched for now** (owner decision, 2026-11-11). The owner will get the old → new mapping from the business (Q3). Note for then: since `0f1b5b6`, an organ with no departments lets its staff pick any department, and regional staff are linked to their HQ parent department (for example PANVAC → Rural Economy & Agriculture). Giving such an organ its own department would force its staff to re-pick, so ask whether regional offices should get their own departments.
 - [ ] Optional safeguard: if the selected organ has no departments, show a clear message instead of an empty dropdown.
 
 **Acceptance:** Every organ has at least one department, and HQ departments match the current structure.
@@ -524,8 +524,8 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 - [x] Review the `server.js` rate limits. Now `trust proxy` = 1 (one Azure front-end hop), keyed per client IP with the port stripped from `X-Forwarded-For`. The limits are 1000 GET/min, 100 POST/min, and 30/min on `/signup` per IP, generous for offices behind shared NAT. If Azure Front Door or Application Gateway is ever put in front, raise `trust proxy` to match the number of hops.
 - [x] Added `GET /resources/healthcheck`, which runs `SELECT 1` against the DB and returns `200 OK`, or `500` if the DB is unreachable. The rate limiter skips it.
 - [x] (2026-11-11) Application Insights standard availability test `staffwise-health` (App Insights `austaffwise`); alert rule `staffwise-health-austaffwise` emails action group `ag-staffwise-alerts`. Add the support mailbox to that action group once Q9 is answered. Original task: add uptime monitoring with alerts that targets `/resources/healthcheck`: an Application Insights availability test, or the App Service **Health check** setting (Monitoring → Health check, path `/resources/healthcheck`), plus an alert rule.
-- [ ] Confirm and publish the official URL, and set up a custom domain if one is planned.
-- [ ] Process side (business): name a support contact or mailbox and a response target. Add a "Help / Contact" link in the app.
+- [x] Confirm and publish the official URL, and set up a custom domain if one is planned. *(Closed by owner, 2026-11-11.)*
+- [x] Process side (business): name a support contact or mailbox and a response target. Add a "Help / Contact" link in the app. *(Closed by owner, 2026-11-11.)*
 
 **Acceptance:** Monitoring is in place, no cold-start timeouts occur, and users have a support channel.
 
@@ -552,13 +552,13 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 - Branch naming: `phase-<n>-<short-name>`, branched from the latest `main`.
 - A release counts as **done** when it's merged, deployed, smoke-tested in production, and its items are ticked in this document.
 
-### Phase 0: Database safety 🟨
+### Phase 0: Database safety ✅
 
 | Release | Type | Contents | Owner steps | Status |
 |---|---|---|---|---|
 | 0.1 | Ops | Verify Azure backups, first `pg_dump`, local Docker copy, drift check | Portal check, `pg_dump` | ✅ |
 | 0.2 | Migration (baseline) | `prisma/migrations/0_init`, CLAUDE.md workflow, this plan | `migrate resolve --applied 0_init` on prod ✅ | ✅ |
-| 0.3 | Ops | Raise backup retention 7 → 35 days | Portal (affects the shared server) | ⬜ |
+| 0.3 | Ops | Raise backup retention 7 → 35 days | Portal (affects the shared server) | ✅ 2026-11-11 (owner) |
 
 **Exit criteria:** `migrate status` on production says "up to date", the baseline is merged to `main`, and local development uses the Docker copy.
 
@@ -570,8 +570,8 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 | 1.2 | Migration | 2 | `middleName` optional on Employee/Dependant/Spouse; `formatFullName()` helper; update ~23 files and exports | `middle_name_optional` (DROP NOT NULL ×3) | 0.2 merged | ✅ migrated on prod, pushed and smoke-tested 2026-11-11 (`2aebec8`) |
 | 1.3 | Migration | 3 | Free-text building/floor when an organ has no locations or floors; null-safe display and exports | `duty_station_free_text` (DROP NOT NULL ×2, ADD `buildingName`, `floorName`) | Q8 | ✅ migrated on prod, pushed and smoke-tested 2026-11-11 (`0f1b5b6`) |
 | 1.4 | Data import (+ optional migration) | 4 | Import approved incident types; optional `category` column and grouped dropdown | `incident_type_category` (optional) | Q1 | ✅ 53 types imported on prod 2026-11-11 (`818f855`); dropdown sort pushed 2026-11-11 |
-| 1.5 | Data import (+ optional migration) | 5, 6 | Import organs, departments and renames; at least one department per organ; optional `Organ.city`; empty-department guard in the PHP form | `organ_city` (optional) | Q2, Q3 | ✅ organs imported on prod 2026-11-11 (`bb4c965`): 13 new, 24 codes fixed, 5 duplicates merged; unclear organs left as they are. Departments (Item 6) ⏸ waiting on the Q3 mapping |
-| 1.6 | Code + Ops | 11 | Code: `trust proxy` and per-client rate-limit keys, raised limits, `/resources/healthcheck`. Ops: Always On / plan tier / restarts, uptime monitor, publish URL and support contact | — | Q9 (support contact only) | 🟨 code live (`5139320`), monitor set up, Always On / P0v3 confirmed; waiting on Q9 (support contact, Help link) |
+| 1.5 | Data import (+ optional migration) | 5, 6 | Import organs, departments and renames; at least one department per organ; optional `Organ.city`; empty-department guard in the PHP form | `organ_city` (optional) | Q2, Q3 | ✅ organs imported on prod 2026-11-11 (`bb4c965`): 13 new, 24 codes fixed, 5 duplicates merged; unclear organs left as they are. Departments (Item 6): HQ mapping closed by owner 2026-11-11 |
+| 1.6 | Code + Ops | 11 | Code: `trust proxy` and per-client rate-limit keys, raised limits, `/resources/healthcheck`. Ops: Always On / plan tier / restarts, uptime monitor, publish URL and support contact | — | Q9 (support contact only) | ✅ code live (`5139320`), monitor set up, Always On / P0v3 confirmed; Q9 closed by owner 2026-11-11 |
 | 1.7 | Data import | 6 | "Admin and Finance" and "Other" departments for every organ with no departments; their staff default to "Other" (`add-default-departments.ts`) | — | Q3 ✅ | ✅ run on prod by owner 2026-11-11 (`f5f9fde`); rehearsed locally first (40 organs, 80 departments, 65 staff moved to Other) |
 | 1.8 | Migration | 3 | Office number optional (Q8) | `office_number_optional` (DROP NOT NULL ×1) | Q8 ✅ | ✅ migrated on prod, pushed and smoke-tested 2026-11-11 (`757b235`) |
 
@@ -627,15 +627,15 @@ Suggested order: **1.1 → 1.2 → 1.3**, with 1.6 investigated in parallel. 1.4
 
 | # | Question | Blocks |
 |---|---|---|
-| Q1 | Confirm the cleaned incident type list (Appendix A), especially the flagged entries. Should types be grouped by category? | Item 4 |
-| Q2 | Confirm the organ/office list (Appendix B): acronyms, countries, cities, parent department. Supply the rest of the list after "CAR". | Item 5 |
-| Q3 | Provide the current AUC department structure and the old → new name mapping. Should regional offices get their own departments, or keep using the HQ parent department? **Answered 2026-11-11:** Yes, regional offices get their own departments where they have a structure. An office with no department structure gets an **Admin & Finance** department (usually the case), plus an **Other** option. Existing staff in those offices default to **Other**. HQ rename mapping still to come. | Item 6 |
+| Q1 | Confirm the cleaned incident type list (Appendix A), especially the flagged entries. Should types be grouped by category? **Closed by owner 2026-11-11.** | Item 4 |
+| Q2 | Confirm the organ/office list (Appendix B): acronyms, countries, cities, parent department. Supply the rest of the list after "CAR". **Closed by owner 2026-11-11.** | Item 5 |
+| Q3 | Provide the current AUC department structure and the old → new name mapping. Should regional offices get their own departments, or keep using the HQ parent department? **Answered 2026-11-11:** Yes, regional offices get their own departments where they have a structure. An office with no department structure gets an **Admin & Finance** department (usually the case), plus an **Other** option. Existing staff in those offices default to **Other**. HQ rename mapping: **closed by owner 2026-11-11.** | Item 6 |
 | Q4 | Should office admins see only their own office's data (recommended) or all data? Which modules can they manage? **Answered 2026-11-11:** Office admins see **only their own office's** data, and manage **incidents only**. | Item 9 |
 | Q5 | Should `major` incidents also trigger alerts, or only `critical`? Who besides incident admins should receive them (EOC mailbox)? **Answered 2026-11-11: only `critical`; `incidentAdmin` users only.** | Item 8 |
 | Q6 | Is SMS required, or is email enough for now? Budget for SMS? **Answered 2026-11-11:** **No SMS for now**; email is enough. | Item 8 |
 | Q7 | Which external domains are approved? Are Gmail accounts allowed? **Answered 2026-11-11:** Some offices can't use africanunion.org or their own domain, so users may sign in with **personal email addresses**. No domain allowlist. | Item 10 |
 | Q8 | Should office number remain mandatory for regional offices? **Answered 2026-11-11:** Office number is **not mandatory**. | Item 3 |
-| Q9 | Who is the support contact for staff, and what response time is expected? | Item 11 |
+| Q9 | Who is the support contact for staff, and what response time is expected? **Closed by owner 2026-11-11.** | Item 11 |
 
 ---
 
@@ -918,3 +918,4 @@ app/routes/settings+/officers+/index.tsx
 | 2026-11-11 | LAS merge script rehearsed on a fresh production dump (production has 3 LAS records, not 2 as in the local copy). Note: a run of local scripts briefly read production because `.env` had the production URL active; nothing was written (scripts refuse writes without `--remote`) |
 | 2026-11-11 | LAS merge run on production by owner |
 | 2026-11-11 | Releases 1.1, 1.2, 1.3 and 3.1–3.2 (with the Settings auth fix) smoke-tested on production by owner; Items 1–3 done, Item 9 waits only on onboarding (3.4) |
+| 2026-11-11 | Owner closed backup retention (35 days), on-demand backups, Q1, Q2, Q3 (HQ mapping) and Q9. Phase 0 and Items 0, 5, 6, 11 done. Still open: middle-name placeholder cleanup (business OK) and multi-tenant login (3.3) → office admin onboarding (3.4) |
