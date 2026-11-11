@@ -2,11 +2,9 @@ import { parseWithZod } from '@conform-to/zod'
 import { createId as cuid } from '@paralleldrive/cuid2'
 import { ActionFunctionArgs, json } from '@remix-run/node'
 import { insertAuditLog } from '~/utils/audit.server'
-import { requireUser } from '~/utils/auth.server'
 import { validateCSRF } from '~/utils/csrf.server'
 import { generateSerialNumber, prisma } from '~/utils/db.server'
 import { checkHoneypot } from '~/utils/honeypot.server'
-import { invariantResponse } from '~/utils/misc'
 import {
 	deleteDirectory,
 	deleteFileIfExists,
@@ -19,9 +17,13 @@ import {
 	IncidentDeleteSchema,
 	IncidentEditorSchema,
 } from './__incident-editor'
+import {
+	requireEditableIncident,
+	requireReporter,
+} from './__incident-access.server'
 
 export async function action({ params, request }: ActionFunctionArgs) {
-	const user = await requireUser(request)
+	const { user, employee } = await requireReporter(request, params)
 	const formData = await request.formData()
 	checkHoneypot(formData)
 	await validateCSRF(formData, request.headers)
@@ -38,9 +40,21 @@ export async function action({ params, request }: ActionFunctionArgs) {
 				{ status: submission.status === 'error' ? 400 : 200 },
 			)
 		}
+		const { incident: own } = await requireEditableIncident(
+			request,
+			params,
+			submission.value.id,
+		)
 		const incident = await prisma.incident.delete({
-			where: { id: submission.value.id },
+			where: { id: own.id },
 			select: { incidentNumber: true },
+		})
+
+		await insertAuditLog({
+			user: { id: user.id },
+			action: 'DELETE',
+			entity: 'Incident',
+			details: { id: own.id, incidentNumber: incident.incidentNumber },
 		})
 
 		await deleteDirectory({
@@ -109,20 +123,6 @@ export async function action({ params, request }: ActionFunctionArgs) {
 		)
 	}
 
-	const employee = await prisma.employee.findFirst({
-		where: {
-			email: {
-				equals: user.email,
-				mode: 'insensitive',
-			},
-		},
-		select: { id: true, auIdNumber: true },
-	})
-
-	invariantResponse(employee, 'Employee not found', {
-		status: 404,
-	})
-
 	const {
 		id: incidentId,
 		updatedAttachments,
@@ -130,15 +130,24 @@ export async function action({ params, request }: ActionFunctionArgs) {
 		...incidentDetails
 	} = submission.value
 
+	if (incidentId) {
+		await requireEditableIncident(request, params, incidentId)
+	}
+
 	const data = {
 		...incidentDetails,
 		employeeId: employee.id,
 	}
 
-	const deletedAttachments = await prisma.attachment.findMany({
-		select: { fileName: true, extension: true },
-		where: { id: { notIn: updatedAttachments.map(i => i.id) } },
-	})
+	const deletedAttachments = incidentId
+		? await prisma.attachment.findMany({
+				select: { fileName: true, extension: true },
+				where: {
+					incidentId,
+					id: { notIn: updatedAttachments.map(i => i.id) },
+				},
+		  })
+		: []
 
 	const incidentNumber = await generateSerialNumber('INCIDENT')
 	const incident = await prisma.incident.upsert({

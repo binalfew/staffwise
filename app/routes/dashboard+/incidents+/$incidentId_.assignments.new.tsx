@@ -24,6 +24,7 @@ import { Button } from '~/components/ui/button'
 import { validateCSRF } from '~/utils/csrf.server'
 import { prisma } from '~/utils/db.server'
 import { checkHoneypot } from '~/utils/honeypot.server'
+import { changeIncidentStatus } from '~/utils/incident-status.server'
 import { formatFullName, invariantResponse } from '~/utils/misc'
 import { requireUserWithRoles } from '~/utils/permission.server'
 import { redirectWithToast } from '~/utils/toast.server'
@@ -39,7 +40,7 @@ export const AssignmentSchema = z.object({
 })
 
 export async function action({ request }: ActionFunctionArgs) {
-	await requireUserWithRoles(request, ['admin', 'incidentAdmin'])
+	const user = await requireUserWithRoles(request, ['admin', 'incidentAdmin'])
 	const formData = await request.formData()
 	checkHoneypot(formData)
 	await validateCSRF(formData, request.headers)
@@ -60,7 +61,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 	const incident = await prisma.incident.findFirst({
 		where: { incidentNumber },
-		select: { id: true },
+		select: { id: true, status: true },
 	})
 
 	invariantResponse(incident, 'Incident not found', {
@@ -71,15 +72,39 @@ export async function action({ request }: ActionFunctionArgs) {
 		...assignment,
 		incidentId: incident.id,
 	}
-	await prisma.incidentAssignment.upsert({
-		select: { id: true },
-		where: { id: assignmentId ?? '__new_assignment__' },
-		create: {
-			...data,
-		},
-		update: {
-			...data,
-		},
+	await prisma.$transaction(async tx => {
+		const saved = await tx.incidentAssignment.upsert({
+			select: { id: true },
+			where: { id: assignmentId ?? '__new_assignment__' },
+			create: data,
+			update: data,
+		})
+		await tx.auditLog.create({
+			data: {
+				userId: user.id,
+				action: assignmentId ? 'UPDATE' : 'CREATE',
+				entity: 'IncidentAssignment',
+				details: {
+					incidentId: incident.id,
+					incidentNumber,
+					assignmentId: saved.id,
+					officerId: assignment.officerId,
+				},
+			},
+		})
+		// The first officer assigned means someone is looking at the incident.
+		if (!assignmentId && incident.status === 'SUBMITTED') {
+			await changeIncidentStatus(
+				{
+					incidentId: incident.id,
+					toStatus: 'UNDER_REVIEW',
+					userId: user.id,
+					remarks: 'An officer has been assigned to your report.',
+					isVisibleToReporter: true,
+				},
+				tx,
+			)
+		}
 	})
 
 	return redirectWithToast(`/dashboard/incidents/${incident.id}`, {
