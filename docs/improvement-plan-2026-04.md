@@ -393,18 +393,18 @@ Data imports (organs, departments, incident types, admins) are **not** migration
   - [x] Add `model IncidentStatusHistory { id, incidentId, fromStatus?, toStatus, changedById (User, nullable for system changes), remarks?, isVisibleToReporter Boolean, createdAt }`.
   - [x] Backfill existing incidents: `SUBMITTED` by default; incidents with an assessment become `UNDER_REVIEW` (Open) or `CLOSED` (Closed), with a hidden system history row.
 - *Admin (dashboard)*
-  - [ ] Show a status badge and status filter on `dashboard+/incidents+/index.tsx`, using `filterFields`.
-  - [ ] Add a "Change status" action on `$incidentId_.tsx` (select, remarks, reporter-visible toggle), following the action conventions (honeypot, CSRF, Zod, audit log, toast).
-  - [ ] Add an "Escalate" action (reason plus officer to escalate to). It creates an assignment and a history row.
-  - [ ] Automatically move the status from `SUBMITTED` to `UNDER_REVIEW` when the first officer is assigned.
-  - [ ] Show the status timeline on the detail page.
+  - [x] Show a status badge and status filter on `dashboard+/incidents+/index.tsx` (validated `where`, not `filterFields`, so a bad URL value can't 500).
+  - [x] Add a "Change status" action (`$incidentId_.status.tsx`: select, remarks, reporter-visible toggle), following the action conventions (honeypot, CSRF, Zod, audit log, toast).
+  - [x] Add an "Escalate" action (`$incidentId_.escalate.tsx`: reason plus incident officer). It creates an assignment and a history row in one transaction. Blocked on resolved/closed incidents.
+  - [x] Automatically move the status from `SUBMITTED` to `UNDER_REVIEW` when the first officer is assigned (assignments now also write an audit log).
+  - [x] Show the status timeline on the detail page (internal remarks tagged).
 - *Reporter (profile)*
   - [ ] Show a status column on `profile+/$userId_+/incidents.tsx`.
   - [ ] Add a read-only incident detail page with the timeline (reporter-visible entries only).
   - [ ] Block edit and delete when the status isn't `SUBMITTED` (both UI and server action).
 - *Notifications (shared with Item 8)*
   - [ ] Email the reporter when the status changes.
-- [ ] Record every status change with `insertAuditLog`.
+- [x] Record every status change in the audit log (`changeIncidentStatus` in `app/utils/incident-status.server.ts`).
 
 **Acceptance:** Reporters can see where their incident stands at any time. Admins can change the status, escalate, and see the full history.
 
@@ -569,7 +569,7 @@ Suggested order: **1.1 → 1.2 → 1.3**, with 1.6 investigated in parallel. 1.4
 | Release | Type | Items | Contents | Migration | Depends on | Status |
 |---|---|---|---|---|---|---|
 | 2.1 | Migration | 7 | `IncidentStatus` enum, `Incident.status` (default `SUBMITTED`), `IncidentStatusHistory` table, backfill of existing incidents | `incident_status` | Phase 1 done | 🟨 prepared on `phase-2-incident-status`, applied locally; awaiting prod `migrate deploy` |
-| 2.2 | Code only | 7 | Admin: status badge and filter, change-status action, escalate action, auto `UNDER_REVIEW` on first assignment, timeline on detail page, audit log | — | 2.1 | ⬜ |
+| 2.2 | Code only | 7 | Admin: status badge and filter, change-status action, escalate action, auto `UNDER_REVIEW` on first assignment, timeline on detail page, audit log | — | 2.1 | 🟨 built on `phase-2-incident-status` (ships with 2.1); awaiting UI check |
 | 2.3 | Code only | 7 | Reporter: status column, read-only detail page with reporter-visible timeline, block edit/delete after `SUBMITTED` | — | 2.2 | ⬜ |
 | 2.4 | Code only | 8 (+7) | Critical-incident email to incident admins; status-change email to the reporter; configurable trigger severities | — | Q5 | ⬜ |
 
@@ -873,3 +873,4 @@ app/routes/settings+/officers+/index.tsx
 | 2026-11-11 | Releases 1.4 and 1.5 merged to `main`; production imports still to run by owner |
 | 2026-11-11 | Releases 1.4 and 1.5: owner ran both imports on production; dry runs afterwards report nothing left to do |
 | 2026-11-11 | Release 2.1 (Item 7) prepared on branch: `incident_status` migration with backfill; awaiting production deploy |
+| 2026-11-11 | Release 2.2 (Item 7, admin side) built on the same branch; 2.1 and 2.2 ship together |

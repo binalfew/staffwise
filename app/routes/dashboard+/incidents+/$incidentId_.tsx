@@ -1,13 +1,17 @@
 import { EyeClosedIcon } from '@radix-ui/react-icons'
 import { LoaderFunctionArgs, json } from '@remix-run/node'
 import { Link, Outlet, useLoaderData } from '@remix-run/react'
+import { format } from 'date-fns'
 import {
+	ArrowUpCircle,
 	LaptopMinimal,
+	ListChecks,
 	PaperclipIcon,
 	TrashIcon,
 	UserPlusIcon,
 } from 'lucide-react'
 import { FC } from 'react'
+import { IncidentStatusBadge } from '~/components/IncidentStatusBadge'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
 import { Input } from '~/components/ui/input'
@@ -68,6 +72,10 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 				},
 			},
 			assessment: true,
+			statusHistory: {
+				orderBy: { createdAt: 'asc' },
+				include: { changedBy: { select: { name: true, email: true } } },
+			},
 		},
 	})
 
@@ -188,6 +196,30 @@ export default function DeleteIncidentRoute() {
 			<div className="grid gap-4 md:gap-8">
 				<Outlet />
 				<IncidentSection title="Incident" url={`/dashboard/incidents`}>
+					<div className="flex flex-wrap items-center gap-3">
+						<span className="text-sm font-medium text-gray-700">Status</span>
+						<IncidentStatusBadge status={incident.status} />
+						<div className="ml-auto flex gap-2">
+							<Button asChild size="sm" variant="outline" className="gap-1">
+								<Link
+									to={`/dashboard/incidents/${incident.id}/status`}
+									preventScrollReset
+								>
+									<ListChecks className="h-4 w-4" />
+									Change status
+								</Link>
+							</Button>
+							<Button asChild size="sm" variant="destructive" className="gap-1">
+								<Link
+									to={`/dashboard/incidents/${incident.id}/escalate`}
+									preventScrollReset
+								>
+									<ArrowUpCircle className="h-4 w-4" />
+									Escalate
+								</Link>
+							</Button>
+						</div>
+					</div>
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 						{[
 							{ label: 'Incident Number', value: incident.incidentNumber },
@@ -320,6 +352,55 @@ export default function DeleteIncidentRoute() {
 					) : (
 						<></>
 					)}
+				</IncidentSection>
+
+				<IncidentSection
+					title="Status Timeline"
+					url={`/dashboard/incidents`}
+					showActions={false}
+				>
+					<ol className="relative border-s border-gray-200 ms-2">
+						<li className="mb-6 ms-4">
+							<span className="absolute -start-1.5 mt-1.5 h-3 w-3 rounded-full border border-white bg-gray-300" />
+							<div className="flex flex-wrap items-center gap-2 text-sm">
+								<IncidentStatusBadge status="SUBMITTED" />
+								<span className="text-muted-foreground">
+									Reported by {formatFullName(incident.employee)} ·{' '}
+									{format(new Date(incident.createdAt), 'd MMM yyyy, HH:mm')}
+								</span>
+							</div>
+						</li>
+						{incident.statusHistory.map(entry => (
+							<li key={entry.id} className="mb-6 ms-4">
+								<span className="absolute -start-1.5 mt-1.5 h-3 w-3 rounded-full border border-white bg-gray-400" />
+								<div className="flex flex-wrap items-center gap-2 text-sm">
+									{entry.fromStatus ? (
+										<>
+											<IncidentStatusBadge status={entry.fromStatus} />
+											<span aria-hidden>→</span>
+										</>
+									) : null}
+									<IncidentStatusBadge status={entry.toStatus} />
+									<span className="text-muted-foreground">
+										{entry.changedBy
+											? entry.changedBy.name || entry.changedBy.email
+											: 'System'}{' '}
+										· {format(new Date(entry.createdAt), 'd MMM yyyy, HH:mm')}
+									</span>
+								</div>
+								{entry.remarks ? (
+									<p className="mt-1 text-sm text-gray-700">
+										{entry.remarks}
+										{entry.isVisibleToReporter ? null : (
+											<span className="ms-2 rounded bg-yellow-100 px-1.5 py-0.5 text-xs font-medium text-yellow-800">
+												Internal
+											</span>
+										)}
+									</p>
+								) : null}
+							</li>
+						))}
+					</ol>
 				</IncidentSection>
 
 				<IncidentSection

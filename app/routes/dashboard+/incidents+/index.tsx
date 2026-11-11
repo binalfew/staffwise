@@ -3,6 +3,7 @@ import { LoaderFunctionArgs, json } from '@remix-run/node'
 import { Link, useLoaderData } from '@remix-run/react'
 import { ArrowLeftIcon, PlusCircle } from 'lucide-react'
 import { ErrorList } from '~/components/ErrorList'
+import { IncidentStatusBadge } from '~/components/IncidentStatusBadge'
 import { Paginator } from '~/components/Paginator'
 import { SearchBar } from '~/components/SearchBar'
 import { Button } from '~/components/ui/button'
@@ -22,11 +23,19 @@ import {
 	TableRow,
 } from '~/components/ui/table'
 import { filterAndPaginate, prisma } from '~/utils/db.server'
+import {
+	incidentStatusLabels,
+	incidentStatuses,
+	isIncidentStatus,
+} from '~/utils/incident-status'
 import { formatDate, formatFullName, formatTime } from '~/utils/misc'
 import { requireUserWithRoles } from '~/utils/permission.server'
 
 export async function loader({ request }: LoaderFunctionArgs) {
 	await requireUserWithRoles(request, ['admin', 'incidentAdmin'])
+
+	const statusParam = new URL(request.url).searchParams.get('status')
+	const statusFilter = isIncidentStatus(statusParam) ? statusParam : undefined
 
 	const { data, totalPages, currentPage } = await filterAndPaginate({
 		request,
@@ -37,9 +46,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 			'employee.familyName',
 			'employee.email',
 		],
+		where: statusFilter ? { status: statusFilter } : {},
 		orderBy: [{ createdAt: 'desc' }],
 		select: {
 			id: true,
+			status: true,
 			incidentNumber: true,
 			incidentType: { select: { name: true } },
 			location: true,
@@ -82,6 +93,20 @@ export default function IncidentsRoute() {
 					</div>
 					<div className="flex items-center gap-2 ml-auto">
 						<SearchBar
+							filters={[
+								{
+									name: 'status',
+									label: 'Status',
+									type: 'select',
+									options: [
+										{ value: 'all', label: 'All' },
+										...incidentStatuses.map(status => ({
+											value: status,
+											label: incidentStatusLabels[status],
+										})),
+									],
+								},
+							]}
 							status={data.status}
 							action={`/dashboard/incidents`}
 							autoSubmit
@@ -110,6 +135,7 @@ export default function IncidentsRoute() {
 									<TableHead>Type</TableHead>
 									<TableHead>Location</TableHead>
 									<TableHead>Severity</TableHead>
+									<TableHead>Status</TableHead>
 									<TableHead>Date & Time</TableHead>
 									<TableHead>Occured While</TableHead>
 									<TableHead className="w-1/6 text-right pr-6">
@@ -146,6 +172,9 @@ export default function IncidentsRoute() {
 													{incident.severity}
 												</TableCell>
 												<TableCell className="py-1">
+													<IncidentStatusBadge status={incident.status} />
+												</TableCell>
+												<TableCell className="py-1">
 													{formatDate(incident.occuredAt)}{' '}
 													{formatTime(incident.timeOfDay)}
 												</TableCell>
@@ -163,7 +192,7 @@ export default function IncidentsRoute() {
 										))
 									) : (
 										<TableRow>
-											<TableCell colSpan={8} className="text-center">
+											<TableCell colSpan={9} className="text-center">
 												<h3 className="mt-2 text-sm font-semibold text-muted-foreground">
 													No incidents found
 												</h3>
@@ -172,7 +201,7 @@ export default function IncidentsRoute() {
 									)
 								) : data.status === 'error' ? (
 									<TableRow>
-										<TableCell colSpan={8} className="text-center">
+										<TableCell colSpan={9} className="text-center">
 											<ErrorList
 												errors={['There was an error parsing the results']}
 											/>
@@ -180,7 +209,7 @@ export default function IncidentsRoute() {
 									</TableRow>
 								) : (
 									<TableRow>
-										<TableCell colSpan={8} className="text-center">
+										<TableCell colSpan={9} className="text-center">
 											Loading...
 										</TableCell>
 									</TableRow>
