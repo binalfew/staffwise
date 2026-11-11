@@ -1,11 +1,23 @@
 import { type LoaderFunctionArgs } from '@remix-run/node'
+import { requireUser } from '~/utils/auth.server'
 import { prisma } from '~/utils/db.server'
 import { invariantResponse } from '~/utils/misc'
 import { getFile } from '~/utils/storage.server'
 
 type AttachmentType = 'car-pass-requests' | 'id-requests' | 'incidents'
 
-export async function loader({ params }: LoaderFunctionArgs) {
+const ADMIN_ROLES: Record<AttachmentType, string[]> = {
+	incidents: ['admin', 'incidentAdmin'],
+	'id-requests': ['admin', 'idRequestAdmin'],
+	'car-pass-requests': ['admin', 'carPassAdmin'],
+}
+
+function sameEmail(a: string | undefined, b: string) {
+	return a?.toLowerCase() === b.toLowerCase()
+}
+
+export async function loader({ request, params }: LoaderFunctionArgs) {
+	const user = await requireUser(request)
 	const { attachmentId } = params
 	invariantResponse(attachmentId, 'Attachment ID is required', { status: 400 })
 
@@ -15,9 +27,11 @@ export async function loader({ params }: LoaderFunctionArgs) {
 			contentType: true,
 			extension: true,
 			fileName: true,
-			incident: { select: { incidentNumber: true } },
-			carPassRequest: { select: { requestNumber: true } },
-			idRequest: { select: { requestNumber: true } },
+			incident: {
+				select: { incidentNumber: true, employee: { select: { email: true } } },
+			},
+			carPassRequest: { select: { requestNumber: true, requestorEmail: true } },
+			idRequest: { select: { requestNumber: true, requestorEmail: true } },
 			type: true,
 		},
 	})
@@ -25,6 +39,26 @@ export async function loader({ params }: LoaderFunctionArgs) {
 	invariantResponse(attachment, 'Attachment not found', { status: 404 })
 
 	const attachmentType = attachment.type as AttachmentType
+	invariantResponse(attachmentType in ADMIN_ROLES, 'Attachment not found', {
+		status: 404,
+	})
+
+	const ownerEmail = {
+		incidents: attachment.incident?.employee.email,
+		'id-requests': attachment.idRequest?.requestorEmail,
+		'car-pass-requests': attachment.carPassRequest?.requestorEmail,
+	}[attachmentType]
+
+	if (!sameEmail(ownerEmail, user.email)) {
+		const isAdmin = await prisma.user.count({
+			where: {
+				id: user.id,
+				roles: { some: { name: { in: ADMIN_ROLES[attachmentType] } } },
+			},
+		})
+		// 404 rather than 403, so attachment IDs can't be probed.
+		invariantResponse(isAdmin, 'Attachment not found', { status: 404 })
+	}
 
 	const requestNumber = (() => {
 		switch (attachmentType) {
@@ -49,7 +83,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
 			'content-type': attachment.contentType,
 			'content-length': Buffer.byteLength(blob).toString(),
 			'content-disposition': `inline; filename="${params.attachmentId}"`,
-			'cache-control': 'public, max-age=31536000, immutable',
+			'cache-control': 'private, no-store',
 		},
 	})
 }

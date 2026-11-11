@@ -2,8 +2,10 @@ import { LoaderFunctionArgs } from '@remix-run/node'
 import * as XLSX from 'xlsx'
 import { prisma } from '~/utils/db.server'
 import { formatBuilding, formatFloor } from '~/utils/misc'
+import { requireUserWithRoles } from '~/utils/permission.server'
 
 export async function loader({ request }: LoaderFunctionArgs) {
+	await requireUserWithRoles(request, ['admin', 'phpAdmin'])
 	const url = new URL(request.url)
 	const searchParams = url.searchParams
 
@@ -127,6 +129,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 			'content-type':
 				'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 			'content-disposition': `attachment; filename="employees.xlsx"`,
+			'cache-control': 'private, no-store',
 		},
 	})
 }

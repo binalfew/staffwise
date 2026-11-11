@@ -1,10 +1,21 @@
 import { type LoaderFunctionArgs } from '@remix-run/node'
 import path from 'path'
 import PDFDocument from 'pdfkit'
+import { requireUser } from '~/utils/auth.server'
 import { prisma } from '~/utils/db.server'
 import { formatBuilding, formatFloor, invariantResponse } from '~/utils/misc'
 
-export async function loader({ params }: LoaderFunctionArgs) {
+const ADMIN_ROLES = [
+	'admin',
+	'phpAdmin',
+	'idRequestAdmin',
+	'carPassAdmin',
+	'accessRequestAdmin',
+	'incidentAdmin',
+]
+
+export async function loader({ request, params }: LoaderFunctionArgs) {
+	const user = await requireUser(request)
 	const { employeeId } = params
 	invariantResponse(employeeId, 'Employee ID is required', { status: 400 })
 
@@ -37,6 +48,14 @@ export async function loader({ params }: LoaderFunctionArgs) {
 	})
 
 	invariantResponse(employee, 'Employee not found', { status: 404 })
+
+	if (employee.email.toLowerCase() !== user.email.toLowerCase()) {
+		const isAdmin = await prisma.user.count({
+			where: { id: user.id, roles: { some: { name: { in: ADMIN_ROLES } } } },
+		})
+		// 404 rather than 403, so employee IDs can't be probed.
+		invariantResponse(isAdmin, 'Employee not found', { status: 404 })
+	}
 
 	const doc = new PDFDocument()
 
@@ -156,6 +175,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
 		headers: {
 			'content-type': 'application/pdf',
 			'content-disposition': `attachment; filename="${employee.firstName}-${employee.familyName}-PersonalInfo.pdf"`,
+			'cache-control': 'private, no-store',
 		},
 	})
 }
