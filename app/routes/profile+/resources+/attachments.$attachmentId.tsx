@@ -1,6 +1,7 @@
 import { type LoaderFunctionArgs } from '@remix-run/node'
 import { requireUser } from '~/utils/auth.server'
 import { prisma } from '~/utils/db.server'
+import { getIncidentScope } from '~/utils/incident-scope.server'
 import { invariantResponse } from '~/utils/misc'
 import { getFile } from '~/utils/storage.server'
 
@@ -28,7 +29,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 			extension: true,
 			fileName: true,
 			incident: {
-				select: { incidentNumber: true, employee: { select: { email: true } } },
+				select: {
+					incidentNumber: true,
+					employee: { select: { email: true, organId: true } },
+				},
 			},
 			carPassRequest: { select: { requestNumber: true, requestorEmail: true } },
 			idRequest: { select: { requestNumber: true, requestorEmail: true } },
@@ -58,6 +62,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 		})
 		// 404 rather than 403, so attachment IDs can't be probed.
 		invariantResponse(isAdmin, 'Attachment not found', { status: 404 })
+
+		// Office incident admins only see their own offices' incidents.
+		if (attachmentType === 'incidents') {
+			const scope = await getIncidentScope(user.id)
+			const organId = attachment.incident?.employee.organId ?? ''
+			invariantResponse(
+				!scope || scope.organIds.includes(organId),
+				'Attachment not found',
+				{ status: 404 },
+			)
+		}
 	}
 
 	const requestNumber = (() => {

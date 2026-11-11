@@ -6,7 +6,11 @@ import { formatFullName, getDomainUrl } from '~/utils/misc'
 /** Severities that email the incident admins when an incident is reported. */
 export const ALERT_SEVERITIES = ['critical']
 
-/** Users with this role receive critical-incident alerts. */
+/**
+ * Users with this role receive critical-incident alerts: global ones for every
+ * incident, office-scoped ones (see incident-scope.server.ts) only for their
+ * offices.
+ */
 const ALERT_ROLE = 'incidentAdmin'
 
 export function isAlertSeverity(severity: string | null | undefined) {
@@ -62,7 +66,8 @@ function emailText(
 }
 
 /**
- * Emails every incident admin when a critical incident is reported.
+ * Emails the incident admins responsible for the reporter's office when a
+ * critical incident is reported.
  * Call without awaiting: it never throws, and sending can take a while.
  */
 export async function sendCriticalIncidentAlert(
@@ -88,6 +93,7 @@ export async function sendCriticalIncidentAlert(
 						familyName: true,
 						email: true,
 						mobileTelephoneNumber: true,
+						organId: true,
 						organ: { select: { name: true } },
 					},
 				},
@@ -96,7 +102,14 @@ export async function sendCriticalIncidentAlert(
 		if (!incident || !isAlertSeverity(incident.severity)) return
 
 		const recipients = await prisma.user.findMany({
-			where: { roles: { some: { name: ALERT_ROLE } } },
+			where: {
+				roles: { some: { name: ALERT_ROLE } },
+				OR: [
+					{ roles: { some: { name: 'admin' } } },
+					{ adminOrgans: { none: {} } },
+					{ adminOrgans: { some: { organId: incident.employee.organId } } },
+				],
+			},
 			select: { email: true },
 		})
 		if (recipients.length === 0) {

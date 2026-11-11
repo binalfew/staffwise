@@ -33,15 +33,15 @@ import {
 	getAttachmentFileSrc,
 	invariantResponse,
 } from '~/utils/misc.tsx'
-import { requireUserWithRoles } from '~/utils/permission.server'
+import { requireIncidentAdmin } from '~/utils/incident-scope.server'
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
-	await requireUserWithRoles(request, ['admin', 'incidentAdmin'])
+	const { scopeWhere } = await requireIncidentAdmin(request)
 
 	const { incidentId } = params
 
-	const incident = await prisma.incident.findUnique({
-		where: { id: incidentId },
+	const incident = await prisma.incident.findFirst({
+		where: { id: incidentId, ...scopeWhere },
 		include: {
 			attachments: true,
 			incidentType: true,

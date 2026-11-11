@@ -55,9 +55,13 @@ Top-level areas:
 
 ### Authorization
 
-The parent layout route's loader does the auth check, and child loaders usually don't repeat it:
+The parent layout route's loader checks the role for page loads:
 - `settings.tsx` calls `requireUserWithRole(request, 'admin')`.
 - `dashboard.tsx` calls `requireUserWithRoles(request, ['admin', 'phpAdmin', 'idRequestAdmin', 'incidentAdmin', 'accessRequestAdmin', 'carPassAdmin'])`.
+
+**Parent loaders don't run for actions** (or for direct `_data` requests to a child loader). Every action, and every loader that returns protected data, must call the auth helper itself. Routes under `profile+/$userId_+` skip the `$userId.tsx` layout, so they must also check that the signed-in user owns the record.
+
+Incident admins can be limited to offices (`OrganAdmin`, set in Settings → Users). Admin incident routes use `requireIncidentAdmin` / `scopeWhere` from `app/utils/incident-scope.server.ts`; `admin` users and incident admins with no offices see everything.
 
 The helpers live in `app/utils/permission.server.ts`. There is also permission-based checking (`requireUserWithPermission` with strings like `read:user:any`, parsed in `app/utils/user.ts`). On the client, use `userHasRole` / `userHasRoles` / `userHasPermission` with the user loaded in `root.tsx`. Roles and permissions are created in `prisma/seed.ts`, except `phpAdmin`, which was added directly in the database.
 

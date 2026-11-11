@@ -10,18 +10,24 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
 	const user = await prisma.user.findUnique({
 		where: { id: userId },
-		include: { roles: true },
+		include: { roles: true, adminOrgans: { select: { organId: true } } },
 	})
 
 	invariantResponse(user, 'Not Found', { status: 404 })
 
 	const roles = await prisma.role.findMany()
+	const organs = await prisma.organ.findMany({
+		select: { id: true, name: true },
+		orderBy: { name: 'asc' },
+	})
 
-	return json({ user, roles })
+	return json({ user, roles, organs })
 }
 
 export default function EditCountryRoute() {
-	const { user, roles } = useLoaderData<typeof loader>()
+	const { user, roles, organs } = useLoaderData<typeof loader>()
 
-	return <UserEditor user={user} roles={roles} title="Edit User" />
+	return (
+		<UserEditor user={user} roles={roles} organs={organs} title="Edit User" />
+	)
 }

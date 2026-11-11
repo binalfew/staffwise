@@ -113,6 +113,7 @@ model User {
   auditLogs   AuditLog[]
 
   incidentStatusChanges IncidentStatusHistory[]
+  adminOrgans           OrganAdmin[]
 }
 
 model AuditLog {
@@ -181,6 +182,20 @@ model Organ {
   departments Department[]
   locations   Location[]
   employees   Employee[]
+  admins      OrganAdmin[]
+}
+
+/// Offices an incident admin manages. An incidentAdmin with rows here sees
+/// only incidents reported by staff of these organs; with none, all of them.
+model OrganAdmin {
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  organId   String
+  organ     Organ    @relation(fields: [organId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, organId])
+  @@index([organId])
 }
 
 model Department {

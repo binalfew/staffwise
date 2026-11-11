@@ -341,6 +341,9 @@ Data imports (organs, departments, incident types, admins) are **not** migration
   - **Merging deletes rows**, so it goes beyond the usual "insert and update only" rule for data imports. That's why it sits behind `--merge`.
 - [ ] Later, with the business (Q2): the organs left out above. They stay as they are until someone confirms them.
 - [x] (2026-11-11) Owner ran it on production with `--merge` after a backup; a dry run afterwards reports nothing left to create, update or merge.
+- [x] (2026-11-11) Second list from the business: 7 new organs added to `organs.json` (AfSA Cairo, PANSTAT Yamoussoukro, ACERWC Maseru, ACBF Harare, AFCONE Pretoria, AMA Kigali, AfHA Kampala). Rehearsed locally with `add-default-departments.ts`, which gives each one "Admin and Finance" and "Other".
+- [x] Owner ran `import-organs.ts` and `add-default-departments.ts` on production (fresh dump 2026-11-11 11:57: all 7 present with their two departments; both scripts report nothing to do).
+- [ ] League of Arab States office: production has three records: `+20` "AU Permanent Representative Mission League Arab States" (1 staff, Administration/Finance/HR, 1 location), and two "Permanent Delegation … – Cairo Office" (`+20`, 0 staff; `20`, 1 staff), each with only the default departments. `prisma/scripts/merge-las-office.ts` keeps the first, renames it `AU-LAS` "AU Permanent Representative to the League of Arab States", adds "Other", moves the duplicates' staff there and deletes both duplicates (owner, 2026-11-11). Rehearsed on a fresh prod dump (`staffwise_rehearsal`): organs 64 → 62, staff unchanged at 1,776, departments 198 → 195; rerun changes nothing. Awaiting prod run by owner.
 - [ ] Export the current organs list first as a backup.
 
 **Acceptance:** Every confirmed AU office, organ and specialised agency can be selected in the PHP form.
@@ -461,11 +464,15 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 **Tasks (Option B)**
 - [x] Scoping model confirmed (Q4, 2026-11-11): office admins see only their own office's data (Option B).
 - [x] Office admins manage **incidents only** (Q4, 2026-11-11). PHP, ID, car pass and access requests stay with the global admins.
-- [ ] Schema: add an `OrganAdmin` (userId, organId) join table.
-- [ ] Settings → Users: let an admin assign organs to a user.
-- [ ] Add a `getAdminScope(user)` helper in `permission.server.ts` that returns `null` (global) or a list of organ IDs.
-- [ ] Apply the scope to dashboard loaders through `filterAndPaginate`'s `where`: incidents, PHP, ID requests, car pass and access requests.
-- [ ] Apply the scope to detail pages too, so a scoped admin can't open another office's record by URL.
+- [x] Schema: `OrganAdmin` (userId, organId) join table, migration `20261111083653_organ_admin` (new table only).
+- [x] Incident office = the reporter's organ (`incident.employee.organId`), no extra column (owner, 2026-11-11).
+- [x] An `incidentAdmin` with no offices assigned stays global; `admin` is always global. No new role (owner, 2026-11-11).
+- [x] Settings → Users: "Incident admin offices" checkboxes on the user form; changes are audit-logged.
+- [x] `app/utils/incident-scope.server.ts`: `getIncidentScope()` returns `null` (global) or organ IDs; `requireIncidentAdmin()` returns the user and a `scopeWhere` filter.
+- [x] Apply the scope to the incident list (`filterAndPaginate` `where`) and the dashboard incident count. Incidents only (Q4).
+- [x] Apply the scope to the detail page, status, escalate, assessment, assignment add/remove, the admin editor's create/edit/delete/assign intents, and incident attachments. Out-of-scope requests get 404.
+- [x] Critical-incident emails go to global incident admins plus those scoped to the reporter's office.
+- [x] Tested locally (incident admin scoped to IBAR): list and count show 3 of 26; every out-of-scope page and write returns 404 and changes nothing; removing the offices restores the full view; alert recipients 9 for an IBAR incident, 8 for an HQ one.
 - [ ] Onboarding: create or invite the listed admins, assign roles and organs, and send a welcome email that includes the EOC liaison instructions.
 - [ ] Track onboarding per office in Appendix C.
 
@@ -587,8 +594,8 @@ Suggested order: **1.1 → 1.2 → 1.3**, with 1.6 investigated in parallel. 1.4
 
 | Release | Type | Items | Contents | Migration | Depends on | Status |
 |---|---|---|---|---|---|---|
-| 3.1 | Migration | 9 | `OrganAdmin` join table | `organ_admin` | Q4 ✅ | ⬜ ready to start |
-| 3.2 | Code only | 9 | Assign organs to users in Settings → Users; `getAdminScope()`; scope the incident dashboard list and detail pages by organ (incidents only, Q4) | — | 3.1 | ⏸ |
+| 3.1 | Migration | 9 | `OrganAdmin` join table | `organ_admin` | Q4 ✅ | 🟨 migrated on prod; built on `phase-3-office-incident-admins` (with 3.2 and the Settings auth fix); awaiting merge and push |
+| 3.2 | Code only | 9 | Assign organs to users in Settings → Users; `getIncidentScope()`; scope the incident dashboard list and detail pages by organ (incidents only, Q4) | — | 3.1 | 🟨 built with 3.1, tested locally; ships with 3.1 |
 | 3.3 | Code + Azure config | 10 | Multi-tenant Microsoft login (`organizations`); `ALLOWED_EMAIL_DOMAINS` env var and checks in OAuth callback and signup; login guide | — | Q7, Azure AD admin | ⏸ |
 | 3.4 | Data / ops | 9 | Onboard listed office admins (Appendix C): accounts, roles, organs, welcome/EOC email | — | 3.2, 3.3 | ⏸ |
 | 3.5 | Spike | 8 | SMS (Azure Communication Services) and Web Push: cost, coverage, effort; recommendation only | — | Q6 | ⏹ dropped for now (Q6: no SMS) |
@@ -902,3 +909,8 @@ app/routes/settings+/officers+/index.tsx
 | 2026-11-11 | Release 1.8 (office number optional) built; migration awaiting production deploy |
 | 2026-11-11 | Release 1.8 migration deployed on production by owner; merged to `main` |
 | 2026-11-11 | Release 1.8 pushed and smoke-tested in production |
+| 2026-11-11 | Security fix (`fix-settings-action-auth`): all 11 Settings actions (users, roles, permissions, organs, departments, locations, floors, countries, officers, relationships, incident types) had no auth. The `settings.tsx` admin check is a loader and doesn't run for actions, so anyone, even signed out, could create, edit or delete these records (confirmed locally). Each action now calls `requireUserWithRole(request, 'admin')`. Dashboard and profile actions already check auth. Code only; awaiting push and prod smoke test |
+| 2026-11-11 | Settings auth fix moved off `main` (not pushed yet) onto `phase-3-office-incident-admins`, to ship with 3.1–3.2 (owner) |
+| 2026-11-11 | Releases 3.1–3.2 (office-scoped incident admins) built on `phase-3-office-incident-admins`; `organ_admin` migration awaiting production deploy |
+| 2026-11-11 | `organ_admin` migration deployed on production by owner. Second organ list: 7 new organs added to `organs.json`; LAS duplicate pending |
+| 2026-11-11 | LAS merge script rehearsed on a fresh production dump (production has 3 LAS records, not 2 as in the local copy). Note: a run of local scripts briefly read production because `.env` had the production URL active; nothing was written (scripts refuse writes without `--remote`) |
