@@ -29,7 +29,7 @@ The business request has 14 items. Mapped against the current codebase, they fal
 | 5 | Add missing organs/offices, regional offices, specialised agencies | C | 1 | M | ✅ (unclear organs left for the business) |
 | 6 | Update renamed/restructured departments; departments for regional offices | C | 1 | M | ⏸ waiting on old → new mapping (Q3) |
 | 7 | Incident status tracking, assignment and escalation | B | 2 | L | ✅ (reporter status email ships with 2.4) |
-| 8 | Critical-incident notifications to admins | B | 2 | M | ⬜ |
+| 8 | Critical-incident notifications to admins | B | 2 | M | 🟨 |
 | 9 | Designate office system administrators | C | 3 | M–L | ⏸ design decision |
 | 10 | Support staff with non-AU email domains | D | 3 | M | ⏸ Azure AD admin |
 | 11 | "Staffwise link inactive" / no response | D | 1 (investigate) | S | 🟨 |
@@ -427,12 +427,12 @@ Data imports (organs, departments, incident types, admins) are **not** migration
 3. **Push (later):** Web Push needs a PWA or service worker and VAPID keys. This is larger. Email to phone mail apps covers most of the need for now.
 
 **Tasks**
-- [ ] Add a `sendIncidentAlert(incident)` helper in `app/utils/incident-notifications.server.ts`.
-- [ ] Look up recipients: users with the `incidentAdmin` or `admin` role (and the organ's office admins after Item 9).
-- [ ] Create a React email template matching the existing email templates.
-- [ ] Call the helper from the create action when severity is critical. Don't block the redirect: catch and log failures.
-- [ ] Make the trigger severities configurable (constant or env var). *(Confirm whether `major` should also alert.)*
-- [ ] Email the reporter on status changes (Item 7).
+- [x] Add `sendCriticalIncidentAlert(incidentId, request)` in `app/utils/incident-notifications.server.ts`.
+- [x] Look up recipients: users with the `incidentAdmin` role only (Q5). *(Office admins after Item 9.)*
+- [x] Email body: inline HTML + plain text, matching the existing emails (no React email library in the project); user input is HTML-escaped.
+- [x] Call the helper from both create actions (reporter and admin) and when a reporter edit raises severity to critical. Not awaited, never throws: `sendEmail` can poll for up to 3 minutes.
+- [x] Trigger severities in the `ALERT_SEVERITIES` constant: `critical` only (Q5).
+- [x] Email the reporter on every status change (change status, escalate, auto `UNDER_REVIEW` on first assignment): `sendIncidentStatusEmail(historyId, request)`; internal remarks left out.
 - [ ] *(Later)* SMS spike: cost, coverage, and an admin mobile number field.
 - [ ] *(Later)* Web Push spike.
 
@@ -572,7 +572,7 @@ Suggested order: **1.1 → 1.2 → 1.3**, with 1.6 investigated in parallel. 1.4
 | 2.1 | Migration | 7 | `IncidentStatus` enum, `Incident.status` (default `SUBMITTED`), `IncidentStatusHistory` table, backfill of existing incidents | `incident_status` | Phase 1 done | 🟨 ✅ migrated on prod, pushed and smoke-tested 2026-11-11 (`4a65d3d`) |
 | 2.2 | Code only | 7 | Admin: status badge and filter, change-status action, escalate action, auto `UNDER_REVIEW` on first assignment, timeline on detail page, audit log | — | 2.1 | ✅ pushed and smoke-tested 2026-11-11 (`4a65d3d`) |
 | 2.3 | Code only | 7 | Reporter: status column, read-only detail page with reporter-visible timeline, block edit/delete after `SUBMITTED`; ownership checks on reporter routes | — | 2.2 | ✅ pushed and smoke-tested 2026-11-11 (`4a65d3d`) |
-| 2.4 | Code only | 8 (+7) | Critical-incident email to incident admins; status-change email to the reporter; configurable trigger severities | — | Q5 | ⬜ |
+| 2.4 | Code only | 8 (+7) | Critical-incident email to incident admins; status-change email to the reporter; configurable trigger severities | — | Q5 ✅ | 🟨 built on `phase-2-incident-emails` |
 
 **Exit criteria:** Reporters can follow their incident's status. Admins can change the status and escalate, with a full history. Critical incidents email the admins within a minute.
 
@@ -612,7 +612,7 @@ Suggested order: **1.1 → 1.2 → 1.3**, with 1.6 investigated in parallel. 1.4
 | Q2 | Confirm the organ/office list (Appendix B): acronyms, countries, cities, parent department. Supply the rest of the list after "CAR". | Item 5 |
 | Q3 | Provide the current AUC department structure and the old → new name mapping. Should regional offices get their own departments, or keep using the HQ parent department? | Item 6 |
 | Q4 | Should office admins see only their own office's data (recommended) or all data? Which modules can they manage? | Item 9 |
-| Q5 | Should `major` incidents also trigger alerts, or only `critical`? Who besides incident admins should receive them (EOC mailbox)? | Item 8 |
+| Q5 | Should `major` incidents also trigger alerts, or only `critical`? Who besides incident admins should receive them (EOC mailbox)? **Answered 2026-11-11: only `critical`; `incidentAdmin` users only.** | Item 8 |
 | Q6 | Is SMS required, or is email enough for now? Budget for SMS? | Item 8 |
 | Q7 | Which external domains are approved? Are Gmail accounts allowed? | Item 10 |
 | Q8 | Should office number remain mandatory for regional offices? | Item 3 |
@@ -879,3 +879,4 @@ app/routes/settings+/officers+/index.tsx
 | 2026-11-11 | Release 2.3 (Item 7, reporter side) built on the same branch; also fixes missing auth/ownership checks on reporter incident routes. Open: `/profile/resources/attachments/:id` has no auth (all request types) |
 | 2026-11-11 | Release 2.1 migration deployed on production by owner; 2.1–2.3 merged to `main` |
 | 2026-11-11 | Releases 2.1–2.3 pushed and smoke-tested in production |
+| 2026-11-11 | Q5 answered (critical only, incidentAdmin only); release 2.4 built on `phase-2-incident-emails` |

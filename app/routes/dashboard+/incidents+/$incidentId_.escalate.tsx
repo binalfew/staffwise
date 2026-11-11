@@ -19,6 +19,7 @@ import { Separator } from '~/components/ui/separator'
 import { validateCSRF } from '~/utils/csrf.server'
 import { prisma } from '~/utils/db.server'
 import { checkHoneypot } from '~/utils/honeypot.server'
+import { sendIncidentStatusEmail } from '~/utils/incident-notifications.server'
 import { changeIncidentStatus } from '~/utils/incident-status.server'
 import { formatFullName, invariantResponse } from '~/utils/misc'
 import { requireUserWithRoles } from '~/utils/permission.server'
@@ -105,7 +106,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 	const { officerId, reason, isVisibleToReporter } = submission.value
 
-	await prisma.$transaction(async tx => {
+	const history = await prisma.$transaction(async tx => {
 		const assignment = await tx.incidentAssignment.create({
 			data: {
 				incidentId: incident.id,
@@ -128,7 +129,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 				},
 			},
 		})
-		await changeIncidentStatus(
+		const { history } = await changeIncidentStatus(
 			{
 				incidentId: incident.id,
 				toStatus: 'ESCALATED',
@@ -138,7 +139,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
 			},
 			tx,
 		)
+		return history
 	})
+	void sendIncidentStatusEmail(history.id, request)
 
 	return redirectWithToast(`/dashboard/incidents/${incident.id}`, {
 		type: 'success',

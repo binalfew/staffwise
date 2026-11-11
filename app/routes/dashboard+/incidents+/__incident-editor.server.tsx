@@ -12,6 +12,7 @@ import {
 	deleteFileIfExists,
 	uploadFile,
 } from '~/utils/storage.server'
+import { sendCriticalIncidentAlert } from '~/utils/incident-notifications.server'
 import { redirectWithToast } from '~/utils/toast.server'
 import { AssignmentSchema } from './$incidentId_.assignments.new'
 import {
@@ -185,10 +186,15 @@ export async function action({ params, request }: ActionFunctionArgs) {
 		employeeId: employee.id,
 	}
 
-	const deletedAttachments = await prisma.attachment.findMany({
-		select: { fileName: true, extension: true },
-		where: { id: { notIn: updatedAttachments.map(i => i.id) } },
-	})
+	const deletedAttachments = incidentId
+		? await prisma.attachment.findMany({
+				select: { fileName: true, extension: true },
+				where: {
+					incidentId,
+					id: { notIn: updatedAttachments.map(i => i.id) },
+				},
+		  })
+		: []
 
 	const incidentNumber = await generateSerialNumber('INCIDENT')
 	const incident = await prisma.incident.upsert({
@@ -260,6 +266,8 @@ export async function action({ params, request }: ActionFunctionArgs) {
 			id: incidentId,
 		},
 	})
+
+	if (!incidentId) void sendCriticalIncidentAlert(incident.id, request)
 
 	return redirectWithToast(`/dashboard/incidents`, {
 		type: 'success',
